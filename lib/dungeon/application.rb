@@ -1,7 +1,7 @@
 require "dungeon/root_entity"
 require "dungeon/video_system"
 require "dungeon/event_system"
-require "dungeon/profile_system"
+#require "dungeon/profile_system"
 
 module Dungeon
   class Application
@@ -11,16 +11,20 @@ module Dungeon
 
     def run!
       open_systems([
-        # ProfileSystem,
+        #ProfileSystem,
         [ VideoSystem, "test", 640, 480 ],
         EventSystem,
       ]) do |video, event|
+        video.init_assets "assets/manifest.yaml"
+        video.context[SDL2::SDL_HINT_RENDER_SCALE_QUALITY] = 0
+        video.context.scale = 4
+
         event_loop RootEntity.new(video.context), event
       end
     end
 
     def event_loop destination, source
-      source.each do |e|
+      source.each(60) do |e|
         case e
         when EventSystem::KeyupEvent
           destination.emit :keyup, e.key

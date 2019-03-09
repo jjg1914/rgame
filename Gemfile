@@ -7,6 +7,7 @@ source "https://rubygems.org"
 gem "ffi"
 
 group :development do
+  gem "dotenv"
   gem "pry"
   gem "ruby-prof"
 end

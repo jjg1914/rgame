@@ -1,0 +1,4 @@
+---
+- name: model
+  path: assets/model.json
+  type: sprite

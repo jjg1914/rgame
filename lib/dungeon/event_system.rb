@@ -65,11 +65,11 @@ module Dungeon
       @now = 0
     end
 
-    def each fps = 60, &block
+    def each fps = nil, &block
       if block_given?
         self.each(fps).each(&block)
       else
-        waitticks = (1000 / fps).to_i
+        waitticks = fps.nil? ? 0 : (1000 / fps).to_i
 
         Enumerator.new do |yielder|
           begin

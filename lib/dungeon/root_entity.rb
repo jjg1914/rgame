@@ -13,7 +13,7 @@ module Dungeon
     end
 
     after :interval do
-      @ctx.color = 0xFFFFFF
+      @ctx.color = 0x888888
       @ctx.clear
       self.emit :draw, @ctx
       @ctx.present

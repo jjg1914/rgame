@@ -7,6 +7,7 @@ module Dungeon
 
     attach_function :SDL_Init, [ :uint32 ], :int
     attach_function :SDL_Quit, [], :void
+    attach_function :SDL_GetError, [], :string
     attach_function :SDL_Delay, [ :int ], :void
     attach_function :SDL_GetTicks, [], :uint32
     attach_function :SDL_CreateWindow, [ :string,
@@ -18,9 +19,17 @@ module Dungeon
     attach_function :SDL_PollEvent, [ :pointer ], :int
     attach_function :SDL_RenderPresent, [ :pointer ], :void
     attach_function :SDL_SetRenderDrawColor, [ :pointer, :int, :int, :int, :int ], :int
+    attach_function :SDL_RenderSetScale, [ :pointer, :float, :float ], :int
+    attach_function :SDL_GetHint, [ :string ], :string
+    attach_function :SDL_SetHint, [ :string, :string ], :int
     attach_function :SDL_RenderClear, [ :pointer ], :int
     attach_function :SDL_RenderDrawRect, [ :pointer, :pointer ], :int
     attach_function :SDL_RenderFillRect, [ :pointer, :pointer ], :int
+    attach_function :SDL_RenderCopy, [ :pointer, :pointer, :pointer, :pointer ], :int
+    attach_function :SDL_CreateTextureFromSurface, [ :pointer, :pointer ], :pointer
+    attach_function :SDL_DestroyTexture, [ :pointer ], :void
+    attach_function :SDL_QueryTexture, [ :pointer, :pointer, :pointer, :pointer, :pointer ], :int
+    attach_function :SDL_FreeSurface, [ :pointer ], :void
 
     enum :SDL_WindowEventID, [
       :SDL_WINDOWEVENT_NONE,
@@ -98,10 +107,25 @@ module Dungeon
     SDL_WINDOW_SHOWN = 0x4
     SDL_WINDOW_OPENGL = 0x2
     SDL_RENDERER_ACCELERATED = 0x2
+    SDL_RENDERER_PRESENTVSYNC = 0x4
 
     SDL_QUIT = 0x100
     SDL_WINDOWEVENT = 0x200
     SDL_KEYDOWN = 0x300
     SDL_KEYUP = 0x301
+
+    SDL_HINT_RENDER_SCALE_QUALITY = "SDL_RENDER_SCALE_QUALITY"
+    SDL_HINT_RENDER_VSYNC = "SDL_RENDER_VSYNC"
+  end
+
+  module SDL2Image
+    extend FFI::Library
+    ffi_lib "SDL2_image"
+
+    attach_function :IMG_Load, [ :string ], :pointer
+    attach_function :IMG_Init, [ :uint32 ], :int
+    attach_function :IMG_Quit, [], :void
+
+    IMG_INIT_PNG = 0x2
   end
 end
