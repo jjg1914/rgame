@@ -69,7 +69,7 @@ module Dungeon
     end
 
     def self.new *args
-      super(id_counter_next).tap { |o| o.emit(:new, *args) }
+      super(Entity.id_counter_next).tap { |o| o.emit(:new, *args) }
     end
 
     attr_reader :id

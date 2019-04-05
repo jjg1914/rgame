@@ -5,32 +5,6 @@ module Dungeon
     extend FFI::Library
     ffi_lib "SDL2"
 
-    attach_function :SDL_Init, [ :uint32 ], :int
-    attach_function :SDL_Quit, [], :void
-    attach_function :SDL_GetError, [], :string
-    attach_function :SDL_Delay, [ :int ], :void
-    attach_function :SDL_GetTicks, [], :uint32
-    attach_function :SDL_CreateWindow, [ :string,
-                                         :int, :int, :int, :int,
-                                         :uint32 ], :pointer
-    attach_function :SDL_DestroyWindow, [ :pointer ], :void
-    attach_function :SDL_CreateRenderer, [ :pointer, :int, :uint32 ], :pointer
-    attach_function :SDL_DestroyRenderer, [ :pointer ], :void
-    attach_function :SDL_PollEvent, [ :pointer ], :int
-    attach_function :SDL_RenderPresent, [ :pointer ], :void
-    attach_function :SDL_SetRenderDrawColor, [ :pointer, :int, :int, :int, :int ], :int
-    attach_function :SDL_RenderSetScale, [ :pointer, :float, :float ], :int
-    attach_function :SDL_GetHint, [ :string ], :string
-    attach_function :SDL_SetHint, [ :string, :string ], :int
-    attach_function :SDL_RenderClear, [ :pointer ], :int
-    attach_function :SDL_RenderDrawRect, [ :pointer, :pointer ], :int
-    attach_function :SDL_RenderFillRect, [ :pointer, :pointer ], :int
-    attach_function :SDL_RenderCopy, [ :pointer, :pointer, :pointer, :pointer ], :int
-    attach_function :SDL_CreateTextureFromSurface, [ :pointer, :pointer ], :pointer
-    attach_function :SDL_DestroyTexture, [ :pointer ], :void
-    attach_function :SDL_QueryTexture, [ :pointer, :pointer, :pointer, :pointer, :pointer ], :int
-    attach_function :SDL_FreeSurface, [ :pointer ], :void
-
     enum :SDL_WindowEventID, [
       :SDL_WINDOWEVENT_NONE,
       :SDL_WINDOWEVENT_SHOWN,
@@ -59,6 +33,41 @@ module Dungeon
       :SDL_SCANCODE_UP, 82,
       :SDL_NUM_SCANCODES, 512,
     ]
+
+    attach_function :SDL_Init, [ :uint32 ], :int
+    attach_function :SDL_Quit, [], :void
+    attach_function :SDL_GetError, [], :string
+    attach_function :SDL_Delay, [ :int ], :void
+    attach_function :SDL_GetTicks, [], :uint32
+    attach_function :SDL_CreateWindow, [ :string,
+                                         :int, :int, :int, :int,
+                                         :uint32 ], :pointer
+    attach_function :SDL_DestroyWindow, [ :pointer ], :void
+    attach_function :SDL_CreateRenderer, [ :pointer, :int, :uint32 ], :pointer
+    attach_function :SDL_DestroyRenderer, [ :pointer ], :void
+    attach_function :SDL_PollEvent, [ :pointer ], :int
+    attach_function :SDL_RenderPresent, [ :pointer ], :void
+    attach_function :SDL_SetRenderDrawColor, [ :pointer, :int, :int, :int, :int ], :int
+    attach_function :SDL_RenderSetScale, [ :pointer, :float, :float ], :int
+    attach_function :SDL_SetRenderTarget, [ :pointer, :pointer ], :int
+    attach_function :SDL_GetRenderTarget, [ :pointer ], :pointer
+    attach_function :SDL_GetHint, [ :string ], :string
+    attach_function :SDL_SetHint, [ :string, :string ], :int
+    attach_function :SDL_RenderClear, [ :pointer ], :int
+    attach_function :SDL_RenderDrawRect, [ :pointer, :pointer ], :int
+    attach_function :SDL_RenderFillRect, [ :pointer, :pointer ], :int
+    attach_function :SDL_RenderCopy, [ :pointer, :pointer, :pointer, :pointer ], :int
+    attach_function :SDL_CreateTextureFromSurface, [ :pointer, :pointer ], :pointer
+    attach_function :SDL_CreateTexture, [ :pointer, :uint32, :int, :int, :int ], :pointer
+    attach_function :SDL_DestroyTexture, [ :pointer ], :void
+    attach_function :SDL_QueryTexture, [ :pointer, :pointer, :pointer, :pointer, :pointer ], :int
+    attach_function :SDL_CreateRGBSurface, [ :uint32, :int, :int, :int,
+                                             :uint32, :uint32, :uint32,
+                                             :uint32 ], :pointer
+    attach_function :SDL_FreeSurface, [ :pointer ], :void
+    attach_function :SDL_SetTextureBlendMode, [ :pointer, :int ], :int
+    attach_function :SDL_GetTextureBlendMode, [ :pointer, :pointer ], :int
+    attach_function :SDL_GetWindowPixelFormat, [ :pointer ], :uint32
 
     class SDL_Keysym < FFI::Struct
       layout :scancode, :SDL_Scancode,
@@ -116,6 +125,16 @@ module Dungeon
 
     SDL_HINT_RENDER_SCALE_QUALITY = "SDL_RENDER_SCALE_QUALITY"
     SDL_HINT_RENDER_VSYNC = "SDL_RENDER_VSYNC"
+
+    SDL_TEXTUREACCESS_STATIC = 0x0
+    SDL_TEXTUREACCESS_STREAMING = 0x1
+    SDL_TEXTUREACCESS_TARGET = 0x2
+
+    SDL_BLENDMODE_NONE = 0x0
+    SDL_BLENDMODE_BLEND = 0x1
+    SDL_BLENDMODE_ADD = 0x2
+    SDL_BLENDMODE_MOD = 0x4
+    SDL_BLENDMODE_INVALID = 0x7FFFFFFF
   end
 
   module SDL2Image

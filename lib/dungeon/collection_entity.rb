@@ -41,10 +41,12 @@ module Dungeon
     private
 
     def last message, *args
-      index = @head
-      until index.nil?
-        @children[index][:target].emit(message, *args)
-        index = @children[index][:next]
+      unless message == :new
+        index = @head
+        until index.nil?
+          @children[index][:target].emit(message, *args)
+          index = @children[index][:next]
+        end
       end
     end
   end

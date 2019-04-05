@@ -14,14 +14,19 @@ module Dungeon
       attr_accessor :color
       attr_accessor :alpha
       attr_accessor :scale
+      attr_accessor :target
 
-      def initialize renderer
+      def initialize window, renderer
+        @window = window
         @renderer = renderer
         @color = 0x000000
         @alpha = 0xFF
         @rect = SDL2::SDL_Rect.new
         @rect_2 = SDL2::SDL_Rect.new
-        @ints = FFI::MemoryPointer.new(:int, 8)
+        @ints = 8.times.map { FFI::MemoryPointer.new(:int, 1) }
+        @uint32s = 8.times.map { FFI::MemoryPointer.new(:uint32, 1) }
+
+        @stack = []
       end
 
       def [] key
@@ -32,8 +37,25 @@ module Dungeon
         SDL2.SDL_SetHint(key.to_s, value.to_s)
       end
 
+      def save
+        @stack << [ self.color, self.alpha, self.scale, self.target ]
+        if block_given?
+          begin
+            yield
+          ensure
+            self.restore
+          end
+        end
+      end
+
+      def restore
+        unless @stack.empty?
+          self.color, self.alpha, self.scale, self.target = @stack.pop
+        end
+      end
+
       def color= value
-        unless color == value
+        unless @color == value
           SDL2.SDL_SetRenderDrawColor @renderer,
                                       value.red_value,
                                       value.green_value,
@@ -44,13 +66,46 @@ module Dungeon
       end
 
       def alpha= value
-        unless alpha == value
+        unless @alpha == value
           SDL2.SDL_SetRenderDrawColor @renderer,
                                       color.red_value,
                                       color.green_value,
                                       color.blue_value,
                                       value
           @alpha = value
+        end
+      end
+
+      def texture_blend_mode target, mode = nil
+        if mode.nil?
+          SDL2.SDL_GetTextureBlendMode target, @ints[0]
+          case @ints[0].get(:int, 0)
+            when SDL2::SDL_BLENDMODE_NONE
+              :none
+            when SDL2::SDL_BLENDMODE_BLEND
+              :blend
+            when SDL2::SDL_BLENDMODE_ADD
+              :add
+            when SDL2::SDL_BLENDMODE_MOD
+              :mod
+            else
+              :invalid
+          end
+        else
+          mode = case mode
+            when :none
+              SDL2::SDL_BLENDMODE_NONE
+            when :blend
+              SDL2::SDL_BLENDMODE_BLEND
+            when :add
+              SDL2::SDL_BLENDMODE_ADD
+            when :mod
+              SDL2::SDL_BLENDMODE_MOD
+            else
+              SDL2::SDL_BLENDMODE_INVALID
+          end
+
+          SDL2.SDL_SetTextureBlendMode(target, mode)
         end
       end
 
@@ -68,6 +123,29 @@ module Dungeon
           SDL2.SDL_RenderSetScale @renderer, value[0], value[1]
           @scale = value
         end
+      end
+
+      def target= value
+        unless @target == value
+          SDL2.SDL_SetRenderTarget(@renderer, value)
+          @target = value 
+        end
+      end
+
+      def create_texture width, height
+        SDL2.SDL_CreateTexture(@renderer, SDL2.SDL_GetWindowPixelFormat(@window),
+                               SDL2::SDL_TEXTUREACCESS_TARGET, width, height)
+                               
+      end
+
+      def query_texture texture
+        SDL2.SDL_QueryTexture(texture, @uint32s[0], @ints[0], @ints[1], @ints[2])
+        [
+          @uint32s[0].get(:uint32, 0),
+          @ints[0].get(:int, 0),
+          @ints[1].get(:int, 0),
+          @ints[2].get(:int, 0),
+        ]
       end
 
       def present
@@ -95,8 +173,8 @@ module Dungeon
       end
 
       def draw_texture texture, x, y
-        SDL2.SDL_QueryTexture(texture, nil, nil, @ints, @ints + 1)
-        self.draw_sprite(texture, x, y, @ints.get(:int, 0), @ints.get(:int, 1), 0, 0)
+        SDL2.SDL_QueryTexture(texture, nil, nil, @ints[0], @ints[1])
+        self.draw_sprite(texture, x, y, 0, 0, @ints[0].get(:int, 0), @ints[1].get(:int, 0))
       end
 
       def draw_sprite texture, x, y, x_offset, y_offset, width, height
@@ -136,7 +214,7 @@ module Dungeon
     end
 
     def context
-      (@context ||= Context.new @renderer)
+      (@context ||= Context.new @window, @renderer)
     end
     
     def close

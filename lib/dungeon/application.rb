@@ -4,7 +4,14 @@ require "dungeon/event_system"
 #require "dungeon/profile_system"
 
 module Dungeon
+  WINDOW_WIDTH = 640
+  WINDOW_HEIGHT = 576
+  SCALE_FACTOR = 4
+  VIEW_WIDTH = WINDOW_WIDTH / SCALE_FACTOR
+  VIEW_HEIGHT = WINDOW_HEIGHT / SCALE_FACTOR
+
   class Application
+
     def self.run!
       self.new.tap { |o| o.run! }
     end
@@ -12,12 +19,12 @@ module Dungeon
     def run!
       open_systems([
         #ProfileSystem,
-        [ VideoSystem, "test", 640, 480 ],
+        [ VideoSystem, "test", WINDOW_WIDTH, WINDOW_HEIGHT ],
         EventSystem,
       ]) do |video, event|
-        video.init_assets "assets/manifest.yaml"
         video.context[SDL2::SDL_HINT_RENDER_SCALE_QUALITY] = 0
-        video.context.scale = 4
+        video.context.scale = SCALE_FACTOR
+        video.init_assets "assets/manifest.yaml"
 
         event_loop RootEntity.new(video.context), event
       end

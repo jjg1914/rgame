@@ -1,6 +1,12 @@
 require "yaml"
+require "json"
 
-ASSET_SOURCES = FileList["assets/*.ase"]
+SPRITE_SOURCES  = FileList["assets/sprites/*.ase"]
+MAP_SOURCES     = FileList["assets/maps/*.json"]
+TILESET_SOURCES = FileList["assets/tilesets/*.json"]
+XCF_SOURCES     = FileList["assets/**/*.xcf"]
+
+ASSET_SOURCES = SPRITE_SOURCES + MAP_SOURCES + TILESET_SOURCES
 
 SDL2_SOURCE = "https://libsdl.org/release/SDL2-2.0.9.tar.gz"
 SDL2_DEST = File.join("vendor", File.basename(SDL2_SOURCE))
@@ -12,25 +18,35 @@ SDL2_IMAGE_DEST = File.join("vendor", File.basename(SDL2_IMAGE_SOURCE))
 SDL2_IMAGE_DIR = File.join("vendor", File.basename(SDL2_IMAGE_DEST, ".tar.gz"))
 SDL2_IMAGE_PREFIX = File.expand_path(File.join("vendor", "SDL2"))
 
-task :assets => "assets/manifest.yaml"
+task :assets => [ "assets/manifest.yaml" ] + XCF_SOURCES.ext(".png")
 
 task :vendor => [ :vendor_sdl, :vendor_sdl_image ]
 
 task :clean do
-  FileUtils.rm(ASSET_SOURCES.ext(".json") + ASSET_SOURCES.ext(".png"))
+  FileUtils.rm(SPRITE_SOURCES.ext(".json") +
+    SPRITE_SOURCES.ext(".png") +
+    XCF_SOURCES.ext(".png"))
 end
 
 file "assets/manifest.yaml" => ASSET_SOURCES.ext(".json") do |t|
   File.open(t.name, "w") do |f|
-    f.write(ASSET_SOURCES.to_a.map do |e|
-      extname = File.extname(e)
-
+    f.write(t.sources.map do |e|
       {
-        "name" => File.basename(e, extname),
-        "path" => e.ext(".json"),
-        "type" => case extname
-        when ".ase"
-          "sprite"
+        "name" => File.basename(e, ".json"),
+        "path" => e,
+        "type" => begin
+          json = JSON.parse File.read e
+
+          if json.is_a?(Hash) and json.has_key?("meta") and
+            json["meta"].is_a?(Hash) and 
+            json["meta"]["app"] == "http://www.aseprite.org/"
+
+            "sprite"
+          elsif json.is_a?(Hash) and json.has_key?("type")
+            json["type"]
+          else
+            "?"
+          end
         end,
       }
     end.to_yaml)
@@ -43,6 +59,10 @@ rule ".json" => ".ase" do |t|
     t.name.ext(".png"),
     t.name,
   ]
+end
+
+rule ".png" => ".xcf" do |t|
+  sh "convert %s %s" % [ t.name, t.source ]
 end
 
 task :vendor_sdl => [ SDL2_DIR ] do |t|

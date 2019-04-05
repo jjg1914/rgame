@@ -1,6 +1,8 @@
 require "yaml"
 
 require "dungeon/sprite"
+require "dungeon/tileset"
+require "dungeon/map"
 
 module Dungeon
   module Assets
@@ -11,6 +13,10 @@ module Dungeon
         self[e["name"]] = case e["type"]
         when "sprite"
           Sprite.load renderer, e["path"]
+        when "tileset"
+          Tileset.load renderer, e["path"]
+        when "map"
+          Map.load e["path"]
         end
       end
     end

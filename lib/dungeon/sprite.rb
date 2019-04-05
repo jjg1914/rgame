@@ -1,8 +1,12 @@
+require "forwardable"
 require "json"
+
+require "dungeon/image"
 
 module Dungeon
   class Sprite
-    attr_reader :texture
+    extend Forwardable
+    def_delegators :@image, :texture, :close
 
     class FrameData
       attr_reader :x
@@ -58,11 +62,8 @@ module Dungeon
         [ e["name"], FrameTag.new(range, keys) ]
       end.to_h
 
-      surface = SDL2Image.IMG_Load data["meta"]["image"]
-      texture = SDL2.SDL_CreateTextureFromSurface renderer, surface
-      SDL2.SDL_FreeSurface surface
-
-      self.new(texture, frames, tags)
+      image = Dungeon::Image.load(renderer, data["meta"]["image"])
+      self.new(image, frames, tags)
     end
 
     def self.range_for_direction direction, from, to
@@ -78,8 +79,8 @@ module Dungeon
       end
     end
 
-    def initialize texture, frames, tags
-      @texture = texture
+    def initialize image, frames, tags
+      @image = image
       @frames = frames
       @tags = tags
     end
@@ -102,10 +103,6 @@ module Dungeon
           v
         end.first.first
       end
-    end
-
-    def close
-      SDL2.SDL_DestroyTexture @texture
     end
   end
 end

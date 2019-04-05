@@ -1,4 +1,3 @@
-require "pry"
 require "dungeon/ext"
 require "dungeon/application"
 
