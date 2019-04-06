@@ -1,3 +1,5 @@
+require "dungeon/core/dynamic_scope"
+
 class Integer
   def red_value
     # TODO ENDIAN
@@ -18,4 +20,12 @@ class Integer
     # TODO ENDIAN
     (self & 0xFF000000) >> 24
   end
+end
+
+module Kernel
+  include Dungeon::Core::DynamicScope
+end
+
+class Object
+  include Kernel
 end

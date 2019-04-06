@@ -1,4 +1,4 @@
-require "dungeon/ext"
+require "dungeon/core/ext"
 require "dungeon/application"
 
 module Dungeon
