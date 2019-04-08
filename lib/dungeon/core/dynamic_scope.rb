@@ -6,11 +6,8 @@ module Dungeon
       end
 
       def var_defined? name
-        DynamicScope.scope.has_key? name.to_s
-      end
-
-      def def_var name, value
-        def_vars({ name => value })
+        DynamicScope.scope.has_key?(name.to_s) and
+          not DynamicScope.scope[name.to_s].empty?
       end
 
       def let_var name, value
@@ -21,24 +18,14 @@ module Dungeon
         get_vars([ name ]).first
       end
 
-      def def_vars vars
-        vars.keys.each do |e|
-          if var_defined? e
-            raise ArgumentError.new("already defined %s" % e.inspect)
-          end
-        end
-
-        vars.each { |e| DynamicScope.scope[e[0].to_s] = [ e[1] ] }
-      end
-
       def let_vars vars
-        vars.keys.each do |e|
-          unless var_defined? e
-            raise ArgumentError.new("not defined %s" % e.inspect)
+        vars.each do |e|
+          unless DynamicScope.scope.has_key?(e[0].to_s)
+            DynamicScope.scope[e[0].to_s] = []
           end
+          DynamicScope.scope[e[0].to_s].push e[1]
         end
 
-        vars.each { |e| DynamicScope.scope[e[0].to_s].push e[1] }
         begin
           yield if block_given?
         ensure
@@ -52,7 +39,7 @@ module Dungeon
             raise ArgumentError.new("not defined %s" % e.inspect)
           end
 
-          DynamicScope.scope.fetch(e.to_s).last
+          DynamicScope.scope.fetch(e.to_s, []).last
         end
       end
     end

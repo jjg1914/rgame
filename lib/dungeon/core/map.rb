@@ -53,7 +53,7 @@ module Dungeon
         end
 
         self.new(data["width"], data["height"],
-                 data["tile_width"], data["tile_height"],
+                 data["tilewidth"], data["tileheight"],
                  layers, tileset, background)
       end
 

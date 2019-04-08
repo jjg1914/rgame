@@ -5,8 +5,6 @@ require "dungeon/core/profile_system"
 module Dungeon
   module Core
     class ApplicationBase
-      def_var "ctx", nil
-
       attr_reader :systems
 
       def self.run!
