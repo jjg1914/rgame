@@ -110,6 +110,17 @@ module Dungeon
           end
         end
 
+        def scale_quality= value
+          unless @scale_quality == value
+            self[SDL2::SDL_HINT_RENDER_SCALE_QUALITY] = value
+            @scale_quality = value
+          end
+        end
+
+        def scale_quality
+          (@scale_quality = self[SDL2::SDL_HINT_RENDER_SCALE_QUALITY])
+        end
+
         def scale= value
           value = [ value, value ] unless value.is_a? Array
           value = if value.empty?
@@ -120,7 +131,7 @@ module Dungeon
             value.take(2).map { |e| e.to_f }
           end
 
-          unless scale == value
+          unless @scale == value
             SDL2.SDL_RenderSetScale @renderer, value[0], value[1]
             @scale = value
           end

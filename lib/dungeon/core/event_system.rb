@@ -27,18 +27,20 @@ module Dungeon
         end
 
         def key
-          if key_code < 256
-            key_code.chr
+          case scan_code
+          when :SDL_SCANCODE_RIGHT
+            "right"
+          when :SDL_SCANCODE_LEFT
+            "left"
+          when :SDL_SCANCODE_DOWN
+            "down"
+          when :SDL_SCANCODE_UP
+            "up"
+          when :SDL_SCANCODE_SPACE
+            "space"
           else
-            case scan_code
-            when :SDL_SCANCODE_RIGHT
-              "right"
-            when :SDL_SCANCODE_LEFT
-              "left"
-            when :SDL_SCANCODE_DOWN
-              "down"
-            when :SDL_SCANCODE_UP
-              "up"
+            if key_code < 256
+              key_code.chr
             end
           end
         end

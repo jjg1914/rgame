@@ -28,6 +28,7 @@ module Dungeon
 
       enum :SDL_Scancode, [
         :SDL_SCANCODE_UNKNOWN, 0,
+        :SDL_SCANCODE_SPACE, 44,
         :SDL_SCANCODE_RIGHT, 79,
         :SDL_SCANCODE_LEFT, 80,
         :SDL_SCANCODE_DOWN, 81,

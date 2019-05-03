@@ -5,7 +5,11 @@ module Dungeon
     class TilelayerEntity < Dungeon::Core::Entity
       on :new do |tilelayer, tileset|
         @tilelayer = tilelayer
-        @tileset = tileset
+        @tileset = unless tileset.is_a? Dungeon::Core::Tileset
+          Dungeon::Core::Assets[tileset.to_s]
+        else
+          map
+        end
 
         get_var("ctx").tap do |ctx|
           ctx.save do

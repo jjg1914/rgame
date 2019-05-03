@@ -1,0 +1,6 @@
+$:.unshift File.expand_path "../../lib", File.dirname(__FILE__)
+require "dungeon/task"
+
+Dungeon::Task.define
+
+task :default => :assets

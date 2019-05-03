@@ -1,0 +1,23 @@
+[
+    {
+        "color": "#ff444444",
+        "name": "block",
+        "properties": [
+            {
+                "name": "color",
+                "type": "string",
+                "value": "#AAAAAA"
+            },
+            {
+                "name": "height",
+                "type": "int",
+                "value": 8
+            },
+            {
+                "name": "width",
+                "type": "int",
+                "value": 32
+            }
+        ]
+    }
+]

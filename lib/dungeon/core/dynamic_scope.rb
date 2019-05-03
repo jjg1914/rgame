@@ -35,10 +35,6 @@ module Dungeon
 
       def get_vars vars
         vars.map do |e|
-          unless var_defined? e
-            raise ArgumentError.new("not defined %s" % e.inspect)
-          end
-
           DynamicScope.scope.fetch(e.to_s, []).last
         end
       end

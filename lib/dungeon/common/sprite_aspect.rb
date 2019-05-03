@@ -23,7 +23,7 @@ module Dungeon
       end
 
       def sprite_tag= value
-        @sprite_tag = value
+        @sprite_tag = if value.nil? then self.sprite.default_tag else value end
         self.sprite_frame = 0
         self.sprite_key = 0
       end

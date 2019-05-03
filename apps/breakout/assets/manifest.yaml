@@ -1,0 +1,13 @@
+---
+- name: ball
+  path: sprites/ball.json
+  type: sprite
+- name: player
+  path: sprites/player.json
+  type: sprite
+- name: stage1
+  path: maps/stage1.json
+  type: map
+- name: stage-bg
+  path: backgrounds/stage-bg.png
+  type: png

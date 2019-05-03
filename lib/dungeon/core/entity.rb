@@ -49,6 +49,13 @@ module Dungeon
         def handlers
           (@handlers ||= (Hash.new { |h,k| h[k] = []}))
         end
+
+        def inherited klass
+          super
+          klass.instance_exec(@handlers) do |handlers|
+            @handlers = handlers.dup
+          end
+        end
       end
 
       def self.inherited klass

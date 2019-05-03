@@ -56,14 +56,24 @@ module Dungeon
                         e["frame"]["h"]
         end
 
-        tags = data["meta"]["frameTags"].map do |e|
-          range = self.range_for_direction(e["direction"], e["from"], e["to"])
+        tags = if data["meta"]["frameTags"].empty?
+          range = self.range_for_direction("forward", 0, frames.size - 1)
           keys = range.map { |f| data["frames"][f]["duration"] }
 
-          [ e["name"], FrameTag.new(range, keys) ]
-        end.to_h
+          { "" => FrameTag.new(range, keys) }
+        else
+          data["meta"]["frameTags"].map do |e|
+            range = self.range_for_direction(e["direction"], e["from"], e["to"])
+            keys = range.map { |f| data["frames"][f]["duration"] }
 
-        image = Dungeon::Core::Image.load(renderer, data["meta"]["image"])
+            [ e["name"], FrameTag.new(range, keys) ]
+          end.to_h
+        end
+
+        base_dir = File.dirname File.expand_path filename
+        image_path = File.expand_path data["meta"]["image"], base_dir
+
+        image = Dungeon::Core::Image.load(renderer, image_path)
         self.new(image, frames, tags)
       end
 

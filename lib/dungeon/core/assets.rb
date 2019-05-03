@@ -1,5 +1,6 @@
 require "yaml"
 
+require "dungeon/core/image"
 require "dungeon/core/sprite"
 require "dungeon/core/tileset"
 require "dungeon/core/map"
@@ -10,14 +11,20 @@ module Dungeon
       extend self
 
       def init filename, renderer
+        base_dir = File.dirname File.expand_path filename
+
         YAML.load_file(filename).each do |e|
+          path = File.expand_path e["path"], base_dir
+
           self[e["name"]] = case e["type"]
           when "sprite"
-            Sprite.load renderer, e["path"]
+            Sprite.load renderer, path
           when "tileset"
-            Tileset.load renderer, e["path"]
+            Tileset.load renderer, path
+          when "png"
+            Image.load renderer, path
           when "map"
-            Map.load e["path"]
+            Map.load path
           end
         end
       end

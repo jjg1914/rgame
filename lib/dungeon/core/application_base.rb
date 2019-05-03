@@ -42,7 +42,13 @@ module Dungeon
 
       def event_loop destination_klass
         let_var("ctx", @systems.has_key?("video") ? @systems["video"].context : nil ) do
-          destination = destination_klass.new
+          destination = if destination_klass.is_a? Array
+            destination_klass = destination_klass.dup
+            klass = destination_klass.shift
+            klass.new(*destination_klass)
+          else
+            destination_klass.new
+          end
           open_event_system unless @systems.has_key? "event"
 
           @systems["event"].each(60) do |e|

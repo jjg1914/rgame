@@ -1,12 +1,7 @@
-require "yaml"
-require "json"
+$:.unshift File.expand_path "lib", File.dirname(__FILE__)
+require "dungeon/task"
 
-SPRITE_SOURCES  = FileList["assets/sprites/*.ase"]
-MAP_SOURCES     = FileList["assets/maps/*.json"]
-TILESET_SOURCES = FileList["assets/tilesets/*.json"]
-XCF_SOURCES     = FileList["assets/**/*.xcf"]
-
-ASSET_SOURCES = SPRITE_SOURCES + MAP_SOURCES + TILESET_SOURCES
+Dungeon::Task.define
 
 SDL2_SOURCE = "https://libsdl.org/release/SDL2-2.0.9.tar.gz"
 SDL2_DEST = File.join("vendor", File.basename(SDL2_SOURCE))
@@ -18,52 +13,7 @@ SDL2_IMAGE_DEST = File.join("vendor", File.basename(SDL2_IMAGE_SOURCE))
 SDL2_IMAGE_DIR = File.join("vendor", File.basename(SDL2_IMAGE_DEST, ".tar.gz"))
 SDL2_IMAGE_PREFIX = File.expand_path(File.join("vendor", "SDL2"))
 
-task :assets => [ "assets/manifest.yaml" ] + XCF_SOURCES.ext(".png")
-
 task :vendor => [ :vendor_sdl, :vendor_sdl_image ]
-
-task :clean do
-  FileUtils.rm(SPRITE_SOURCES.ext(".json") +
-    SPRITE_SOURCES.ext(".png") +
-    XCF_SOURCES.ext(".png"))
-end
-
-file "assets/manifest.yaml" => ASSET_SOURCES.ext(".json") do |t|
-  File.open(t.name, "w") do |f|
-    f.write(t.sources.map do |e|
-      {
-        "name" => File.basename(e, ".json"),
-        "path" => e,
-        "type" => begin
-          json = JSON.parse File.read e
-
-          if json.is_a?(Hash) and json.has_key?("meta") and
-            json["meta"].is_a?(Hash) and 
-            json["meta"]["app"] == "http://www.aseprite.org/"
-
-            "sprite"
-          elsif json.is_a?(Hash) and json.has_key?("type")
-            json["type"]
-          else
-            "?"
-          end
-        end,
-      }
-    end.to_yaml)
-  end
-end
-
-rule ".json" => ".ase" do |t|
-  sh "aseprite -b %s --sheet %s --data %s --list-tags --format json-array" % [
-    t.source,
-    t.name.ext(".png"),
-    t.name,
-  ]
-end
-
-rule ".png" => ".xcf" do |t|
-  sh "convert %s %s" % [ t.name, t.source ]
-end
 
 task :vendor_sdl => [ SDL2_DIR ] do |t|
   FileUtils.mkdir_p File.join(t.source, "build")
@@ -71,15 +21,6 @@ task :vendor_sdl => [ SDL2_DIR ] do |t|
     sh "../configure --prefix=%s" % [ SDL2_PREFIX.inspect ]
     sh "make install"
   end
-end
-
-file SDL2_DIR => SDL2_DEST do |t|
-  sh "tar -xz -C %s -f %s" % [ File.dirname(t.source), t.source ]
-end
-
-file(SDL2_DEST) do |t|
-  sh "mkdir -p %s" % File.dirname(t.name)
-  sh "curl -o %s %s" % [ t.name, SDL2_SOURCE ]
 end
 
 task :vendor_sdl_image => [ SDL2_IMAGE_DIR ] do |t|
@@ -99,6 +40,15 @@ task :vendor_sdl_image => [ SDL2_IMAGE_DIR ] do |t|
     ]
     sh "make install"
   end
+end
+
+file SDL2_DIR => SDL2_DEST do |t|
+  sh "tar -xz -C %s -f %s" % [ File.dirname(t.source), t.source ]
+end
+
+file(SDL2_DEST) do |t|
+  sh "mkdir -p %s" % File.dirname(t.name)
+  sh "curl -o %s %s" % [ t.name, SDL2_SOURCE ]
 end
 
 file SDL2_IMAGE_DIR => SDL2_IMAGE_DEST do |t|

@@ -133,6 +133,60 @@ module Dungeon
         end
       end
 
+      def self.calculate_mtv target, other
+        # left |-----| right      TARGET
+        #     left |-----| right  OTHER
+        #          |-|            MTV
+        #      |---------|        MTV'
+
+        target_bounds = self.bounds_for(target)
+        other_bounds = self.bounds_for(other)
+
+        [
+          if target.respond_to?(:x_change) and not target.x_change.nil?
+            value = if target.x_change > 0
+              other_bounds["left"] - target_bounds["right"]
+            elsif target.x_change < 0
+              other_bounds["right"] - target_bounds["left"]
+            else
+              0
+            end
+
+            if value.abs <= target.x_change.abs
+              value
+            else
+              0
+            end
+          else
+            [
+              other_bounds["left"] - target_bounds["right"],
+              other_bounds["right"] - target_bounds["left"],
+            ].min_by { |e| e.abs }
+          end,
+
+          if target.respond_to?(:y_change) and not target.y_change.nil?
+            value = if target.y_change > 0
+              other_bounds["top"] - target_bounds["bottom"]
+            elsif target.y_change < 0
+              other_bounds["bottom"] - target_bounds["top"]
+            else
+              0
+            end
+
+            if value.abs <= target.y_change.abs
+              value
+            else
+              0
+            end
+          else
+            [
+              other_bounds["top"] - target_bounds["bottom"],
+              other_bounds["bottom"] - target_bounds["top"],
+            ].min_by { |e| e.abs }
+          end,
+        ]
+      end
+
       def self.check a, b
         check_bounds(bounds_for(a), bounds_for(b))
       end
