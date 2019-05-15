@@ -1,0 +1,73 @@
+{ "frames": [
+   {
+    "filename": "block 0.ase",
+    "frame": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "block 1.ase",
+    "frame": { "x": 16, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "block 2.ase",
+    "frame": { "x": 32, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "block 3.ase",
+    "frame": { "x": 48, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "block 4.ase",
+    "frame": { "x": 64, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "block 5.ase",
+    "frame": { "x": 80, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
+   }
+ ],
+ "meta": {
+  "app": "http://www.aseprite.org/",
+  "version": "1.2.2",
+  "image": "block.png",
+  "format": "RGBA8888",
+  "size": { "w": 96, "h": 8 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "red", "from": 0, "to": 0, "direction": "forward" },
+   { "name": "orange", "from": 1, "to": 1, "direction": "forward" },
+   { "name": "yellow", "from": 2, "to": 2, "direction": "forward" },
+   { "name": "green", "from": 3, "to": 3, "direction": "forward" },
+   { "name": "blue", "from": 4, "to": 4, "direction": "forward" },
+   { "name": "purple", "from": 5, "to": 5, "direction": "forward" }
+  ]
+ }
+}

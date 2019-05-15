@@ -196,6 +196,15 @@ module Dungeon
           b["top"] <= a["bottom"] and a["top"] <= b["bottom"]
       end
 
+      def self.check_point p, b
+        check_point_bounds(p, bounds_for(b))
+      end
+
+      def self.check_point_bounds p, b
+        b["left"] <= p[0] and p[0] <= b["right"] and
+          b["top"] <= p[1] and p[1] <= b["bottom"]
+      end
+
       def self.bounds_for entity
         {
           "left" => entity.x,
@@ -205,6 +214,8 @@ module Dungeon
         }
       end
 
+      attr_reader :size
+
       def initialize width, height
         self.reset(width, height)
       end
@@ -213,7 +224,7 @@ module Dungeon
         @root.add([
           Collision.bounds_for(entity),
           entity,
-        ])
+        ]).tap { @size += 1 }
       end
 
       def query entity
@@ -223,6 +234,7 @@ module Dungeon
       end
 
       def reset width, height
+        @size = 0
         @root = Node.new(0, {
           "left" => 0,
           "top" => 0,

@@ -39,6 +39,17 @@ module Dungeon
           d
         end.to_i
       end
+
+      def to_h
+        super.merge({
+          "x_speed" => self.x_speed,
+          "y_speed" => self.y_speed,
+          "x_subpixel" => self.x_subpixel,
+          "y_subpixel" => self.y_subpixel,
+          "x_change" => self.x_change,
+          "y_change" => self.y_change,
+        })
+      end
     end
   end
 end

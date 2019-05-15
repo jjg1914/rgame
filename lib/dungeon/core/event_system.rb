@@ -1,3 +1,4 @@
+require "thread"
 require "dungeon/core/sdl"
 
 module Dungeon
@@ -17,27 +18,66 @@ module Dungeon
         end
       end
 
+      class ModifierState
+        attr_accessor :ctrl
+        attr_accessor :shift
+        attr_accessor :alt
+        attr_accessor :super
+
+        def initialize
+          @ctrl = false
+          @shift = false
+          @alt = false
+          @super = false
+        end
+      end
+
       class KeyEvent
         attr_reader :key_code
         attr_reader :scan_code
+        attr_reader :modifiers
 
-        def initialize key_code, scan_code
+        SCAN_CODE_STRINGS = {
+          :SDL_SCANCODE_ESCAPE=> "escape",
+          :SDL_SCANCODE_BACKSPACE => "backspace",
+          :SDL_SCANCODE_TAB => "tab",
+          :SDL_SCANCODE_SPACE => "space",
+          :SDL_SCANCODE_F1 => "f1",
+          :SDL_SCANCODE_F2 => "f2",
+          :SDL_SCANCODE_F3 => "f3",
+          :SDL_SCANCODE_F4 => "f4",
+          :SDL_SCANCODE_F5 => "f5",
+          :SDL_SCANCODE_F6 => "f6",
+          :SDL_SCANCODE_F7 => "f7",
+          :SDL_SCANCODE_F8 => "f8",
+          :SDL_SCANCODE_F9 => "f9",
+          :SDL_SCANCODE_F10 => "f10",
+          :SDL_SCANCODE_F11 => "f11",
+          :SDL_SCANCODE_F12 => "f12",
+          :SDL_SCANCODE_DELETE => "delete",
+          :SDL_SCANCODE_RIGHT => "right",
+          :SDL_SCANCODE_LEFT => "left",
+          :SDL_SCANCODE_DOWN => "down",
+          :SDL_SCANCODE_UP => "up",
+          :SDL_SCANCODE_LCTRL => "left_ctrl",
+          :SDL_SCANCODE_LSHIFT => "right_shift",
+          :SDL_SCANCODE_LALT => "left_alt", # alt, option
+          :SDL_SCANCODE_LGUI => "left_super", # windows, command (apple), meta
+          :SDL_SCANCODE_RCTRL => "right_ctrl",
+          :SDL_SCANCODE_RSHIFT => "right_shift",
+          :SDL_SCANCODE_RALT => "right_alt", # alt gr, option
+          :SDL_SCANCODE_RGUI => "right_super", # windows, command (apple), meta
+        }
+
+        def initialize key_code, scan_code, modifiers
           @key_code = key_code
           @scan_code = scan_code
+          @modifiers = modifiers
         end
 
         def key
-          case scan_code
-          when :SDL_SCANCODE_RIGHT
-            "right"
-          when :SDL_SCANCODE_LEFT
-            "left"
-          when :SDL_SCANCODE_DOWN
-            "down"
-          when :SDL_SCANCODE_UP
-            "up"
-          when :SDL_SCANCODE_SPACE
-            "space"
+          if SCAN_CODE_STRINGS.has_key?(scan_code)
+            SCAN_CODE_STRINGS[scan_code]
           else
             if key_code < 256
               key_code.chr
@@ -48,6 +88,45 @@ module Dungeon
 
       class KeydownEvent < KeyEvent; end
       class KeyupEvent < KeyEvent; end
+
+      class MouseMotionEvent
+        attr_reader :x
+        attr_reader :y
+
+        def initialize x, y
+          @x = x
+          @y = y
+        end
+      end
+
+      class MouseButtonEvent
+        attr_reader :x
+        attr_reader :y
+
+        def initialize x, y, button
+          @x = x
+          @y = y
+          @button = button
+        end
+
+        def button
+          case @button
+          when SDL2::SDL_BUTTON_LEFT
+            "left"
+          when SDL2::SDL_BUTTON_MIDDLE
+            "middle"
+          when SDL2::SDL_BUTTON_RIGHT
+            "right"
+          when SDL2::SDL_BUTTON_X1
+            "x1"
+          when SDL2::SDL_BUTTON_X2
+            "x2"
+          end
+        end
+      end
+
+      class MouseButtondownEvent < MouseButtonEvent; end
+      class MouseButtonupEvent < MouseButtonEvent; end
 
       include Enumerable
 
@@ -66,6 +145,9 @@ module Dungeon
       def open
         @event = SDL2::SDL_Event.new
         @now = 0
+        @internal = []
+        @mutex = Mutex.new
+        @modifiers = ModifierState.new
       end
 
       def each fps = nil, &block
@@ -97,6 +179,10 @@ module Dungeon
       def close
       end
 
+      def << event
+        @mutex.synchronize { @internal << event }
+      end
+
       private
 
       def _ticks_since last
@@ -107,16 +193,58 @@ module Dungeon
       def _pump_events yielder
         flag = false
 
+        unless @internal.empty?
+          @mutex.synchronize do
+            @internal.each { |e| yielder << e }
+            @internal.clear
+          end
+        end
+
         while SDL2.SDL_PollEvent(@event) != 0
           case @event[:type]
           when SDL2::SDL_KEYUP
+            case @event[:key][:keysym][:scancode]
+            when :SDL_SCANCODE_LCTRL, :SDL_SCANCODE_RCTRL
+              @modifiers.ctrl = false
+            when :SDL_SCANCODE_LSHIFT, :SDL_SCANCODE_RSHIFT
+              @modifiers.shift = false
+            when :SDL_SCANCODE_LALT, :SDL_SCANCODE_RALT
+              @modifiers.alt = false
+            when :SDL_SCANCODE_LGUI, :SDL_SCANCODE_RGUI
+              @modifiers.super = false
+            end
+
             yielder << KeyupEvent.new(@event[:key][:keysym][:sym],
-                                      @event[:key][:keysym][:scancode])
+                                      @event[:key][:keysym][:scancode],
+                                      @modifiers)
           when SDL2::SDL_KEYDOWN
             if @event[:key][:repeat] == 0
+              case @event[:key][:keysym][:scancode]
+              when :SDL_SCANCODE_LCTRL, :SDL_SCANCODE_RCTRL
+                @modifiers.ctrl = true
+              when :SDL_SCANCODE_LSHIFT, :SDL_SCANCODE_RSHIFT
+                @modifiers.shift = true 
+              when :SDL_SCANCODE_LALT, :SDL_SCANCODE_RALT
+                @modifiers.alt = true 
+              when :SDL_SCANCODE_LGUI, :SDL_SCANCODE_RGUI
+                @modifiers.super = true
+              end
+
               yielder << KeydownEvent.new(@event[:key][:keysym][:sym],
-                                          @event[:key][:keysym][:scancode])
+                                          @event[:key][:keysym][:scancode],
+                                          @modifiers)
             end
+          when SDL2::SDL_MOUSEMOTION
+            yielder << MouseMotionEvent.new(@event[:motion][:x],
+                                            @event[:motion][:y])
+          when SDL2::SDL_MOUSEBUTTONDOWN
+            yielder << MouseButtondownEvent.new(@event[:button][:x],
+                                                @event[:button][:y],
+                                                @event[:button][:button])
+          when SDL2::SDL_MOUSEBUTTONUP
+            yielder << MouseButtonupEvent.new(@event[:button][:x],
+                                              @event[:button][:y],
+                                              @event[:button][:button])
           when SDL2::SDL_WINDOWEVENT
             if @event[:window][:event] == :SDL_WINDOWEVENT_CLOSE
               flag = true

@@ -1,6 +1,9 @@
+require "forwardable"
+
 require "dungeon/core/map"
 require "dungeon/core/assets"
 require "dungeon/core/collision"
+require "dungeon/core/savable"
 require "dungeon/common/collection_entity"
 require "dungeon/common/tilelayer_entity"
 require "dungeon/common/imagelayer_entity"
@@ -8,27 +11,12 @@ require "dungeon/common/imagelayer_entity"
 module Dungeon
   module Common
     class MapEntity < CollectionEntity
-      on :new do |map|
-        @map = unless map.is_a? Dungeon::Core::Map
-          Dungeon::Core::Assets[map.to_s]
-        else
-          map
-        end
-        @collision = Dungeon::Core::Collision.new((@map.width * @map.tile_width),
-                                                  (@map.height * @map.tile_height))
+      extend Forwardable
+      def_delegators :@map, :width, :height, :background
 
-        @map.layers.each do |e|
-          if e.is_a? Dungeon::Core::Map::Tilelayer
-            self.add(TilelayerEntity.new(e, @map.tileset)) unless @map.tileset.nil?
-          elsif e.is_a? Dungeon::Core::Map::Imagelayer
-            self.add(ImagelayerEntity.new(e.image))
-          elsif e.is_a? Dungeon::Core::Map::Objectgroup
-            self.add_bulk e.load_entities
-          end
-        end
-      end
+      attr_reader :map
 
-      after :interval do |p|
+      after :interval do
         let_var("collision", @collision) do
           self.emit :pre_collision
           self.emit :post_collision
@@ -40,6 +28,21 @@ module Dungeon
         get_var("ctx").tap do |ctx|
           ctx.color = @map.background
           ctx.clear
+        end
+      end
+
+      def map= value
+        @map = unless value.is_a? Dungeon::Core::Map
+          Dungeon::Core::Assets[value.to_s]
+        else
+          value
+        end
+
+        @collision = Dungeon::Core::Collision.new(@map.width.to_i,
+                                                  @map.height.to_i)
+
+        @map.entities.flatten.reverse.each do |e|
+          self.add_front Dungeon::Core::Savable.load(e)
         end
       end
     end

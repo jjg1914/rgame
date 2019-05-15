@@ -74,6 +74,13 @@ module Dungeon
           end
         end
       end
+
+      def to_h
+        super.merge({
+          "fill_color" => self.fill_color,
+          "stroke_color" => self.stroke_color,
+        })
+      end
     end
   end
 end

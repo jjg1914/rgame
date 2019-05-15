@@ -24,7 +24,7 @@ module Dungeon
           when "png"
             Image.load renderer, path
           when "map"
-            Map.load path
+            Map.load_file path
           end
         end
       end

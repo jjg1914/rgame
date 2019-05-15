@@ -60,6 +60,13 @@ module Dungeon
       def y_restrict= value
         @y_restrict = RestrictAspect.normalize_value value
       end
+
+      def to_h
+        super.merge({
+          "x_restrict" => self.x_restrict,
+          "y_restrict" => self.y_restrict,
+        })
+      end
     end
   end
 end

@@ -2,6 +2,9 @@
 - name: ball
   path: sprites/ball.json
   type: sprite
+- name: block
+  path: sprites/block.json
+  type: sprite
 - name: player
   path: sprites/player.json
   type: sprite

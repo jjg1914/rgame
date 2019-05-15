@@ -3,3 +3,4 @@ assets/manifest.yaml
 assets/sprites/*.json
 assets/sprites/*.png
 assets/tilesets/*.png
+.consolehst

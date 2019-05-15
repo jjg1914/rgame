@@ -9,6 +9,8 @@ module Dungeon
       extend Forwardable
       def_delegators :@image, :texture, :close
 
+      attr_accessor :name
+
       class FrameData
         attr_reader :x
         attr_reader :y
@@ -47,6 +49,7 @@ module Dungeon
       end
 
       def self.load renderer, filename
+        name = File.basename(filename, ".json")
         data = JSON.parse(File.read filename)
 
         frames = data["frames"].map do |e|
@@ -74,7 +77,7 @@ module Dungeon
         image_path = File.expand_path data["meta"]["image"], base_dir
 
         image = Dungeon::Core::Image.load(renderer, image_path)
-        self.new(image, frames, tags)
+        self.new(image, frames, tags).tap { |o| o.name = name }
       end
 
       def self.range_for_direction direction, from, to

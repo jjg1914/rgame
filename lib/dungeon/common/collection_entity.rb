@@ -7,29 +7,30 @@ module Dungeon
 
       def initialize id
         super
-        @children = {}
-        @head = nil
-        @tail = nil
+        @children = []
+        @index = {}
       end
 
-      def add target
-        raise IndexError if @children.has_key? target.id
-        @children[target.id] = {
-          :target => target,
-        }
-
-        if @head.nil?
-          @head = target.id
-          @tail = target.id
-        else
-          @children[@tail][:next] = target.id
-          @children[target.id][:prev] = @tail
-          @tail = target.id
-        end
+      def add_front target
+        raise IndexError if @index.has_key? target.id
+        @index.keys.each { |e| @index[e] += 1 }
+        @index[target.id] = 0
+        @children.unshift target
 
         target.parent = self
         target.emit(:add)
       end
+
+      def add_back target
+        raise IndexError if @index.has_key? target.id
+        @index[target.id] = @children.size
+        @children.push target
+
+        target.parent = self
+        target.emit(:add)
+      end
+
+      alias_method :add, :add_back
 
       def add_bulk targets
         targets.each { |e| self.add(e) }
@@ -37,12 +38,12 @@ module Dungeon
 
       def remove target = nil
         unless target.nil?
-          child = @children.fetch target.id
-          child[:target].emit(:remove)
-          child[:target].parent = nil
-          @children[child[:prev]][:next] = child[:next] unless child[:prev].nil?
-          @children[child[:next]][:prev] = child[:prev] unless child[:next].nil?
-          @children.delete child[:target].id
+          index = @index.fetch target.id
+          @children[index].emit(:remove)
+          @children[index].parent = nil
+
+          @children.delete_at(index)
+          @index.keys.each { |e| @index[e] -= 1 if @index[e] > index }
         else
           super()
         end
@@ -56,19 +57,13 @@ module Dungeon
         self.each { |e| self.remove(e) }
       end
 
-      def each
-        if block_given?
-          self.each.each { |e| yield e }
-        else
-          Enumerator.new do |y|
-            index = @head
-            until index.nil?
-              n = @children[index][:next]
-              y << @children[index][:target]
-              index = n
-            end
-          end
-        end
+      def each(&b)
+        @children.each(&b)
+      end
+
+      def inspect
+        tmp = self.each.map { |e| e.inspect }.join("\n")
+        ([ super ] + tmp.each_line.map { |e| "  " + e.chomp }).join("\n")
       end
 
       private

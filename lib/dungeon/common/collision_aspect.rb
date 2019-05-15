@@ -45,6 +45,12 @@ module Dungeon
           self.y += mtv[1]
         end
       end
+
+      def to_h
+        super.merge({
+          "solid" => self.solid,
+        })
+      end
     end
   end
 end

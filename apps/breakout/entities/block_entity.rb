@@ -1,17 +1,21 @@
 class BlockEntity < Dungeon::Core::Entity
   include Dungeon::Common::CollisionAspect
+  include Dungeon::Common::SpriteAspect
   include Dungeon::Common::PositionAspect
   include Dungeon::Common::DrawAspect
   include Dungeon::Common::MovementAspect
 
+  include Dungeon::Core::Savable
+
+  savable [ :x, :y ]
+
   on :new do
-    self.width = 32
+    self.width = 16
     self.height = 8
 
     self.solid = true
 
-    self.fill_color = "bright_red"
-    self.stroke_color = "red"
+    self.sprite = "block"
   end
 
   on :post_collision do

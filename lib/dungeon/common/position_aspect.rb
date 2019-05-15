@@ -16,6 +16,15 @@ module Dungeon
         self.width = 0
         self.height = 0
       end
+
+      def to_h
+        super.merge({
+          "x" => self.x,
+          "y" => self.y,
+          "width" => self.width,
+          "height" => self.height,
+        })
+      end
     end
   end
 end

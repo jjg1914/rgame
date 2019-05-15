@@ -28,14 +28,37 @@ module Dungeon
 
       enum :SDL_Scancode, [
         :SDL_SCANCODE_UNKNOWN, 0,
+        :SDL_SCANCODE_ESCAPE, 41,
+        :SDL_SCANCODE_BACKSPACE, 42,
+        :SDL_SCANCODE_TAB, 43,
         :SDL_SCANCODE_SPACE, 44,
+        :SDL_SCANCODE_F1, 58,
+        :SDL_SCANCODE_F2, 59,
+        :SDL_SCANCODE_F3, 60,
+        :SDL_SCANCODE_F4, 61,
+        :SDL_SCANCODE_F5, 62,
+        :SDL_SCANCODE_F6, 63,
+        :SDL_SCANCODE_F7, 64,
+        :SDL_SCANCODE_F8, 65,
+        :SDL_SCANCODE_F9, 66,
+        :SDL_SCANCODE_F10, 67,
+        :SDL_SCANCODE_F11, 68,
+        :SDL_SCANCODE_F12, 69,
+        :SDL_SCANCODE_DELETE, 76,
         :SDL_SCANCODE_RIGHT, 79,
         :SDL_SCANCODE_LEFT, 80,
         :SDL_SCANCODE_DOWN, 81,
         :SDL_SCANCODE_UP, 82,
+        :SDL_SCANCODE_LCTRL, 224,
+        :SDL_SCANCODE_LSHIFT, 225,
+        :SDL_SCANCODE_LALT, 226, # alt, option
+        :SDL_SCANCODE_LGUI, 227, # windows, command (apple), meta
+        :SDL_SCANCODE_RCTRL, 228,
+        :SDL_SCANCODE_RSHIFT, 229,
+        :SDL_SCANCODE_RALT, 230, # alt gr, option
+        :SDL_SCANCODE_RGUI, 231, # windows, command (apple), meta
         :SDL_NUM_SCANCODES, 512,
       ]
-
       attach_function :SDL_Init, [ :uint32 ], :int
       attach_function :SDL_Quit, [], :void
       attach_function :SDL_GetError, [], :string
@@ -101,10 +124,48 @@ module Dungeon
                :keysym, SDL_Keysym
       end
 
+      class SDL_MouseMotionEvent < FFI::Struct
+        layout :type, :uint32,
+               :timestamp, :uint32,
+               :windowID, :uint32,
+               :which, :uint32,
+               :state, :uint32,
+               :x, :int32,
+               :y, :int32,
+               :xrel, :int32,
+               :yrel, :int32
+      end
+
+      class SDL_MouseButtonEvent < FFI::Struct
+        layout :type, :uint32,
+               :timestamp, :uint32,
+               :windowID, :uint32,
+               :which, :uint32,
+               :button, :uint8,
+               :state, :uint8,
+               :clicks, :uint8,
+               :padding1, :uint8,
+               :x, :int32,
+               :y, :int32
+      end
+
+      class SDL_MouseWheelEvent < FFI::Struct
+        layout :type, :uint32,
+               :timestamp, :uint32,
+               :windowID, :uint32,
+               :which, :uint32,
+               :x, :int32,
+               :y, :int32,
+               :direction, :uint32
+      end
+
       class SDL_Event < FFI::Union
         layout :type, :uint32,
                :window, SDL_WindowEvent,
-               :key, SDL_KeyboardEvent
+               :key, SDL_KeyboardEvent,
+               :motion, SDL_MouseMotionEvent,
+               :button, SDL_MouseButtonEvent,
+               :wheel, SDL_MouseWheelEvent
       end
 
       class SDL_Rect < FFI::Struct
@@ -124,6 +185,10 @@ module Dungeon
       SDL_WINDOWEVENT = 0x200
       SDL_KEYDOWN = 0x300
       SDL_KEYUP = 0x301
+      SDL_MOUSEMOTION = 0x400
+      SDL_MOUSEBUTTONDOWN = 0x401
+      SDL_MOUSEBUTTONUP = 0x402
+      SDL_MOUSEWHEEL = 0x403
 
       SDL_HINT_RENDER_SCALE_QUALITY = "SDL_RENDER_SCALE_QUALITY"
       SDL_HINT_RENDER_VSYNC = "SDL_RENDER_VSYNC"
@@ -137,6 +202,12 @@ module Dungeon
       SDL_BLENDMODE_ADD = 0x2
       SDL_BLENDMODE_MOD = 0x4
       SDL_BLENDMODE_INVALID = 0x7FFFFFFF
+
+      SDL_BUTTON_LEFT = 0x1
+      SDL_BUTTON_MIDDLE = 0x2
+      SDL_BUTTON_RIGHT = 0x3
+      SDL_BUTTON_X1= 0x4
+      SDL_BUTTON_X2= 0x5
     end
 
     module SDL2Image
@@ -148,6 +219,14 @@ module Dungeon
       attach_function :IMG_Quit, [], :void
 
       IMG_INIT_PNG = 0x2
+    end
+
+    module SDL2TTF
+      extend FFI::Library
+      ffi_lib "SDL2_ttf"
+
+      attach_function :TTF_Init, [], :int
+      attach_function :TTF_Quit, [], :void
     end
   end
 end

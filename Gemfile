@@ -7,7 +7,10 @@ source "https://rubygems.org"
 gem "ffi"
 
 group :development do
+  gem "rake"
   gem "dotenv"
   gem "pry"
   gem "ruby-prof"
+  gem "minitest"
+  gem "minitest-reporters"
 end

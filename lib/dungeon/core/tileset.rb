@@ -9,6 +9,8 @@ module Dungeon
       extend Forwardable
       def_delegators :@image, :texture, :close
 
+      attr_accessor :name
+
       attr_reader :tile_width
       attr_reader :tile_height
 
@@ -26,7 +28,7 @@ module Dungeon
         end
       end
 
-      def self.load renderer, filename
+      def self.load renderer, filename, name = "?"
         data = JSON.parse(File.read filename)
 
         tiles = data["tilecount"].times.map do |i|
@@ -40,7 +42,9 @@ module Dungeon
         image_path = File.join(File.dirname(filename), data["image"])
         image = Dungeon::Core::Image.load(renderer, image_path)
 
-        self.new(image, tiles, data["tilewidth"], data["tileheight"])
+        self.new(image, tiles, data["tilewidth"], data["tileheight"]).tap do |o|
+          o.name = name
+        end
       end
 
       def initialize image, tiles, tile_width, tile_height

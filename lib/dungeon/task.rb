@@ -56,6 +56,11 @@ module Dungeon
                   json["meta"]["app"] == "http://www.aseprite.org/"
 
                   "sprite"
+                elsif json.is_a?(Hash) and json.has_key?("meta") and
+                  json["meta"].is_a?(Hash) and 
+                  json["meta"]["schema"] == "dungeon"
+
+                  "map"
                 elsif json.is_a?(Hash) and json.has_key?("type")
                   json["type"]
                 else

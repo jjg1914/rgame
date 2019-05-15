@@ -76,8 +76,8 @@ module Dungeon
         self.id_counter += 1
       end
 
-      def self.new *args
-        super(Entity.id_counter_next).tap { |o| o.emit(:new, *args) }
+      def self.new
+        super(Entity.id_counter_next).tap { |o| o.emit(:new) }
       end
 
       attr_reader :id
@@ -124,6 +124,31 @@ module Dungeon
 
       def try_send message, *args
         send(message, *args) if respond_to? message
+      end
+
+      def to_h
+        {
+          "id" => self.id,
+          "type" => self.class.name.
+            split("::").
+            map do |e|
+              e.split(/(?=[A-Z])/).
+              tap { |o| o.pop if o.last == "Entity" }.
+              map { |e| e.downcase }.
+              join("_")
+            end.join("::"),
+          "active" => self.active,
+        }
+      end
+
+      def inspect
+        "#<%s id=%i %s>" % [
+          self.class,
+          self.id,
+          self.to_h.tap { |o| o.delete("id"); o.delete("type") }.to_a.map do |e|
+            [ e[0].to_s, e[1].inspect ].join("=")
+          end.join(" "),
+        ]
       end
 
       private

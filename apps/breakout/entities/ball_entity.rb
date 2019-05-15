@@ -8,6 +8,7 @@ class BallEntity < Dungeon::Core::Entity
   include Dungeon::Common::CollisionAspect
 
   attr_reader :mode
+  attr_reader :player
 
   on :new do |player|
     @mode = "init"
@@ -15,16 +16,13 @@ class BallEntity < Dungeon::Core::Entity
 
     self.width = 8
     self.height = 8
-    self.x = @player.x + (@player.width / 2) - (self.width / 2)
-    self.y = @player.y - 12
-
     self.solid = true
 
     self.sprite = "ball"
   end
 
   on :interval do
-    if self.mode == "init"
+    if self.mode == "init" and not @player.nil?
       self.x = @player.x + (3 * (@player.width / 4)) - (self.width / 2)
       self.y = @player.y - 12
     end
@@ -60,5 +58,11 @@ class BallEntity < Dungeon::Core::Entity
         self.y_speed = -self.y_speed
       end
     end
+  end
+
+  def player= value
+    @player = value
+    self.x = @player.x + (@player.width / 2) - (self.width / 2)
+    self.y = @player.y - 12
   end
 end

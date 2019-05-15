@@ -14,10 +14,10 @@ module Dungeon
       attr_accessor :sprite_translate
 
       def sprite= value
-        if value.is_a? Dungeon::Core::Sprite
-          @sprite = value
+        @sprite = unless value.is_a? Dungeon::Core::Sprite
+          Dungeon::Core::Assets[value.to_s]
         else
-          @sprite = Dungeon::Core::Assets[value.to_s]
+          value
         end
         self.sprite_tag = self.sprite.default_tag
       end
@@ -61,6 +61,16 @@ module Dungeon
                                    x.to_i + self.sprite_translate[0],
                                    y.to_i + self.sprite_translate[1],
                                    *self.sprite.at(self.sprite_tag, self.sprite_frame))
+      end
+
+      def to_h
+        super.merge({
+          "sprite" => self.sprite.name,
+          "sprite_tag" => self.sprite_tag,
+          "sprite_frame" => self.sprite_frame,
+          "sprite_key" => self.sprite_key,
+          "sprite_translate" => self.sprite_translate,
+        })
       end
     end
   end

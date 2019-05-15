@@ -1,11 +1,13 @@
 require "dungeon/core/video_system"
 require "dungeon/core/event_system"
 require "dungeon/core/profile_system"
+require "dungeon/core/console_system"
 
 module Dungeon
   module Core
     class ApplicationBase
       attr_reader :systems
+      attr_reader :root
 
       def self.run!
         self.new.tap do |o|
@@ -40,25 +42,55 @@ module Dungeon
         yield @systems["event"] if block_given?
       end
 
-      def event_loop destination_klass
+      def open_console_system *args
+        push_system "console", ConsoleSystem.open(self, *args)
+        yield @systems["console"] if block_given?
+      end
+
+      def event_loop destination_klass = nil
         let_var("ctx", @systems.has_key?("video") ? @systems["video"].context : nil ) do
-          destination = if destination_klass.is_a? Array
+          @root = if destination_klass.is_a? Array
             destination_klass = destination_klass.dup
             klass = destination_klass.shift
             klass.new(*destination_klass)
-          else
+          elsif not destination_klass.nil?
             destination_klass.new
+          elsif not @root.nil?
+            @root
+          else
+            raise "Missing Root Entity"
           end
+
           open_event_system unless @systems.has_key? "event"
 
           @systems["event"].each(60) do |e|
             case e
+            when ConsoleSystem::ConsoleEvent
+              @root.emit :console, e.args
+              e.release
             when EventSystem::KeyupEvent
-              destination.emit :keyup, e.key
+              @root.emit :keyup, e.key, e.modifiers
             when EventSystem::KeydownEvent
-              destination.emit :keydown, e.key
+              @root.emit :keydown, e.key, e.modifiers
             when EventSystem::IntervalEvent
-              destination.emit :interval, e.dt
+              @root.emit :interval, e.dt
+            when EventSystem::MouseMotionEvent
+              scale = @systems.has_key?("video") ?
+                @systems["video"].context.scale : [ 1, 1 ]
+              @root.emit :mousemotion, (e.x / scale[0]).to_i,
+                                       (e.y / scale[1]).to_i
+            when EventSystem::MouseButtonupEvent
+              scale = @systems.has_key?("video") ?
+                @systems["video"].context.scale : [ 1, 1 ]
+              @root.emit :mouseup, (e.x / scale[0]).to_i,
+                                   (e.y / scale[1]).to_i,
+                                   e.button
+            when EventSystem::MouseButtondownEvent
+              scale = @systems.has_key?("video") ?
+                @systems["video"].context.scale : [ 1, 1 ]
+              @root.emit :mousedown, (e.x / scale[0]).to_i,
+                                     (e.y / scale[1]).to_i,
+                                     e.button
             end
           end
         end
