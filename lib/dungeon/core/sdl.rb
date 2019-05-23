@@ -28,6 +28,7 @@ module Dungeon
 
       enum :SDL_Scancode, [
         :SDL_SCANCODE_UNKNOWN, 0,
+        :SDL_SCANCODE_RETURN, 40,
         :SDL_SCANCODE_ESCAPE, 41,
         :SDL_SCANCODE_BACKSPACE, 42,
         :SDL_SCANCODE_TAB, 43,
@@ -44,11 +45,14 @@ module Dungeon
         :SDL_SCANCODE_F10, 67,
         :SDL_SCANCODE_F11, 68,
         :SDL_SCANCODE_F12, 69,
+        :SDL_SCANCODE_PAGEUP, 75,
         :SDL_SCANCODE_DELETE, 76,
+        :SDL_SCANCODE_PAGEDOWN, 78,
         :SDL_SCANCODE_RIGHT, 79,
         :SDL_SCANCODE_LEFT, 80,
         :SDL_SCANCODE_DOWN, 81,
         :SDL_SCANCODE_UP, 82,
+        :SDL_SCANCODE_ENTER, 88,
         :SDL_SCANCODE_LCTRL, 224,
         :SDL_SCANCODE_LSHIFT, 225,
         :SDL_SCANCODE_LALT, 226, # alt, option
@@ -175,6 +179,13 @@ module Dungeon
                :h, :int
       end
 
+      class SDL_Color < FFI::Struct
+        layout :r, :uint8,
+               :g, :uint8,
+               :b, :uint8,
+               :a, :uint8
+      end
+
       SDL_INIT_VIDEO = 0x10
       SDL_WINDOW_SHOWN = 0x4
       SDL_WINDOW_OPENGL = 0x2
@@ -227,6 +238,18 @@ module Dungeon
 
       attach_function :TTF_Init, [], :int
       attach_function :TTF_Quit, [], :void
+      attach_function :TTF_OpenFont, [ :string, :int ], :pointer
+      attach_function :TTF_RenderText_Solid, [
+        :pointer,
+        :string,
+        SDL2::SDL_Color.by_value,
+      ], :pointer
+      attach_function :TTF_SizeText, [
+        :pointer,
+        :string,
+        :pointer,
+        :pointer,
+      ], :int
     end
   end
 end

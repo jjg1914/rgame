@@ -16,6 +16,7 @@ module Dungeon
         attr_accessor :alpha
         attr_accessor :scale
         attr_accessor :target
+        attr_accessor :font
 
         def initialize window, renderer
           @window = window
@@ -26,6 +27,10 @@ module Dungeon
           @rect_2 = SDL2::SDL_Rect.new
           @ints = 8.times.map { FFI::MemoryPointer.new(:int, 1) }
           @uint32s = 8.times.map { FFI::MemoryPointer.new(:uint32, 1) }
+          @color_struct = SDL2::SDL_Color.new
+
+          @font_cache = {}
+          @text_cache = {}
 
           @stack = []
         end
@@ -37,9 +42,27 @@ module Dungeon
         def []= key, value
           SDL2.SDL_SetHint(key.to_s, value.to_s)
         end
+  
+        def font_path
+          ENV.fetch("FONT_PATH", begin
+            if (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM) != nil
+              "C:\Windows\Fonts"
+            elsif (/darwin/ =~ RUBY_PLATFORM) != nil
+              "~/Library/Fonts:/Library/Fonts"
+            else
+              "~/.fonts:/usr/share/fonts"
+            end
+          end)
+        end
 
         def save
-          @stack << [ self.color, self.alpha, self.scale, self.target ]
+          @stack << [
+            self.color,
+            self.alpha,
+            self.scale,
+            self.target,
+            self.font,
+          ]
           if block_given?
             begin
               yield
@@ -51,7 +74,11 @@ module Dungeon
 
         def restore
           unless @stack.empty?
-            self.color, self.alpha, self.scale, self.target = @stack.pop
+            self.color,
+            self.alpha,
+            self.scale,
+            self.target,
+            self.font = @stack.pop
           end
         end
 
@@ -62,6 +89,10 @@ module Dungeon
                                         value.green_value,
                                         value.blue_value,
                                         alpha
+            @color_struct[:r] = value.red_value
+            @color_struct[:g] = value.green_value
+            @color_struct[:b] = value.blue_value
+            @color_struct[:a] = alpha
             @color = value
           end
         end
@@ -73,6 +104,10 @@ module Dungeon
                                         color.green_value,
                                         color.blue_value,
                                         value
+            @color_struct[:r] = color.red_value
+            @color_struct[:g] = color.green_value
+            @color_struct[:b] = color.blue_value
+            @color_struct[:a] = value
             @alpha = value
           end
         end
@@ -144,6 +179,24 @@ module Dungeon
           end
         end
 
+        def font= value
+          unless @font == value
+            unless value.nil? or @font_cache.has_key?(value)
+              name, size = value.split(":", 2).map { |e| e.strip }
+              path = ([ "." ] + font_path.split(":")).map do |e|
+                File.expand_path("%s.ttf" % name, e.strip)
+              end.find do |e|
+                File.exist?(e)
+              end
+              return if path.nil?
+              @font_cache[value] = SDL2TTF.TTF_OpenFont path, size.to_i
+            end
+
+            @font_pointer = @font_cache[value]
+            @font = value
+          end
+        end
+
         def create_texture width, height
           SDL2.SDL_CreateTexture(@renderer, SDL2.SDL_GetWindowPixelFormat(@window),
                                  SDL2::SDL_TEXTUREACCESS_TARGET, width, height)
@@ -200,6 +253,31 @@ module Dungeon
           @rect_2[:h] = height
           SDL2.SDL_RenderCopy(@renderer, texture, @rect_2, @rect)
         end
+
+        def draw_text text, x, y
+          cache_key = [ text, self.font, self.color ]
+
+          texture = if @text_cache.has_key?(cache_key)
+            @text_cache[cache_key]
+          else
+            return if @font_pointer.nil? or @font_pointer.null?
+            surface = SDL2TTF.TTF_RenderText_Solid @font_pointer,
+                                                   text,
+                                                   @color_struct
+            texture = SDL2.SDL_CreateTextureFromSurface(@renderer, surface)
+            SDL2.SDL_FreeSurface(surface)
+            @text_cache[cache_key] = texture
+          end
+
+          self.draw_texture texture, x, y
+        end
+
+        def size_of_text text
+          unless @font_pointer.nil? or @font_pointer.null?
+            SDL2TTF.TTF_SizeText(@font_pointer, text, @ints[0], @ints[1])
+            [ @ints[0].get(:int, 0), @ints[1].get(:int, 0) ]
+          end
+        end
       end
 
       def self.open *args
@@ -215,6 +293,8 @@ module Dungeon
       def open title, width, height
         raise VideoSystemInitError if SDL2.SDL_Init(SDL2::SDL_INIT_VIDEO) != 0
         raise VideoSystemInitError if SDL2Image.IMG_Init(SDL2Image::IMG_INIT_PNG) == 0
+        raise VideoSystemInitError if SDL2TTF.TTF_Init != 0
+
         @window = SDL2.SDL_CreateWindow "test", 0, 0, width, height, WINDOW_FLAGS
         raise VideoSystemInitError if @window.nil?
         @renderer = SDL2.SDL_CreateRenderer @window, -1, RENDERER_FLAGS
@@ -232,6 +312,7 @@ module Dungeon
       def close
         SDL2.SDL_DestroyRenderer @renderer unless @renderer.nil?
         SDL2.SDL_DestroyWindow @window unless @window.nil?
+        SDL2TTF.TTF_Quit
         SDL2Image.IMG_Quit
         SDL2.SDL_Quit
       end

@@ -2,6 +2,11 @@ require "rake/testtask"
 
 $:.unshift File.expand_path "lib", File.dirname(__FILE__)
 
+ENV["LD_LIBRARY_PATH"] = [
+  File.expand_path("vendor/SDL2/lib", File.dirname(__FILE__)),
+  ENV["LD_LIBRARY_PATH"],
+].join(":")
+
 Rake::TestTask.new do |t|
   t.pattern = "test/**/*_test.rb"
   t.libs = [ "lib", "test" ]

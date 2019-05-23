@@ -78,19 +78,20 @@ module Dungeon
               scale = @systems.has_key?("video") ?
                 @systems["video"].context.scale : [ 1, 1 ]
               @root.emit :mousemotion, (e.x / scale[0]).to_i,
-                                       (e.y / scale[1]).to_i
+                                       (e.y / scale[1]).to_i,
+                                       e.modifiers
             when EventSystem::MouseButtonupEvent
               scale = @systems.has_key?("video") ?
                 @systems["video"].context.scale : [ 1, 1 ]
               @root.emit :mouseup, (e.x / scale[0]).to_i,
                                    (e.y / scale[1]).to_i,
-                                   e.button
+                                   e.button, e.modifiers
             when EventSystem::MouseButtondownEvent
               scale = @systems.has_key?("video") ?
                 @systems["video"].context.scale : [ 1, 1 ]
               @root.emit :mousedown, (e.x / scale[0]).to_i,
                                      (e.y / scale[1]).to_i,
-                                     e.button
+                                     e.button, e.modifiers
             end
           end
         end

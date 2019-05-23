@@ -38,6 +38,7 @@ module Dungeon
         attr_reader :modifiers
 
         SCAN_CODE_STRINGS = {
+          :SDL_SCANCODE_RETURN => "return",
           :SDL_SCANCODE_ESCAPE=> "escape",
           :SDL_SCANCODE_BACKSPACE => "backspace",
           :SDL_SCANCODE_TAB => "tab",
@@ -54,7 +55,9 @@ module Dungeon
           :SDL_SCANCODE_F10 => "f10",
           :SDL_SCANCODE_F11 => "f11",
           :SDL_SCANCODE_F12 => "f12",
+          :SDL_SCANCODE_PAGEUP => "page_up",
           :SDL_SCANCODE_DELETE => "delete",
+          :SDL_SCANCODE_PAGEDOWN => "page_down",
           :SDL_SCANCODE_RIGHT => "right",
           :SDL_SCANCODE_LEFT => "left",
           :SDL_SCANCODE_DOWN => "down",
@@ -67,6 +70,7 @@ module Dungeon
           :SDL_SCANCODE_RSHIFT => "right_shift",
           :SDL_SCANCODE_RALT => "right_alt", # alt gr, option
           :SDL_SCANCODE_RGUI => "right_super", # windows, command (apple), meta
+          :SDL_SCANCODE_ENTER => "enter",
         }
 
         def initialize key_code, scan_code, modifiers
@@ -78,10 +82,10 @@ module Dungeon
         def key
           if SCAN_CODE_STRINGS.has_key?(scan_code)
             SCAN_CODE_STRINGS[scan_code]
+          elsif key_code < 256
+            key_code.chr
           else
-            if key_code < 256
-              key_code.chr
-            end
+            key_code
           end
         end
       end
@@ -92,21 +96,25 @@ module Dungeon
       class MouseMotionEvent
         attr_reader :x
         attr_reader :y
+        attr_reader :modifiers
 
-        def initialize x, y
+        def initialize x, y, modifiers
           @x = x
           @y = y
+          @modifiers = modifiers
         end
       end
 
       class MouseButtonEvent
         attr_reader :x
         attr_reader :y
+        attr_reader :modifiers
 
-        def initialize x, y, button
+        def initialize x, y, button, modifiers
           @x = x
           @y = y
           @button = button
+          @modifiers = modifiers
         end
 
         def button
@@ -236,15 +244,18 @@ module Dungeon
             end
           when SDL2::SDL_MOUSEMOTION
             yielder << MouseMotionEvent.new(@event[:motion][:x],
-                                            @event[:motion][:y])
+                                            @event[:motion][:y],
+                                            @modifiers)
           when SDL2::SDL_MOUSEBUTTONDOWN
             yielder << MouseButtondownEvent.new(@event[:button][:x],
                                                 @event[:button][:y],
-                                                @event[:button][:button])
+                                                @event[:button][:button],
+                                                @modifiers)
           when SDL2::SDL_MOUSEBUTTONUP
             yielder << MouseButtonupEvent.new(@event[:button][:x],
                                               @event[:button][:y],
-                                              @event[:button][:button])
+                                              @event[:button][:button],
+                                              @modifiers)
           when SDL2::SDL_WINDOWEVENT
             if @event[:window][:event] == :SDL_WINDOWEVENT_CLOSE
               flag = true

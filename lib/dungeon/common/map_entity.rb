@@ -12,7 +12,9 @@ module Dungeon
   module Common
     class MapEntity < CollectionEntity
       extend Forwardable
-      def_delegators :@map, :width, :height, :background
+      def_delegators :@map, :width, :width=,
+                            :height, :height=,
+                            :background, :background=
 
       attr_reader :map
 
@@ -32,6 +34,8 @@ module Dungeon
       end
 
       def map= value
+        self.remove_all
+
         @map = unless value.is_a? Dungeon::Core::Map
           Dungeon::Core::Assets[value.to_s]
         else
@@ -44,6 +48,8 @@ module Dungeon
         @map.entities.flatten.reverse.each do |e|
           self.add_front Dungeon::Core::Savable.load(e)
         end
+
+        self.emit :mapupdate
       end
     end
   end

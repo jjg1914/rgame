@@ -1,4 +1,5 @@
 vendor/
+coverage/
 assets/manifest.yaml
 assets/sprites/*.json
 assets/sprites/*.png

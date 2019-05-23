@@ -13,4 +13,5 @@ group :development do
   gem "ruby-prof"
   gem "minitest"
   gem "minitest-reporters"
+  gem "simplecov"
 end

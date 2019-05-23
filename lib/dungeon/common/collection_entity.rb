@@ -69,7 +69,7 @@ module Dungeon
       private
 
       def last message, *args
-        unless message == :new
+        unless message == "new"
           self.each { |e| e.emit(message, *args) }
         end
       end

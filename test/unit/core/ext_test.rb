@@ -1,0 +1,1 @@
+require "dungeon/core/ext"

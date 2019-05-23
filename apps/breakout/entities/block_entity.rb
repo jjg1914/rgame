@@ -7,7 +7,7 @@ class BlockEntity < Dungeon::Core::Entity
 
   include Dungeon::Core::Savable
 
-  savable [ :x, :y ]
+  savable [ :x, :y, :sprite_tag ]
 
   on :new do
     self.width = 16

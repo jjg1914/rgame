@@ -1,9 +1,56 @@
 module Dungeon
   module Core
     class Entity
+      class HandlerManager
+        attr_reader :own
+        attr_reader :cache
+        attr_reader :push_index
+        attr_reader :parent
+        attr_reader :children
+
+        def initialize parent = nil
+          @own = (Hash.new { |h,k| h[k] = []})
+          @cache = (Hash.new { |h,k| h[k] = []})
+          @push_index = (Hash.new { |h,k| h[k] = 0})
+          @parent = parent
+          @children = []
+          parent.children << self unless parent.nil?
+        end
+
+        def push message, p
+          own[message.to_sym].push(p)
+          rebuild_handler_cache
+        end
+
+        def unshift message, p
+          own[message.to_sym].unshift(p)
+          push_index[message.to_sym] += 1
+          rebuild_handler_cache
+        end
+
+        def rebuild_handler_cache
+          @cache = (Hash.new { |h,k| h[k] = []})
+
+          [ self ].tap do |o|
+            o << o.last.parent until o.last.parent.nil?
+          end.reverse.each do |e|
+            e.own.each do |k,v|
+              index = e.push_index[k]
+              head = v.take(index)
+              tail = v.drop(index)
+              cache[k] = head + cache[k] + tail
+            end
+          end
+
+          children.each { |e| e.rebuild_handler_cache }
+        end
+      end
+
       module ClassMethods
+        attr_reader :handlers
+
         def on message, &block
-          handlers[message.to_sym].push(proc do |p, rcv, *args|
+          @handlers.push(message.to_sym, proc do |p, rcv, *args|
             rcv.instance_exec(*args, &block)
             p.call
           end)
@@ -24,7 +71,7 @@ module Dungeon
         end
 
         def around message, &block
-          handlers[message.to_sym].unshift(proc do |p, rcv, *args|
+          @handlers.unshift(message.to_sym, proc do |p, rcv, *args|
             rcv.instance_exec(p, *args, &block)
           end)
         end
@@ -35,30 +82,37 @@ module Dungeon
           catch(:stop!) do
             target, index = 0, 0
             p = proc do
-              if index < handlers[message].size
+              if index < handlers.cache[message].size
                 target, index = index, index + 1
-                handlers[message][target].call(p, reciever, *args)
+                handlers.cache[message][target].call(p, reciever, *args)
               else
-                reciever.send(:last, message, *args)
+                yield if block_given?
               end
             end
             p.call
           end
         end
 
-        def handlers
-          (@handlers ||= (Hash.new { |h,k| h[k] = []}))
-        end
-
         def inherited klass
           super
-          klass.instance_exec(@handlers) do |handlers|
-            @handlers = handlers.dup
+          klass.instance_exec(self) do |_self|
+            @handlers = HandlerManager.new _self.handlers
+          end
+        end
+
+        def self.extended klass
+          klass.instance_exec do
+            @handlers = HandlerManager.new
           end
         end
       end
 
+      def self.registry
+        (@registry ||= [])
+      end
+
       def self.inherited klass
+        Entity.registry << klass
         klass.instance_eval do
           extend ClassMethods
         end
@@ -93,13 +147,15 @@ module Dungeon
       def broadcast message, *args
         peer, target = parent, self
         until peer.nil?
-          peer, target = target.parent, peer
+          peer, target = peer.parent, peer
         end
-        target.deliver message, *args
+        target.emit message, *args
       end
 
       def emit message, *args
-        self.class.deliver(self, message, *args)
+        self.class.deliver(self, message, *args) do
+          self.send(:last, message.to_s, *args)
+        end
       end
 
       def remove
@@ -122,14 +178,10 @@ module Dungeon
         self.active = !self.active
       end
 
-      def try_send message, *args
-        send(message, *args) if respond_to? message
-      end
-
       def to_h
         {
           "id" => self.id,
-          "type" => self.class.name.
+          "type" => self.class.to_s.
             split("::").
             map do |e|
               e.split(/(?=[A-Z])/).
@@ -152,6 +204,13 @@ module Dungeon
       end
 
       private
+
+      def initialize_copy source
+        super
+        @id = Entity.id_counter_next
+        @parent = nil
+        self.emit(:copy)
+      end
 
       def stop! *args
         throw :stop!, *args
