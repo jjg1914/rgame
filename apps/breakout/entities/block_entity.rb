@@ -18,11 +18,7 @@ class BlockEntity < Dungeon::Core::Entity
     self.sprite = "block"
   end
 
-  on :post_collision do
-    self.remove if @ball_collision
-  end
-
-  on :collision do |e,mtv|
-    @ball_collision = e.is_a? BallEntity
+  on :ball_collision do
+    self.remove
   end
 end

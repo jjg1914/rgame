@@ -72,14 +72,16 @@ module Dungeon
               @root.emit :keyup, e.key, e.modifiers
             when EventSystem::KeydownEvent
               @root.emit :keydown, e.key, e.modifiers
+            when EventSystem::KeyrepeatEvent
+              @root.emit :keyrepeat, e.key, e.modifiers
             when EventSystem::IntervalEvent
               @root.emit :interval, e.dt
-            when EventSystem::MouseMotionEvent
+            when EventSystem::MouseMoveEvent
               scale = @systems.has_key?("video") ?
                 @systems["video"].context.scale : [ 1, 1 ]
-              @root.emit :mousemotion, (e.x / scale[0]).to_i,
-                                       (e.y / scale[1]).to_i,
-                                       e.modifiers
+              @root.emit :mousemove, (e.x / scale[0]).to_i,
+                                     (e.y / scale[1]).to_i,
+                                     e.modifiers
             when EventSystem::MouseButtonupEvent
               scale = @systems.has_key?("video") ?
                 @systems["video"].context.scale : [ 1, 1 ]

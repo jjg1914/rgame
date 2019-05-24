@@ -2,6 +2,8 @@ require "json"
 
 require "dungeon/core/aspect"
 require "dungeon/core/savable"
+require "dungeon/core/collision"
+require "dungeon/common/gui"
 require "dungeon/common/position_aspect"
 
 module Dungeon
@@ -9,155 +11,11 @@ module Dungeon
     module EditorAspect 
       include Dungeon::Core::Aspect
 
-      class MenuState
-        attr_accessor :x
-        attr_accessor :y
-        attr_accessor :items
-        attr_accessor :cursor
-        attr_accessor :padding
-        attr_accessor :view_size
-        attr_accessor :view_position
-
-        def initialize x, y, items
-          self.x = x
-          self.y = y
-          self.items = items
-          self.cursor = 0
-          self.padding = 4
-          self.view_size = 5
-          self.view_position = 0
-        end
-
-        def cursor_up
-          unless @items.empty?
-            @cursor = (@cursor - 1) % @items.size
-
-            if @cursor < @view_position
-              @view_position = @cursor
-            elsif @cursor >= @view_position + @view_size
-              @view_position = [ @items.size - @view_size, 0 ].max
-            end
-          end
-        end
-
-        def cursor_down
-          unless @items.empty?
-            @cursor = (@cursor + 1) % @items.size
-            if @cursor < @view_position
-              @view_position = 0
-            elsif @cursor >= @view_position + @view_size
-              @view_position = @cursor - @view_size + 1
-            end
-          end
-        end
-
-        def cursor_page_up
-          unless @items.empty?
-            @cursor = if @cursor == 0
-              [ @items.size - 1, 0 ].max
-            elsif @cursor == @view_position
-              [ @cursor - @view_size + 1, 0 ].max
-            else
-              @view_position
-            end
-
-            if @cursor < @view_position
-              @view_position = @cursor
-            elsif @cursor >= @view_position + @view_size
-              @view_position = [ @items.size - @view_size, 0 ].max
-            end
-          end
-        end
-
-        def cursor_page_down
-          unless @items.empty?
-            @cursor = if @cursor == @items.size - 1
-              0
-            elsif @cursor == (@view_position + @view_size - 1)
-              [ @cursor + @view_size - 1, @items.size - 1 ].min
-            else
-              [ @view_position + @view_size - 1, @items.size - 1 ].min
-            end
-
-            if @cursor < @view_position
-              @view_position = 0
-            elsif @cursor >= @view_position + @view_size
-              @view_position = @cursor - @view_size + 1
-            end
-          end
-        end
-
-        def paint ctx
-          ctx.save do
-            content = if @items.empty?
-              %w[Empty]
-            else
-              @items
-            end
-
-            ctx.font = "Arial:10"
-
-            sizings = _calculate_sizings ctx, content
-            draw_width = _calculate_width sizings
-            draw_height = _calculate_height sizings
-
-            ctx.color = 0x202020
-            ctx.fill_rect @x, @y, draw_width, draw_height
-
-            ctx.color = 0xD602DD
-
-            content.zip(sizings).slice(view_position, view_size).reduce([]) do |m,v|
-              m + ([
-                [
-                  v[0],
-                  [
-                    v[1][0],
-                    (m.empty? ? 0 : m.last[1][1] + m.last[1][2]),
-                    v[1][1],
-                  ]
-                ]
-              ])
-            end.each_with_index do |e,i|
-              if @items.empty? or @cursor != (i + view_position)
-                ctx.draw_text e[0].to_s, @x + padding, @y + e[1][1] + padding
-              else
-                ctx.save do
-                  ctx.color = 0xD602DD
-                  ctx.fill_rect @x, @y + padding + e[1][1], draw_width, e[1][2]
-
-                  ctx.color = 0x202020
-                  ctx.draw_text e[0].to_s, @x + padding, @y + e[1][1] + padding
-                end
-              end
-            end
-
-            ctx.draw_rect @x, @y, draw_width, draw_height
-          end
-        end
-
-        private
-
-        def _calculate_sizings ctx, items
-          items.map do |e|
-            ctx.size_of_text e.to_s
-          end
-        end
-
-        def _calculate_width sizings
-          sizings.map { |e| e[0] }.max + (padding * 2)
-        end
-
-        def _calculate_height sizings
-          sizings.slice(view_position, view_size).map do |e|
-            e[1]
-          end.sum + (padding * 2)
-        end
-      end
-
       class EditorState
         attr_accessor :edit_mode
         attr_accessor :selected
         attr_accessor :cursor
+        attr_accessor :cursor_inflate
         attr_accessor :grid
         attr_reader :menu
 
@@ -165,12 +23,13 @@ module Dungeon
           self.edit_mode = false
           self.selected = []
           self.cursor = [ 0, 0 ]
+          self.cursor_inflate = [ 0, 0 ]
           self.grid = [ 8, 8 ]
         end
 
         def set_new_entity_edit_mode
           self.edit_mode = :new_entity
-          @menu = MenuState.new cursor[0], cursor[1], Dungeon::Core::Entity.registry
+          @menu = Gui::Menu.new Dungeon::Core::Entity.registry
         end
 
         def enable_edit_mode
@@ -192,6 +51,7 @@ module Dungeon
           entities.each do |e|
             index = collection.find_index { |f| f.equal?(e) }
             selected << index unless index.nil?
+            selected.uniq!
           end
         end
 
@@ -232,6 +92,7 @@ module Dungeon
             tmp = selected[0]
             selected.clear
             selected << tmp
+            selected.uniq!
           elsif selected.size == 1
             loop do
               selected[0] = (selected[0] + 1) % collection.size
@@ -246,6 +107,7 @@ module Dungeon
             tmp = selected[0]
             selected.clear
             selected << tmp
+            selected.uniq!
           elsif selected.size == 1
             loop do
               selected[0] = (selected[0] - 1) % collection.size
@@ -276,6 +138,7 @@ module Dungeon
           end.tap do |o|
             selected.clear
             selected << o unless o.nil?
+            selected.uniq!
           end.nil?)
         end
 
@@ -285,6 +148,7 @@ module Dungeon
               Dungeon::Core::Collision.check_point([ x, y ], e)
           end.tap do |o|
             selected << o unless o.nil?
+            selected.uniq!
           end.nil?)
         end
 
@@ -301,12 +165,55 @@ module Dungeon
           end
         end
 
+        def inflate_cursor direction
+          case direction
+          when "left"
+            cursor_inflate[0] -= grid[0]
+          when "right"
+            cursor_inflate[0] += grid[0]
+          when "up"
+            cursor_inflate[1] -= grid[1]
+          when "down"
+            cursor_inflate[1] += grid[1]
+          end
+        end
+
+        def deflate_cursor
+          self.cursor_inflate = [ 0, 0 ]
+        end
+
         def single_select_cursor collection
           single_select cursor[0], cursor[1], collection
         end
 
         def multi_select_cursor collection
           multi_select cursor[0], cursor[1], collection
+        end
+
+        def inflate_select_cursor collection
+          left = self.cursor[0] + [ self.cursor_inflate[0], 0 ].min
+          top = self.cursor[1] + [ self.cursor_inflate[1], 0 ].min
+          w = 8 + self.cursor_inflate[0].abs
+          h = 8 + self.cursor_inflate[1].abs
+          right = left + w - 1
+          bottom = top + h - 1
+
+          cursor_bounds = {
+            "left" => left,
+            "right" => right,
+            "top" => top,
+            "bottom" => bottom,
+          }
+          
+          collection.each_with_index.select do |e,i|
+            e.kind_of?(Dungeon::Common::PositionAspect)
+          end.select do |e,i|
+            bounds = Dungeon::Core::Collision.bounds_for(e)
+            Dungeon::Core::Collision.check_bounds(bounds, cursor_bounds)
+          end.each do |e,i|
+            selected << i
+            selected.uniq!
+          end
         end
 
         def paint ctx, collection
@@ -326,10 +233,15 @@ module Dungeon
           end
 
           unless @menu.nil?
-            @menu.paint ctx
+            @menu.paint ctx, self.cursor[0], self.cursor[1]
           else
+            x = self.cursor[0] + [ self.cursor_inflate[0], 0 ].min
+            y = self.cursor[1] + [ self.cursor_inflate[1], 0 ].min
+            w = 8 + self.cursor_inflate[0].abs
+            h = 8 + self.cursor_inflate[1].abs
+
             ctx.color = 0xFFFFFF
-            ctx.draw_rect self.cursor[0], self.cursor[1], 8, 8
+            ctx.draw_rect x, y, w, h
           end
         end
       end
@@ -353,8 +265,15 @@ module Dungeon
           when "backspace", "delete"
             @editor_state.delete_selection self.children
           when "left", "right", "up", "down"
-            @editor_state.move_selection key, self.children if mod.shift
-            @editor_state.move_cursor key
+            if mod.shift
+              unless @editor_state.selected.empty?
+                @editor_state.move_selection key, self.children
+              else
+                @editor_state.inflate_cursor key
+              end
+            else
+              @editor_state.move_cursor key
+            end
           when "enter", "return"
             copies = @editor_state.copy_selection self.children
             if copies.empty?
@@ -390,21 +309,61 @@ module Dungeon
 
             @editor_state.enable_edit_mode
             @editor_state.set_selection [ entity ], self.children
-          when "up"
-            @editor_state.menu.cursor_up
-          when "down"
-            @editor_state.menu.cursor_down
-          when "page_up"
-            @editor_state.menu.cursor_page_up
-          when "page_down"
-            @editor_state.menu.cursor_page_down
+          when "up", "down"
+            @editor_state.menu.cursor key
+          when "page_up", "page_down"
+            @editor_state.menu.page key[5..-1]
           end
         else
           @editor_state.enable_edit_mode if key == "f1"
         end
       end
 
-      on :mousedown do |x,y,button,mod|
+      on :keyrepeat do |key,mod|
+        case @editor_state.edit_mode
+        when :default
+          case key
+          when "left", "right", "up", "down"
+            if mod.shift
+              unless @editor_state.selected.empty?
+                @editor_state.move_selection key, self.children
+              else
+                @editor_state.inflate_cursor key
+              end
+            else
+              @editor_state.move_cursor key
+            end
+          when "tab"
+            if mod.shift
+              @editor_state.previous_selection self.children
+            else
+              @editor_state.next_selection self.children
+            end
+          end
+        when :new_entity
+          case key
+          when "up", "down"
+            @editor_state.menu.cursor key
+          when "page_up", "page_down"
+            @editor_state.menu.page key[5..-1]
+          end
+        end
+      end
+
+      on :keyup do |key,mod|
+        case @editor_state.edit_mode
+        when :default
+          case key
+          when "left_shift", "right_shift"
+            unless mod.shift
+              @editor_state.inflate_select_cursor self.children
+              @editor_state.deflate_cursor
+            end
+          end
+        end
+      end
+
+      on :mouseup do |x,y,button,mod|
         if @editor_state.edit_mode and button == "left"
           @editor_state.enable_edit_mode
           if mod.ctrl

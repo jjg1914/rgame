@@ -19,16 +19,40 @@ module Dungeon
       end
 
       class ModifierState
-        attr_accessor :ctrl
-        attr_accessor :shift
-        attr_accessor :alt
-        attr_accessor :super
+        attr_accessor :left_ctrl
+        attr_accessor :left_shift
+        attr_accessor :left_alt
+        attr_accessor :left_super
+        attr_accessor :right_ctrl
+        attr_accessor :right_shift
+        attr_accessor :right_alt
+        attr_accessor :right_super
 
         def initialize
-          @ctrl = false
-          @shift = false
-          @alt = false
-          @super = false
+          @left_ctrl = false
+          @left_shift = false
+          @left_alt = false
+          @left_super = false
+          @right_ctrl = false
+          @right_shift = false
+          @right_alt = false
+          @right_super = false
+        end
+
+        def ctrl
+          self.left_ctrl or self.right_ctrl
+        end
+
+        def shift
+          self.left_shift or self.right_shift
+        end
+
+        def alt
+          self.left_alt or self.right_alt
+        end
+
+        def super
+          self.left_super or self.right_super
         end
       end
 
@@ -63,7 +87,7 @@ module Dungeon
           :SDL_SCANCODE_DOWN => "down",
           :SDL_SCANCODE_UP => "up",
           :SDL_SCANCODE_LCTRL => "left_ctrl",
-          :SDL_SCANCODE_LSHIFT => "right_shift",
+          :SDL_SCANCODE_LSHIFT => "left_shift",
           :SDL_SCANCODE_LALT => "left_alt", # alt, option
           :SDL_SCANCODE_LGUI => "left_super", # windows, command (apple), meta
           :SDL_SCANCODE_RCTRL => "right_ctrl",
@@ -91,9 +115,10 @@ module Dungeon
       end
 
       class KeydownEvent < KeyEvent; end
+      class KeyrepeatEvent < KeyEvent; end
       class KeyupEvent < KeyEvent; end
 
-      class MouseMotionEvent
+      class MouseMoveEvent
         attr_reader :x
         attr_reader :y
         attr_reader :modifiers
@@ -212,14 +237,22 @@ module Dungeon
           case @event[:type]
           when SDL2::SDL_KEYUP
             case @event[:key][:keysym][:scancode]
-            when :SDL_SCANCODE_LCTRL, :SDL_SCANCODE_RCTRL
-              @modifiers.ctrl = false
-            when :SDL_SCANCODE_LSHIFT, :SDL_SCANCODE_RSHIFT
-              @modifiers.shift = false
-            when :SDL_SCANCODE_LALT, :SDL_SCANCODE_RALT
-              @modifiers.alt = false
-            when :SDL_SCANCODE_LGUI, :SDL_SCANCODE_RGUI
-              @modifiers.super = false
+            when :SDL_SCANCODE_LCTRL
+              @modifiers.left_ctrl = false
+            when :SDL_SCANCODE_LSHIFT
+              @modifiers.left_shift = false 
+            when :SDL_SCANCODE_LALT
+              @modifiers.left_alt = false 
+            when :SDL_SCANCODE_LGUI
+              @modifiers.left_super = false
+            when :SDL_SCANCODE_RCTRL
+              @modifiers.right_ctrl = false
+            when :SDL_SCANCODE_RSHIFT
+              @modifiers.right_shift = false 
+            when :SDL_SCANCODE_RALT
+              @modifiers.right_alt = false 
+            when :SDL_SCANCODE_RGUI
+              @modifiers.right_super = false
             end
 
             yielder << KeyupEvent.new(@event[:key][:keysym][:sym],
@@ -228,24 +261,36 @@ module Dungeon
           when SDL2::SDL_KEYDOWN
             if @event[:key][:repeat] == 0
               case @event[:key][:keysym][:scancode]
-              when :SDL_SCANCODE_LCTRL, :SDL_SCANCODE_RCTRL
-                @modifiers.ctrl = true
-              when :SDL_SCANCODE_LSHIFT, :SDL_SCANCODE_RSHIFT
-                @modifiers.shift = true 
-              when :SDL_SCANCODE_LALT, :SDL_SCANCODE_RALT
-                @modifiers.alt = true 
-              when :SDL_SCANCODE_LGUI, :SDL_SCANCODE_RGUI
-                @modifiers.super = true
+              when :SDL_SCANCODE_LCTRL
+                @modifiers.left_ctrl = true
+              when :SDL_SCANCODE_LSHIFT
+                @modifiers.left_shift = true 
+              when :SDL_SCANCODE_LALT
+                @modifiers.left_alt = true 
+              when :SDL_SCANCODE_LGUI
+                @modifiers.left_super = true
+              when :SDL_SCANCODE_RCTRL
+                @modifiers.right_ctrl = true
+              when :SDL_SCANCODE_RSHIFT
+                @modifiers.right_shift = true 
+              when :SDL_SCANCODE_RALT
+                @modifiers.right_alt = true 
+              when :SDL_SCANCODE_RGUI
+                @modifiers.right_super = true
               end
 
               yielder << KeydownEvent.new(@event[:key][:keysym][:sym],
                                           @event[:key][:keysym][:scancode],
                                           @modifiers)
+            else
+              yielder << KeyrepeatEvent.new(@event[:key][:keysym][:sym],
+                                            @event[:key][:keysym][:scancode],
+                                            @modifiers)
             end
           when SDL2::SDL_MOUSEMOTION
-            yielder << MouseMotionEvent.new(@event[:motion][:x],
-                                            @event[:motion][:y],
-                                            @modifiers)
+            yielder << MouseMoveEvent.new(@event[:motion][:x],
+                                          @event[:motion][:y],
+                                          @modifiers)
           when SDL2::SDL_MOUSEBUTTONDOWN
             yielder << MouseButtondownEvent.new(@event[:button][:x],
                                                 @event[:button][:y],

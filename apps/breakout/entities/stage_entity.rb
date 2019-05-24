@@ -7,15 +7,15 @@ class StageEntity < Dungeon::Common::MapEntity
   
   on :mapupdate do
     self.add(player = PlayerEntity.new.tap do |o|
-      o.x = ((240 - 8 - o.width) / 2) + 8
-      o.y = 252
+      o.x = ((self.width - 8 - o.width) / 2) + 8
+      o.y = self.height - 32
 
-      o.x_restrict = (8..(240 - o.width))
+      o.x_restrict = (8..(self.width - o.width - 8))
     end)
 
     self.add(BallEntity.new.tap do |o|
       o.player = player
-      o.x_restrict = (8..(240 - o.width))
+      o.x_restrict = (8..(self.width - o.width - 8))
       o.y_restrict = (8..)
     end)
   end
