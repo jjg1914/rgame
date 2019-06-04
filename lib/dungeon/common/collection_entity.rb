@@ -1,9 +1,13 @@
+require "forwardable"
 require "dungeon/core/entity"
 
 module Dungeon
   module Common
     class CollectionEntity < Dungeon::Core::Entity
       attr_reader :children
+
+      extend Forwardable
+      def_delegators :@children, :empty?
 
       def initialize id
         super

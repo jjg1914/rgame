@@ -48,21 +48,24 @@ module Dungeon
       end
 
       def event_loop destination_klass = nil
-        let_var("ctx", @systems.has_key?("video") ? @systems["video"].context : nil ) do
-          @root = if destination_klass.is_a? Array
-            destination_klass = destination_klass.dup
-            klass = destination_klass.shift
-            klass.new(*destination_klass)
-          elsif not destination_klass.nil?
-            destination_klass.new
-          elsif not @root.nil?
-            @root
-          else
-            raise "Missing Root Entity"
-          end
+        @root = if destination_klass.is_a? Array
+          destination_klass = destination_klass.dup
+          klass = destination_klass.shift
+          klass.new(*destination_klass)
+        elsif not destination_klass.nil?
+          destination_klass.new
+        elsif not @root.nil?
+          @root
+        else
+          raise "Missing Root Entity"
+        end
 
-          open_event_system unless @systems.has_key? "event"
+        open_event_system unless @systems.has_key? "event"
 
+        let_vars({
+          "ctx" => @systems.has_key?("video") ? @systems["video"].context : nil,
+          "events" => @systems["event"],
+        }) do
           @systems["event"].each(60) do |e|
             case e
             when ConsoleSystem::ConsoleEvent
@@ -74,6 +77,8 @@ module Dungeon
               @root.emit :keydown, e.key, e.modifiers
             when EventSystem::KeyrepeatEvent
               @root.emit :keyrepeat, e.key, e.modifiers
+            when EventSystem::TextInputEvent
+              @root.emit :textinput, e.text
             when EventSystem::IntervalEvent
               @root.emit :interval, e.dt
             when EventSystem::MouseMoveEvent

@@ -4,6 +4,7 @@ module Dungeon
   module Core
     class Map
       attr_accessor :name
+      attr_accessor :path
       attr_accessor :width
       attr_accessor :height
       attr_accessor :background
@@ -91,7 +92,10 @@ module Dungeon
       def self.load_file filename
         name = File.basename(filename, ".json")
         data = JSON.parse File.read filename
-        self.load(data).tap { |o| o.name = name }
+        self.load(data).tap do |o|
+          o.name = name
+          o.path = filename
+        end
       end
 
       def self.load json

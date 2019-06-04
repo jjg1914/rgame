@@ -213,6 +213,10 @@ module Dungeon
           ]
         end
 
+        def release_texture texture
+          SDL2.SDL_DestroyTexture texture
+        end
+
         def present
           SDL2.SDL_RenderPresent @renderer
         end
@@ -261,15 +265,21 @@ module Dungeon
             @text_cache[cache_key]
           else
             return if @font_pointer.nil? or @font_pointer.null?
-            surface = SDL2TTF.TTF_RenderText_Solid @font_pointer,
-                                                   text,
-                                                   @color_struct
-            texture = SDL2.SDL_CreateTextureFromSurface(@renderer, surface)
-            SDL2.SDL_FreeSurface(surface)
-            @text_cache[cache_key] = texture
+            @text_cache[cache_key] = self.create_text(text)
           end
 
           self.draw_texture texture, x, y
+        end
+
+        def create_text text
+          unless @font_pointer.nil? or @font_pointer.null?
+            surface = SDL2TTF.TTF_RenderText_Solid @font_pointer,
+                                                   text,
+                                                   @color_struct
+            SDL2.SDL_CreateTextureFromSurface(@renderer, surface).tap do |o|
+              SDL2.SDL_FreeSurface(o)
+            end
+          end
         end
 
         def size_of_text text

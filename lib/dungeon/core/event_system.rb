@@ -79,8 +79,11 @@ module Dungeon
           :SDL_SCANCODE_F10 => "f10",
           :SDL_SCANCODE_F11 => "f11",
           :SDL_SCANCODE_F12 => "f12",
+          :SDL_SCANCODE_INSERT => "insert",
+          :SDL_SCANCODE_HOME => "home",
           :SDL_SCANCODE_PAGEUP => "page_up",
           :SDL_SCANCODE_DELETE => "delete",
+          :SDL_SCANCODE_END => "end",
           :SDL_SCANCODE_PAGEDOWN => "page_down",
           :SDL_SCANCODE_RIGHT => "right",
           :SDL_SCANCODE_LEFT => "left",
@@ -161,6 +164,14 @@ module Dungeon
       class MouseButtondownEvent < MouseButtonEvent; end
       class MouseButtonupEvent < MouseButtonEvent; end
 
+      class TextInputEvent
+        attr_reader :text
+
+        def initialize text
+          @text = text
+        end
+      end
+
       include Enumerable
 
       attr_reader :now
@@ -181,6 +192,8 @@ module Dungeon
         @internal = []
         @mutex = Mutex.new
         @modifiers = ModifierState.new
+
+        SDL2.SDL_StopTextInput
       end
 
       def each fps = nil, &block
@@ -188,6 +201,8 @@ module Dungeon
           self.each(fps).each(&block)
         else
           waitticks = fps.nil? ? 0 : (1000 / fps).to_i
+
+          trap("INT") { STDERR.puts(caller); exit!(1) }
 
           Enumerator.new do |yielder|
             begin
@@ -207,6 +222,14 @@ module Dungeon
             end
           end
         end
+      end
+
+      def start_text_input
+        SDL2.SDL_StartTextInput
+      end
+
+      def stop_text_input
+        SDL2.SDL_StopTextInput
       end
 
       def close
@@ -287,6 +310,8 @@ module Dungeon
                                             @event[:key][:keysym][:scancode],
                                             @modifiers)
             end
+          when SDL2::SDL_TEXTINPUT
+            yielder << TextInputEvent.new(@event[:text][:text].to_ptr.read_string)
           when SDL2::SDL_MOUSEMOTION
             yielder << MouseMoveEvent.new(@event[:motion][:x],
                                           @event[:motion][:y],

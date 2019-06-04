@@ -17,7 +17,7 @@ class Application < Dungeon::Core::ApplicationBase
       video.context.scale_quality = 0
       video.init_assets "apps/breakout/assets/manifest.yaml"
     end
-    open_console_system
+    #open_console_system
 
     event_loop RootEntity
   end

@@ -45,8 +45,11 @@ module Dungeon
         :SDL_SCANCODE_F10, 67,
         :SDL_SCANCODE_F11, 68,
         :SDL_SCANCODE_F12, 69,
+        :SDL_SCANCODE_INSERT, 73,
+        :SDL_SCANCODE_HOME, 74,
         :SDL_SCANCODE_PAGEUP, 75,
         :SDL_SCANCODE_DELETE, 76,
+        :SDL_SCANCODE_END, 77,
         :SDL_SCANCODE_PAGEDOWN, 78,
         :SDL_SCANCODE_RIGHT, 79,
         :SDL_SCANCODE_LEFT, 80,
@@ -97,6 +100,12 @@ module Dungeon
       attach_function :SDL_SetTextureBlendMode, [ :pointer, :int ], :int
       attach_function :SDL_GetTextureBlendMode, [ :pointer, :pointer ], :int
       attach_function :SDL_GetWindowPixelFormat, [ :pointer ], :uint32
+      attach_function :SDL_StartTextInput, [], :void
+      attach_function :SDL_StopTextInput, [], :void
+      attach_function :SDL_SetTextInputRect, [ :pointer ], :void
+      attach_function :SDL_GetClipboardText, [], :string
+      attach_function :SDL_SetClipboardText, [ :string ], :int
+      attach_function :SDL_HasClipboardText, [], :bool
 
       class SDL_Keysym < FFI::Struct
         layout :scancode, :SDL_Scancode,
@@ -163,10 +172,18 @@ module Dungeon
                :direction, :uint32
       end
 
+      class SDL_TextInputEvent < FFI::Struct
+        layout :type, :uint32,
+               :timestamp, :uint32,
+               :windowID, :uint32,
+               :text, [ :char, 32 ]
+      end
+
       class SDL_Event < FFI::Union
         layout :type, :uint32,
                :window, SDL_WindowEvent,
                :key, SDL_KeyboardEvent,
+               :text, SDL_TextInputEvent,
                :motion, SDL_MouseMotionEvent,
                :button, SDL_MouseButtonEvent,
                :wheel, SDL_MouseWheelEvent
@@ -196,6 +213,8 @@ module Dungeon
       SDL_WINDOWEVENT = 0x200
       SDL_KEYDOWN = 0x300
       SDL_KEYUP = 0x301
+      SDL_TEXTEDITING = 0x302
+      SDL_TEXTINPUT = 0x303
       SDL_MOUSEMOTION = 0x400
       SDL_MOUSEBUTTONDOWN = 0x401
       SDL_MOUSEBUTTONUP = 0x402
