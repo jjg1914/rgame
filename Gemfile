@@ -14,4 +14,5 @@ group :development do
   gem "minitest"
   gem "minitest-reporters"
   gem "simplecov"
+  gem "rubocop"
 end

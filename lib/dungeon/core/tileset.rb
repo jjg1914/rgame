@@ -1,4 +1,6 @@
-require 'forwardable'
+# frozen_string_literal: true
+
+require "forwardable"
 require "json"
 
 require "dungeon/core/image"
@@ -29,7 +31,7 @@ module Dungeon
       end
 
       def self.load renderer, filename, name = "?"
-        data = JSON.parse(File.read filename)
+        data = JSON.parse(File.read(filename))
 
         tiles = data["tilecount"].times.map do |i|
           x = i % data["columns"]

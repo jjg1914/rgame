@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Dungeon
   module Core
     module DynamicScope
@@ -6,7 +8,7 @@ module Dungeon
       end
 
       def var_defined? name
-        DynamicScope.scope.has_key?(name.to_s) and
+        DynamicScope.scope.key?(name.to_s) and
           not DynamicScope.scope[name.to_s].empty?
       end
 
@@ -20,7 +22,7 @@ module Dungeon
 
       def let_vars vars
         vars.each do |e|
-          unless DynamicScope.scope.has_key?(e[0].to_s)
+          unless DynamicScope.scope.key?(e[0].to_s)
             DynamicScope.scope[e[0].to_s] = []
           end
           DynamicScope.scope[e[0].to_s].push e[1]

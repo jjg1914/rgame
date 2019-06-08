@@ -1,0 +1,77 @@
+---
+Style/FormatStringToken:
+  Enabled: false
+
+Style/AndOr:
+  Enabled: false
+
+Style/Not:
+  Enabled: false
+
+Style/MultilineBlockChain:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Style/CommentAnnotation:
+  Enabled: false
+
+Style/RedundantSelf:
+  Enabled: false
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+  SupportedStyles:
+    - single_quotes
+    - double_quotes
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/MethodDefParentheses:
+  EnforcedStyle: require_no_parentheses
+
+Style/FormatString:
+  EnforcedStyle: percent
+
+Style/HashSyntax:
+  EnforcedStyle: hash_rockets
+
+Style/BracesAroundHashParameters:
+  EnforcedStyle: braces
+
+Style/SpecialGlobalVars:
+  EnforcedStyle: use_perl_names
+
+Layout/SpaceInsideArrayLiteralBrackets:
+  EnforcedStyle: space
+
+Layout/IndentFirstHashElement:
+  EnforcedStyle: consistent
+
+Layout/IndentFirstArrayElement:
+  EnforcedStyle: consistent
+
+Layout/EndAlignment:
+  EnforcedStyleAlignWith: variable
+
+Naming/UncommunicativeMethodParamName:
+  AllowedNames:
+    - x
+    - y
+
+Metrics/MethodLength:
+  Max: 24
+
+Metrics/AbcSize:
+  Max: 50
+
+Metrics/ParameterLists:
+  Max: 6
+
+Metrics/ClassLength:
+  Max: 150

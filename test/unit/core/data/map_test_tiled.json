@@ -35,7 +35,22 @@
                    "visible":true,
                    "width":16,
                    "x":32,
-                   "y":152
+                   "y":152,
+                   "properties": {
+                    "foo": "1.23",
+                    "bar": "1",
+                    "bool1": "3",
+                    "bool2": "0",
+                    "str": 123,
+                    "str2": 123
+                   },
+                   "propertytypes": {
+                    "foo": " InT",
+                    "bar": "FlOAt ",
+                    "bool1": "bool",
+                    "bool2": "bool",
+                    "str": "string" 
+                   }
                   }, 
                   {
                    "height":8,

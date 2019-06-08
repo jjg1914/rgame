@@ -1,14 +1,81 @@
+# frozen_string_literal: true
+
 require "pathname"
 require "yaml"
 require "json"
 
-require 'rake'
-require 'rake/tasklib'
+require "rake"
+require "rake/tasklib"
 
 module Dungeon
   class Task < Rake::TaskLib
     def self.define
-      self.new.tap { |o| o.define }
+      self.new.tap(&:define)
+    end
+
+    def self.xcf_to_png dest, source
+      sh "convert %s -define png:color-type=2 %s" % [ source, dest ]
+    end
+
+    def self.ase_to_json dest, source
+      FileUtils.cd(File.dirname(dest)) do
+        sh([
+          "aseprite",
+          "-b", File.basename(source),
+          "--sheet", File.basename(dest.ext(".png")),
+          "--data", File.basename(dest),
+          "--list-tags",
+          "--format", "json-array",
+        ].join(" "))
+      end
+    end
+
+    def self.sources_to_manifest dest, sources
+      base_dir = File.dirname File.expand_path dest
+      base_dir_path = Pathname.new base_dir
+
+      yaml = sources.map do |e|
+        path = Pathname.new(File.expand_path(e))
+                       .relative_path_from(base_dir_path)
+                       .to_s
+
+        ext_name = File.extname(path)
+
+        {
+          "name" => File.basename(e, ext_name),
+          "path" => path,
+          "type" => begin
+          end,
+        }
+      end.to_yaml
+
+      File.open(dest, "w") { |f| f.write yaml }
+    end
+
+    def self.asset_type_for_file path
+      if `file -Ib #{path}`.chomp == "image/png; charset=binary"
+        "png"
+      elsif File.ext_name(path) == ".json"
+        json = JSON.parse File.read e
+
+        if json.is_a?(Hash) and json.key?("meta") and
+           json["meta"].is_a?(Hash) and
+           json["meta"]["app"] == "http://www.aseprite.org/"
+
+          "sprite"
+        elsif json.is_a?(Hash) and json.key?("meta") and
+              json["meta"].is_a?(Hash) and
+              json["meta"]["schema"] == "dungeon"
+
+          "map"
+        elsif json.is_a?(Hash) and json.key?("type")
+          json["type"]
+        else
+          "?"
+        end
+      else
+        "?"
+      end
     end
 
     def define
@@ -32,62 +99,15 @@ module Dungeon
       end
 
       file "assets/manifest.yaml" => manifest_sources do |t|
-        base_dir = File.dirname File.expand_path t.name
-        base_dir_path = Pathname.new base_dir
-
-        yaml = t.sources.map do |e|
-          path = Pathname.new(File.expand_path e).
-            relative_path_from(base_dir_path).
-            to_s
-
-          ext_name = File.extname(path)
-
-          {
-            "name" => File.basename(e, ext_name),
-            "path" => path,
-            "type" => begin
-              if `file -Ib #{e}`.chomp == "image/png; charset=binary"
-                "png"
-              elsif ext_name == ".json"
-                json = JSON.parse File.read e
-
-                if json.is_a?(Hash) and json.has_key?("meta") and
-                  json["meta"].is_a?(Hash) and 
-                  json["meta"]["app"] == "http://www.aseprite.org/"
-
-                  "sprite"
-                elsif json.is_a?(Hash) and json.has_key?("meta") and
-                  json["meta"].is_a?(Hash) and 
-                  json["meta"]["schema"] == "dungeon"
-
-                  "map"
-                elsif json.is_a?(Hash) and json.has_key?("type")
-                  json["type"]
-                else
-                  "?"
-                end
-              else
-                "?"
-              end
-            end,
-          }
-        end.to_yaml
-
-        File.open(t.name, "w") { |f| f.write yaml }
+        Dungeon::Task.sources_to_manifest t.name, t.sources
       end
 
       rule ".json" => ".ase" do |t|
-        FileUtils.cd(File.dirname(t.name)) do
-          sh "aseprite -b %s --sheet %s --data %s --list-tags --format json-array" % [
-            File.basename(t.source),
-            File.basename(t.name.ext(".png")),
-            File.basename(t.name),
-          ]
-        end
+        Dungeon::Task.ase_to_json t.name, t.source
       end
 
       rule ".png" => ".xcf" do |t|
-        sh "convert %s -define png:color-type=2 %s" % [ t.source, t.name ]
+        Dungeon::Task.xcf_to_png t.name, t.source
       end
     end
   end

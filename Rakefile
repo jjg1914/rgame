@@ -1,4 +1,5 @@
 require "rake/testtask"
+require 'rubocop/rake_task'
 
 $:.unshift File.expand_path "lib", File.dirname(__FILE__)
 
@@ -12,6 +13,14 @@ Rake::TestTask.new do |t|
   t.libs = [ "lib", "test" ]
   t.ruby_opts = [ "-rtest_helper" ]
   t.verbose = true
+end
+
+RuboCop::RakeTask.new(:lint) do |task|
+  task.patterns = [ 'lib/dungeon/core/**/*.rb', 'lib/dungeon/task.tb' ]
+  # only show the files with failures
+  #task.formatters = ['files']
+  # don't abort rake on failure
+  #task.fail_on_error = false
 end
 
 SDL2_SOURCE = "https://libsdl.org/release/SDL2-2.0.9.tar.gz"

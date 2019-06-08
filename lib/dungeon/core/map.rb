@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "json"
 
 module Dungeon
@@ -13,16 +15,16 @@ module Dungeon
       class TiledMap < Dungeon::Core::Map
         def self.normalize_objectgroup json
           json["objects"].map do |e|
-            e.dup.keep_if do |k,v|
+            e.dup.keep_if do |k, _v|
               %w[type x y width height].include? k
-            end.merge(Hash[*(e.fetch("properties", {}).map do |k,v|
+            end.merge(Hash[*e.fetch("properties", {}.map do |k, v|
               case e.fetch("propertytypes", {})[k].to_s.strip.downcase
               when "int"
                 [ k, v.to_i ]
               when "float"
                 [ k, v.to_f ]
               when "bool"
-                [ k, !!v.to_i ]
+                [ k, v.to_i != 0 ]
               else
                 [ k, v.to_s ]
               end
@@ -51,6 +53,23 @@ module Dungeon
           }
         end
 
+        def self.normalize_layer json, parent
+          case json["type"]
+          when "imagelayer"
+            self.normalize_imagelayer(json)
+          when "tilelayer"
+            tileset = unless parent["tilesets"].empty?
+              File.basename(parent["tilesets"].first["source"], ".json")
+            end.to_s
+
+            unless tileset.empty?
+              self.normalize_tilelayer(json.merge({ "tileset" => tileset }))
+            end
+          when "objectgroup"
+            self.normalize_objectgroup(json)
+          end
+        end
+
         def self.load json
           self.new(json["width"] * json["tilewidth"],
                    json["height"] * json["tileheight"]).tap do |o|
@@ -58,22 +77,9 @@ module Dungeon
               o.background = $~[1].to_i(16)
             end
 
-            tileset = unless json["tilesets"].empty?
-              File.basename(json["tilesets"].first["source"], ".json")
-            end.to_s
-
             json["layers"].map do |e|
-              case e["type"]
-              when "imagelayer"
-                self.normalize_imagelayer(e)
-              when "tilelayer"
-                unless tileset.empty?
-                  self.normalize_tilelayer(e.merge({ "tileset" => tileset }))
-                end
-              when "objectgroup"
-                self.normalize_objectgroup(e)
-              end
-            end.flatten(1).reject { |e| e.nil? }.each do |e|
+              normalize_layer(e, json)
+            end.flatten(1).reject(&:nil?).each do |e|
               o.entities << e
             end
           end
@@ -99,13 +105,13 @@ module Dungeon
       end
 
       def self.load json
-        if json.has_key?("tiledversion")
+        if json.key?("tiledversion")
           Dungeon::Core::Map::TiledMap.load(json)
-        elsif json["meta"]["schema"] == "dungeon"
+        elsif json.dig("meta", "schema") == "dungeon"
           Dungeon::Core::Map::DungeonMap.load(json)
         else
           raise "unknown map schema"
-        end.tap { |o| o.name = name }
+        end
       end
 
       def initialize width, height

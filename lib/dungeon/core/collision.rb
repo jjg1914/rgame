@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Dungeon
   module Core
     class Collision
@@ -18,50 +20,25 @@ module Dungeon
         end
 
         def split
-          raise RuntimeError.new("node is branch") if branch?
-
-          x_mid = @bounds["left"] + ((@bounds["right"] - @bounds["left"]) / 2)
-          y_mid = @bounds["top"] + ((@bounds["bottom"] - @bounds["top"]) / 2)
+          raise "node is branch" if branch?
 
           old_children = @children.dup
           @mode = "branch"
           @children.clear
 
-          @children << Node.new(@depth + 1, {
-            "left" => @bounds["left"],
-            "top" => @bounds["top"],
-            "right" => x_mid,
-            "bottom" => y_mid,
-          })
-
-          @children << Node.new(@depth + 1, {
-            "left" => x_mid + 1,
-            "top" => @bounds["top"],
-            "right" => @bounds["right"],
-            "bottom" => y_mid,
-          })
-
-          @children << Node.new(@depth + 1, {
-            "left" => @bounds["left"],
-            "top" => y_mid + 1,
-            "right" => x_mid,
-            "bottom" => @bounds["bottom"],
-          })
-
-          @children << Node.new(@depth + 1, {
-            "left" => x_mid + 1,
-            "top" => y_mid + 1,
-            "right" => @bounds["right"],
-            "bottom" => @bounds["bottom"],
-          })
+          Dungeon::Core::Collision.divide_bounds(@bounds, 2, 2).tap do |o|
+            @children.concat(o.map do |e|
+              Node.new(@depth + 1, e)
+            end)
+          end
 
           old_children.each do |e|
-            @children.each { |f| f.add(e) if f.collides? e[0] }
+            @children.each { |f| f.add(e) }
           end
         end
 
         def unsplit
-          raise RuntimeError.new("node is leaf") if leaf?
+          raise "node is leaf" if leaf?
 
           old_children = @children.dup
           @mode = "leaf"
@@ -74,22 +51,23 @@ module Dungeon
         end
 
         def add data
-          if collides? data[0]
-            split if leaf? and @children.size == MAX_SIZE and @depth < MAX_DEPTH
+          return unless collides? data[0]
 
-            if leaf?
-              @children << data
-            else
-              @children.each { |e| e.add(data) }
-            end
+          split if leaf? and @children.size >= MAX_SIZE and @depth < MAX_DEPTH
+
+          if leaf?
+            @children << data
+          else
+            @children.each { |e| e.add(data) }
           end
+
+          true
         end
 
         def query bounds, dest = {}
           if leaf?
             @children.select do |e|
-              not dest.has_key?(e[1].id) and
-                Collision.check_bounds(bounds, e[0])
+              not dest.key?(e[1].id) and Collision.check_bounds(bounds, e[0])
             end.each do |e|
               dest[e[1].id] = e[1]
             end
@@ -103,12 +81,10 @@ module Dungeon
         def clear
           if leaf?
             @children.clear
+          elsif @children.all?(&:empty?)
+            unsplit
           else
-            if @children.all? { |e| e.empty? }
-              unsplit
-            else
-              @children.each { |e| e.clear }
-            end
+            @children.each(&:clear)
           end
         end
 
@@ -120,7 +96,7 @@ module Dungeon
           if leaf?
             @children.empty?
           else
-            @children.all? { |e| e.empty? }
+            @children.all?(&:empty?)
           end
         end
 
@@ -143,66 +119,31 @@ module Dungeon
         other_bounds = self.bounds_for(other)
 
         [
-          if target.respond_to?(:x_change) and not target.x_change.nil?
-            value = if target.x_change > 0
-              other_bounds["left"] - target_bounds["right"]
-            elsif target.x_change < 0
-              other_bounds["right"] - target_bounds["left"]
-            else
-              0
-            end
-
-            if value.abs <= target.x_change.abs
-              value
-            else
-              0
-            end
-          else
-            [
-              other_bounds["left"] - target_bounds["right"],
-              other_bounds["right"] - target_bounds["left"],
-            ].min_by { |e| e.abs }
-          end,
-
-          if target.respond_to?(:y_change) and not target.y_change.nil?
-            value = if target.y_change > 0
-              other_bounds["top"] - target_bounds["bottom"]
-            elsif target.y_change < 0
-              other_bounds["bottom"] - target_bounds["top"]
-            else
-              0
-            end
-
-            if value.abs <= target.y_change.abs
-              value
-            else
-              0
-            end
-          else
-            [
-              other_bounds["top"] - target_bounds["bottom"],
-              other_bounds["bottom"] - target_bounds["top"],
-            ].min_by { |e| e.abs }
-          end,
-        ]
+          [ "left", "right", :x_change ],
+          [ "top", "bottom", :y_change ],
+        ].map do |args|
+          _calculate_mtv_axis(target, target_bounds, other_bounds, *args)
+        end
       end
 
-      def self.check a, b
-        check_bounds(bounds_for(a), bounds_for(b))
+      def self.check target, other
+        check_bounds(bounds_for(target), bounds_for(other))
       end
 
-      def self.check_bounds a, b
-        b["left"] <= a["right"] and a["left"] <= b["right"] and
-          b["top"] <= a["bottom"] and a["top"] <= b["bottom"]
+      def self.check_bounds target, other
+        other["left"] <= target["right"] and
+          target["left"] <= other["right"] and
+          other["top"] <= target["bottom"] and
+          target["top"] <= other["bottom"]
       end
 
-      def self.check_point p, b
-        check_point_bounds(p, bounds_for(b))
+      def self.check_point point, other
+        check_point_bounds(point, bounds_for(other))
       end
 
-      def self.check_point_bounds p, b
-        b["left"] <= p[0] and p[0] <= b["right"] and
-          b["top"] <= p[1] and p[1] <= b["bottom"]
+      def self.check_point_bounds point, other
+        other["left"] <= point[0] and point[0] <= other["right"] and
+          other["top"] <= point[1] and point[1] <= other["bottom"]
       end
 
       def self.bounds_for entity
@@ -214,7 +155,30 @@ module Dungeon
         }
       end
 
+      def self.divide_bounds bounds, x_axis, y_axis
+        x_step = (bounds["right"] - bounds["left"]).abs / 2
+        y_step = (bounds["bottom"] - bounds["top"]).abs / 2
+
+        y_axis.times.map do |j|
+          top = bounds["top"] + (y_step * j) + j
+          bottom = bounds["top"] + (y_step * (j + 1)) + j
+
+          x_axis.times.map do |i|
+            left = bounds["left"] + (x_step * i) + i
+            right = bounds["left"] + (x_step * (i + 1)) + i
+
+            {
+              "left" => left,
+              "right" => right,
+              "top" => top,
+              "bottom" => bottom,
+            }
+          end
+        end.flatten
+      end
+
       attr_reader :size
+      attr_reader :root
 
       def initialize width, height
         self.reset(width, height)
@@ -224,7 +188,7 @@ module Dungeon
         @root.add([
           Collision.bounds_for(entity),
           entity,
-        ]).tap { @size += 1 }
+        ]).tap { |o| @size += 1 if o }
       end
 
       def query entity
@@ -245,6 +209,40 @@ module Dungeon
 
       def clear
         @root.clear
+        @size = 0
+      end
+
+      class << self
+        private
+
+        def _calculate_mtv_axis entity, target, other, min, max, change_method
+          change = entity.then do |o|
+            o.send(change_method) if o.respond_to? change_method
+          end
+
+          if not change.nil?
+            if change.positive?
+              _cutoff_mtv(other[min] - target[max], change)
+            elsif change.negative?
+              _cutoff_mtv(other[max] - target[min], change)
+            else
+              0
+            end
+          else
+            [
+              other[min] - target[max],
+              other[max] - target[min],
+            ].min_by(&:abs)
+          end
+        end
+
+        def _cutoff_mtv value, cutoff
+          if value.abs <= cutoff.abs
+            value
+          else
+            0
+          end
+        end
       end
     end
   end
