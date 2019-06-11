@@ -60,6 +60,7 @@ describe Dungeon::Core::Entity do
 
       @subject = @base_klass.new
       @derived_subject = @derived_klass.new
+
       @mock = Minitest::Mock.new
       @subject.instance_variable_set :@mock, @mock
       @derived_subject.instance_variable_set :@mock, @mock
@@ -288,6 +289,163 @@ describe Dungeon::Core::Entity do
 
       subject.parent = mock
       expect(subject.remove).must_be :nil?
+      mock.verify
+    end
+  end
+
+  describe "#on" do
+    before do
+      @klass = Class.new(Dungeon::Core::Entity)
+    end
+
+    after do
+      Dungeon::Core::Entity.registry.clear
+    end
+
+    it "should only dispatch to entity" do
+      mock = Minitest::Mock.new
+      mock.expect "call", nil, [ "test_on", 1, 2 ]
+
+      subject = @klass.new
+      other = @klass.new
+
+      expect(subject.on("test") { |a, b| mock.call("test_on", a, b) })
+        .must_be_kind_of(Proc)
+      subject.emit "test", 1, 2
+      other.emit "test", 1, 2
+
+      mock.verify
+    end
+
+    it "should provide cancel" do
+      mock = Minitest::Mock.new
+
+      subject = @klass.new
+
+      p = subject.on("test") { |a, b| mock.call("test_on", a, b) }
+      expect(p).must_be_kind_of(Proc)
+      p.call
+      subject.emit "test", 1, 2
+
+      mock.verify
+    end
+  end
+
+  describe "#before" do
+    before do
+      @klass = Class.new(Dungeon::Core::Entity)
+    end
+
+    after do
+      Dungeon::Core::Entity.registry.clear
+    end
+
+    it "should only dispatch to entity" do
+      mock = Minitest::Mock.new
+      mock.expect "call", nil, [ "test_before", 1, 2 ]
+
+      subject = @klass.new
+      other = @klass.new
+
+      expect(subject.before("test") { |a, b| mock.call("test_before", a, b) })
+        .must_be_kind_of(Proc)
+      subject.emit "test", 1, 2
+      other.emit "test", 1, 2
+
+      mock.verify
+    end
+
+    it "should provide cancel" do
+      mock = Minitest::Mock.new
+
+      subject = @klass.new
+
+      p = subject.before("test") { |a, b| mock.call("test_before", a, b) }
+      expect(p).must_be_kind_of(Proc)
+      p.call
+      subject.emit "test", 1, 2
+
+      mock.verify
+    end
+  end
+
+  describe "#after" do
+    before do
+      @klass = Class.new(Dungeon::Core::Entity)
+    end
+
+    after do
+      Dungeon::Core::Entity.registry.clear
+    end
+
+    it "should only dispatch to entity" do
+      mock = Minitest::Mock.new
+      mock.expect "call", nil, [ "test_after", 1, 2 ]
+
+      subject = @klass.new
+      other = @klass.new
+
+      expect(subject.after("test") { |a, b| mock.call("test_after", a, b) })
+        .must_be_kind_of(Proc)
+      subject.emit "test", 1, 2
+      other.emit "test", 1, 2
+
+      mock.verify
+    end
+
+    it "should provide cancel" do
+      mock = Minitest::Mock.new
+
+      subject = @klass.new
+
+      p = subject.after("test") { |a, b| mock.call("test_after", a, b) }
+      expect(p).must_be_kind_of(Proc)
+      p.call
+      subject.emit "test", 1, 2
+
+      mock.verify
+    end
+  end
+
+  describe "#around" do
+    before do
+      @klass = Class.new(Dungeon::Core::Entity)
+    end
+
+    after do
+      Dungeon::Core::Entity.registry.clear
+    end
+
+    it "should only dispatch to entity" do
+      mock = Minitest::Mock.new
+      mock.expect("call", nil) do |*args|
+        args.size == 4 and
+          args[0] == "test_around" and
+          args[1].kind_of?(Proc) and
+          args.drop(2) == [ 1, 2 ]
+      end
+
+      subject = @klass.new
+      other = @klass.new
+
+      expect(subject.around("test") { |p, a, b| mock.call("test_around", p, a, b) })
+        .must_be_kind_of(Proc)
+      subject.emit "test", 1, 2
+      other.emit "test", 1, 2
+
+      mock.verify
+    end
+
+    it "should provide cancel" do
+      mock = Minitest::Mock.new
+
+      subject = @klass.new
+
+      p = subject.around("test") { |p, a, b| mock.call("test_around", p, a, b) }
+      expect(p).must_be_kind_of(Proc)
+      p.call
+      subject.emit "test", 1, 2
+
       mock.verify
     end
   end

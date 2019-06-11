@@ -20,12 +20,23 @@ module Dungeon
         def push message, p
           own[message.to_sym].push(p)
           rebuild_handler_cache
+
+          proc do
+            own[message.to_sym].delete(p)
+            rebuild_handler_cache
+          end
         end
 
         def unshift message, p
           own[message.to_sym].unshift(p)
           push_index[message.to_sym] += 1
           rebuild_handler_cache
+
+          proc do
+            own[message.to_sym].delete(p)
+            push_index[message.to_sym] -= 1
+            rebuild_handler_cache
+          end
         end
 
         def rebuild_handler_cache
@@ -142,6 +153,7 @@ module Dungeon
       def initialize id
         @id = id
         @active = true
+        @klass = self.class
       end
 
       def broadcast message, *args
@@ -153,13 +165,45 @@ module Dungeon
       end
 
       def emit message, *args
-        self.class.deliver(self, message, *args) do
+        @klass.deliver(self, message, *args) do
           self.send(:last, message.to_s, *args)
         end
       end
 
       def remove
         parent.remove(self) unless parent.nil?
+      end
+
+      def on message, &block
+        if @klass == self.class
+          @klass = class << self; self; end
+          self.class.inherited(@klass)
+        end
+        @klass.on(message, &block)
+      end
+
+      def before message, &block
+        if @klass == self.class
+          @klass = class << self; self; end
+          self.class.inherited(@klass)
+        end
+        @klass.before(message, &block)
+      end
+
+      def after message, &block
+        if @klass == self.class
+          @klass = class << self; self; end
+          self.class.inherited(@klass)
+        end
+        @klass.after(message, &block)
+      end
+
+      def around message, &block
+        if @klass == self.class
+          @klass = class << self; self; end
+          self.class.inherited(@klass)
+        end
+        @klass.around(message, &block)
       end
 
       def inactive?

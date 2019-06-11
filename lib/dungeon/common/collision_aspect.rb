@@ -6,13 +6,6 @@ module Dungeon
     module CollisionAspect 
       include Dungeon::Core::Aspect
 
-      attr_accessor :solid
-
-      on :pre_collision do 
-        get_var("collision")&.add(self)
-        @mtv = [ [ nil, 0 ], [ nil, 0 ] ]
-      end
-
       on :post_collision do
         get_var("collision")&.query(self).each do |e|
           mtv = Dungeon::Core::Collision.calculate_mtv(self, e)

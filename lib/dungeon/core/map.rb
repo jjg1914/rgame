@@ -17,7 +17,7 @@ module Dungeon
           json["objects"].map do |e|
             e.dup.keep_if do |k, _v|
               %w[type x y width height].include? k
-            end.merge(Hash[*e.fetch("properties", {}.map do |k, v|
+            end.merge(e.fetch("properties", {}).map do |k, v|
               case e.fetch("propertytypes", {})[k].to_s.strip.downcase
               when "int"
                 [ k, v.to_i ]
@@ -28,7 +28,7 @@ module Dungeon
               else
                 [ k, v.to_s ]
               end
-            end.flatten(1))])
+            end.to_h)
           end
         end
 
