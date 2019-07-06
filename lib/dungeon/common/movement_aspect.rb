@@ -40,6 +40,26 @@ module Dungeon
         end.to_i
       end
 
+      def angle
+        Math.atan2(self.y_speed, self.x_speed)
+      end
+
+      def angle= value
+        tmp = self.speed
+        self.x_speed = tmp * Math.cos(value)
+        self.y_speed = tmp * Math.sin(value)
+      end
+
+      def speed
+        Math.sqrt((self.x_speed ** 2) + (self.y_speed ** 2))
+      end
+
+      def speed= value
+        tmp = self.angle
+        self.x_speed = value * Math.cos(tmp)
+        self.y_speed = value * Math.sin(tmp)
+      end
+
       def to_h
         super.merge({
           "x_speed" => self.x_speed,

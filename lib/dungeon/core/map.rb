@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
 require "json"
+require "dungeon/core/env"
 
 module Dungeon
   module Core
     class Map
       attr_accessor :name
       attr_accessor :path
+
       attr_accessor :width
       attr_accessor :height
       attr_accessor :background
@@ -70,7 +72,7 @@ module Dungeon
           end
         end
 
-        def self.load json
+        def self.load_json json
           self.new(json["width"] * json["tilewidth"],
                    json["height"] * json["tileheight"]).tap do |o|
             if /#([[:xdigit:]]{6})/ =~ json["backgroundcolor"]
@@ -87,7 +89,7 @@ module Dungeon
       end
 
       class DungeonMap < Dungeon::Core::Map
-        def self.load json
+        def self.load_json json
           self.new(json["width"], json["height"]).tap do |o|
             o.background = json["background"]
             json["entities"].map { |e| o.entities << e }
@@ -95,20 +97,30 @@ module Dungeon
         end
       end
 
-      def self.load_file filename
-        name = File.basename(filename, ".json")
-        data = JSON.parse File.read filename
-        self.load(data).tap do |o|
-          o.name = name
-          o.path = filename
+      def self.find_path_for name
+        Env.map_path.split(File::PATH_SEPARATOR).map do |e|
+          File.expand_path("%s.json" % name, e)
+        end.find do |e|
+          File.exist? e
         end
       end
 
-      def self.load json
+      def self.load name
+        path = find_path_for(name)
+        raise "map not found %s" % name.inspect if path.nil?
+
+        data = JSON.parse File.read path
+        self.load_json(data).tap do |o|
+          o.name = File.basename name
+          o.path = path
+        end
+      end
+
+      def self.load_json json
         if json.key?("tiledversion")
-          Dungeon::Core::Map::TiledMap.load(json)
+          Dungeon::Core::Map::TiledMap.load_json(json)
         elsif json.dig("meta", "schema") == "dungeon"
-          Dungeon::Core::Map::DungeonMap.load(json)
+          Dungeon::Core::Map::DungeonMap.load_json(json)
         else
           raise "unknown map schema"
         end

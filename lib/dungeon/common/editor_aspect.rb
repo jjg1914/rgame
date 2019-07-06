@@ -58,7 +58,7 @@ module Dungeon
           self.enable_edit_mode
         end
 
-        on :keydown do |key,mod|
+        before :keydown do |key,mod|
           if self.edit_mode == :default
             case key
             when "escape"
@@ -178,10 +178,10 @@ module Dungeon
                 if self.selected.include? i
                   ctx.save do
                     ctx.color = 0x00E08E
-                    ctx.draw_rect e.x.to_i, e.y.to_i, e.width.to_i, e.height.to_i
+                    ctx.stroke_rect e.x.to_i, e.y.to_i, e.width.to_i, e.height.to_i
                   end
                 else 
-                  ctx.draw_rect e.x.to_i, e.y.to_i, e.width.to_i, e.height.to_i
+                  ctx.stroke_rect e.x.to_i, e.y.to_i, e.width.to_i, e.height.to_i
                 end
               end
             end
@@ -193,7 +193,7 @@ module Dungeon
               h = 8 + self.cursor_inflate[1].abs
 
               ctx.color = 0xFFFFFF
-              ctx.draw_rect x, y, w, h
+              ctx.stroke_rect x, y, w, h
             end
           end
         end
@@ -212,7 +212,10 @@ module Dungeon
         def set_new_entity_edit_mode
           self.edit_mode = :new_entity
           Gui::Menu.new.tap do |o|
-            o.items = Dungeon::Core::Entity.registry
+            o.items = Dungeon::Core::Entity.registry.select do |e|
+              e.ancestors.include?(Dungeon::Common::PositionAspect) and
+                e.ancestors.include?(Dungeon::Core::Savable)
+            end
             o.x = self.cursor[0]
             o.y = self.cursor[1]
             self.add o

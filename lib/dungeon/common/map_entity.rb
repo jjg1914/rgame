@@ -1,7 +1,6 @@
 require "forwardable"
 
 require "dungeon/core/map"
-require "dungeon/core/assets"
 require "dungeon/core/collision"
 require "dungeon/core/savable"
 require "dungeon/common/collection_entity"
@@ -37,7 +36,7 @@ module Dungeon
         self.remove_all
 
         @map = unless value.is_a? Dungeon::Core::Map
-          Dungeon::Core::Assets[value.to_s]
+          Dungeon::Core::Map.load value.to_s
         else
           value
         end

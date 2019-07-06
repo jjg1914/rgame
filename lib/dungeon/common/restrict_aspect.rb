@@ -42,7 +42,7 @@ module Dungeon
       attr_reader :x_restrict
       attr_reader :y_restrict
 
-      after :pre_collision do
+      on :post_collision do
         restrict_mtv = [
           RestrictAspect.restrict_value(x, x_restrict),
           RestrictAspect.restrict_value(y, y_restrict),

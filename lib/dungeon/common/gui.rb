@@ -89,11 +89,11 @@ module Dungeon
         end
 
         on :focus do
-          get_var("events").tap { |o| o.start_text_input unless o.nil? }
+          get_var("ctx").tap { |o| o.text_input_mode = true unless o.nil? }
         end
 
         on :blur do
-          get_var("events").tap { |o| o.stop_text_input unless o.nil? }
+          get_var("ctx").tap { |o| o.text_input_mode = false unless o.nil? }
         end
 
         on :keydown do |key,mod|
@@ -223,10 +223,10 @@ module Dungeon
           case direction
           when "left"
             self.cursor = [ self.cursor - 1, 0 ].max
-            @text_texture_invalid = true if self.cursor < self.fit.first
+            @text_invalid = true if self.cursor < self.fit.first
           when "right"
             self.cursor = [ self.cursor + 1, self.text.size ].min
-            @text_texture_invalid = true if self.cursor > self.fit.last
+            @text_invalid = true if self.cursor > self.fit.last
           end
         end
 
@@ -246,7 +246,7 @@ module Dungeon
             else
               0
             end
-            @text_texture_invalid = true if self.cursor < self.fit.first
+            @text_invalid = true if self.cursor < self.fit.first
           when "right"
             index = self.text.index(%r[\b], self.cursor + 1)
             self.cursor = unless index.nil?
@@ -254,7 +254,7 @@ module Dungeon
             else
               self.text.size
             end
-            @text_texture_invalid = true if self.cursor > self.fit.last
+            @text_invalid = true if self.cursor > self.fit.last
           end
         end
 
@@ -266,10 +266,10 @@ module Dungeon
           case direction
           when "home"
             self.cursor = 0
-            @text_texture_invalid = true if self.cursor < self.fit.first
+            @text_invalid = true if self.cursor < self.fit.first
           when "end"
             self.cursor = self.text.size
-            @text_texture_invalid = true if self.cursor > self.fit.last
+            @text_invalid = true if self.cursor > self.fit.last
           end
         end
 
@@ -280,7 +280,7 @@ module Dungeon
         def select_all
           self.selection = (0..(self.text.size - 1))
           self.cursor = self.text.size
-          @text_texture_invalid = true
+          @text_invalid = true
         end
 
         def toggle_mode
@@ -330,14 +330,14 @@ module Dungeon
             self._impl_insert(self.cursor, text)
             self.cursor = [ self.cursor + text.size, self.text.size ].min
           end
-          @text_texture_invalid = true
+          @text_invalid = true
         end
 
         def backspace
           unless self.cursor == 0
             self._impl_delete(self.cursor - 1)
             self.cursor -= 1
-            @text_texture_invalid = true
+            @text_invalid = true
           end
         end
 
@@ -356,14 +356,14 @@ module Dungeon
               0
             end
 
-            @text_texture_invalid = true
+            @text_invalid = true
           end
         end
 
         def delete
           unless self.cursor == self.text.size
             self._impl_delete(self.cursor) unless self.cursor == self.text.size
-            @text_texture_invalid = true
+            @text_invalid = true
           end
         end
 
@@ -379,7 +379,7 @@ module Dungeon
               self._impl_delete(self.cursor..-1)
             end
 
-            @text_texture_invalid = true
+            @text_invalid = true
           end
         end
 
@@ -387,7 +387,7 @@ module Dungeon
           self._impl_delete(self.selection)
           self.cursor = self.selection.first
           self.selection = nil
-          @text_texture_invalid = true
+          @text_invalid = true
         end
 
         def undo
@@ -400,7 +400,7 @@ module Dungeon
               self.text.insert(first, @undo_stack[@undo_pointer - 2])
               self.cursor = first + @undo_stack[@undo_pointer - 2].size
               @undo_pointer -= 4
-              @text_texture_invalid = true
+              @text_invalid = true
 
             when :insert
               first = (@undo_stack[@undo_pointer - 3])
@@ -408,7 +408,7 @@ module Dungeon
               self.text.slice!(first..last)
               self.cursor = first
               @undo_pointer -= 3
-              @text_texture_invalid = true
+              @text_invalid = true
 
             when :delete
               first = if @undo_stack[@undo_pointer - 3].respond_to? :first
@@ -419,7 +419,7 @@ module Dungeon
               self.text.insert(first, @undo_stack[@undo_pointer - 2])
               self.cursor = first + @undo_stack[@undo_pointer - 2].size
               @undo_pointer -= 3
-              @text_texture_invalid = true
+              @text_invalid = true
 
             else
               raise "unknown operator: %s" % @undo_stack[@undo_pointer - 1].inspect
@@ -442,13 +442,13 @@ module Dungeon
               self.text.slice!(first..last)
               self.text.insert(first, @undo_stack[@undo_pointer - 3])
               self.cursor = first + @undo_stack[@undo_pointer - 3].size
-              @text_texture_invalid = true
+              @text_invalid = true
 
             when :insert
               first = (@undo_stack[@undo_pointer - 3])
               self.text.insert(first, @undo_stack[@undo_pointer - 2])
               self.cursor = first + @undo_stack[@undo_pointer - 2].size
-              @text_texture_invalid = true
+              @text_invalid = true
 
             when :delete
               first = if @undo_stack[@undo_pointer - 3].respond_to? :first
@@ -459,7 +459,7 @@ module Dungeon
               last = first + (@undo_stack[@undo_pointer - 2].size - 1)
               self.text.slice!(first..last)
               self.cursor = first
-              @text_texture_invalid = true
+              @text_invalid = true
 
             else
               raise "unknown operator: %s" % @undo_stack[@undo_pointer - 1].inspect
@@ -479,7 +479,7 @@ module Dungeon
             ctx.fill_rect self.x, self.y, draw_width, draw_height
 
             ctx.color = self.color
-            texture = _text_texture ctx, text, sizings
+            image = _text_image ctx, text, sizings
 
             unless self.selection.nil?
               visible = _visible_selection
@@ -496,23 +496,24 @@ module Dungeon
             end
 
             ctx.color = self.color
-            ctx.draw_texture texture, self.x + self.padding, self.y + self.padding
+            ctx.source = image
+            ctx.draw_image self.x + self.padding, self.y + self.padding
 
             cursor_x = ctx.size_of_text(self.text.slice(self.fit.first...self.cursor)).first
             if self.mode == :replace
               size = ctx.size_of_text((self.text + " ")[self.cursor])
-              ctx.draw_rect self.x + cursor_x + self.padding, self.y + size[1] + self.padding, size[0], 1
+              ctx.stroke_rect self.x + cursor_x + self.padding, self.y + size[1] + self.padding, size[0], 1
             elsif self.mode == :insert
-              ctx.draw_rect self.x + cursor_x + self.padding, self.y + self.padding, 1, sizings[1]
+              ctx.stroke_rect self.x + cursor_x + self.padding, self.y + self.padding, 1, sizings[1]
             end
 
-            ctx.draw_rect self.x, self.y, draw_width, draw_height
+            ctx.stroke_rect self.x, self.y, draw_width, draw_height
           end
         end
 
         def text= value
           @text = value
-          @text_texture_invalid = true
+          @text_invalid = true
         end
 
         protected
@@ -581,18 +582,18 @@ module Dungeon
           end
         end
 
-        def _text_texture ctx, text, sizing
-          if @text_texture_invalid 
-            ctx.release_texture @text_texture unless @text_texture.nil?
+        def _text_image ctx, text, sizing
+          if @text_invalid 
+            @text_image.free unless @text_image.nil?
             self.fit = if not self.fit.nil? and self.cursor > self.fit.last
               _fit_text_right ctx, text + " ", sizing
             else
               _fit_text_left ctx, text + " ", sizing
             end
-            @text_texture = ctx.create_text((text + " ").slice(self.fit))
-            @text_texture_invalid = false
+            @text_image = ctx.create_text((text + " ").slice(self.fit))
+            @text_invalid = false
           end
-          @text_texture
+          @text_image
         end
 
         def _fit_text_right ctx, text, sizing
@@ -644,9 +645,9 @@ module Dungeon
         attr_accessor :view_position
 
         on :new do
-          self.items = []
           self.x = 0
           self.y = 0
+          self.items = []
           self.cursor = 0
           self.view_size = 5
           self.view_position = 0
@@ -739,15 +740,23 @@ module Dungeon
           end
         end
 
+        def items= value
+          @text_images.each { |e| e.free } unless @text_images.nil?
+          @text_images = nil
+          @items = value
+        end
+
         def paint ctx
           ctx.save do
-            content = if @items.empty?
+            content = if self.items.empty?
               %w[Empty]
             else
-              @items
+              self.items
             end
 
             ctx.font = "Arial:10"
+
+            _render_text ctx, content
 
             sizings = _calculate_sizings ctx, content
             draw_width = _calculate_width sizings
@@ -777,14 +786,23 @@ module Dungeon
                 end
               end
 
-              ctx.draw_text e[0].to_s, x + padding, y + e[1][1] + padding
+              ctx.source = @text_images[i + view_position]
+              ctx.draw_image x + padding, y + e[1][1] + padding
             end
 
-            ctx.draw_rect x, y, draw_width, draw_height
+            ctx.stroke_rect x, y, draw_width, draw_height
           end
         end
 
         private
+
+        def _render_text ctx, items
+          if @text_images.nil?
+            @text_images = items.map do |e|
+              ctx.create_text(e.to_s)
+            end
+          end
+        end
 
         def _calculate_sizings ctx, items
           items.map do |e|

@@ -1,10 +1,10 @@
 ## TODO
 
 # Simple
-[ ] make assets a dynamic variable
-[ ] make image/tileset readers on image/tileset entities
+[ ] remove ext.rb
+[ ] remove dynamic_scope.rb
 
 # Big
-[ ] unit tests
+[.] unit tests
 [ ] yard doc
 [ ] packaging

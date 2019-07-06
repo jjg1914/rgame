@@ -1,6 +1,10 @@
 require "dungeon/core/dynamic_scope"
 
 class Integer
+  def self.from_rgb r, g, b
+    (r << 16) | (r << 8) | (b)
+  end
+
   def red_value
     # TODO ENDIAN
     (self & 0x00FF0000) >> 16

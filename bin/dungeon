@@ -2,11 +2,7 @@
 
 LD_LIBRARY_PATH="$(cd "$(dirname "$0")/../vendor/SDL2/lib/"; pwd):$LD_LIBRARY_PATH"
 export LD_LIBRARY_PATH
+RUBYLIB="$(cd "$(dirname "$0")/../lib"; pwd)"
+export RUBYLIB
 
-exec /usr/bin/env ruby \
-  -I "$(cd "$(dirname "$0")/../lib"; pwd)" \
-  -I "$(cd "$1"; pwd)" \
-  -r "dotenv/load" \
-  -r "dungeon" \
-  -r "application" \
-  -e "Application.run!"
+exec /usr/bin/env ruby "$(cd "$1"; pwd)/application.rb"

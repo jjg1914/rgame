@@ -31,7 +31,7 @@ module Dungeon
 
       def tileset= value
         @tileset = unless value.is_a? Dungeon::Core::Tileset
-          Dungeon::Core::Assets[value.to_s]
+          Dungeon::Core::Tileset.load value.to_s
         else
           value
         end

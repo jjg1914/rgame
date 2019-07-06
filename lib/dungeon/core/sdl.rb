@@ -80,6 +80,13 @@ module Dungeon
       attach_function :SDL_PollEvent, [ :pointer ], :int
       attach_function :SDL_RenderPresent, [ :pointer ], :void
       attach_function :SDL_SetRenderDrawColor, [ :pointer, :int, :int, :int, :int ], :int
+      attach_function :SDL_GetRenderDrawColor, [
+        :pointer,
+        :pointer,
+        :pointer,
+        :pointer,
+        :pointer,
+      ], :int
       attach_function :SDL_RenderSetScale, [ :pointer, :float, :float ], :int
       attach_function :SDL_SetRenderTarget, [ :pointer, :pointer ], :int
       attach_function :SDL_GetRenderTarget, [ :pointer ], :pointer

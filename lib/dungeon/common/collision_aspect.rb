@@ -6,7 +6,11 @@ module Dungeon
     module CollisionAspect 
       include Dungeon::Core::Aspect
 
-      on :post_collision do
+      around :post_collision do |p|
+        @mtv = [ [ nil, 0 ], [ nil, 0 ] ]
+
+        p.call
+
         get_var("collision")&.query(self).each do |e|
           mtv = Dungeon::Core::Collision.calculate_mtv(self, e)
           self.emit(:collision, e, mtv)
@@ -28,8 +32,11 @@ module Dungeon
       end
 
       on :collision do |e,mtv|
-        @mtv[0] = [ @mtv[0], [ e, mtv[0] ] ].max_by { |f| f[1].abs }
-        @mtv[1] = [ @mtv[1], [ e, mtv[1] ] ].max_by { |f| f[1].abs }
+        if (self.respond_to?(:solid) and self.solid) and
+           (e.respond_to?(:solid) and e.solid) or e.nil?
+          @mtv[0] = [ @mtv[0], [ e, mtv[0] ] ].max_by { |f| f[1].abs }
+          @mtv[1] = [ @mtv[1], [ e, mtv[1] ] ].max_by { |f| f[1].abs }
+        end
       end
 
       on :bump do |e, mtv|

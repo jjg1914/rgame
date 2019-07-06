@@ -39,10 +39,7 @@ module Dungeon
       end
 
       on :pre_collision do 
-        if self.class.collisions?
-          get_var("collision")&.add(self)
-          @mtv = [ [ nil, 0 ], [ nil, 0 ] ]
-        end
+        get_var("collision")&.add(self)
       end
 
       def to_h

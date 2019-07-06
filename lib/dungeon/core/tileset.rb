@@ -3,8 +3,6 @@
 require "forwardable"
 require "json"
 
-require "dungeon/core/image"
-
 module Dungeon
   module Core
     class Tileset

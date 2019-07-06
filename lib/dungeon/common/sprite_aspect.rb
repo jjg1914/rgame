@@ -1,10 +1,25 @@
 require "dungeon/core/aspect"
 require "dungeon/core/sprite"
-require "dungeon/core/assets"
 
 module Dungeon
   module Common
     module SpriteAspect
+      module ClassMethods
+        def self.extended klass
+          klass.instance_eval do
+            @sprite_sized = true
+          end
+        end
+
+        def sprite_sized value = true
+          @sprite_sized = value
+        end
+
+        def sprite_sized?
+          @sprite_sized
+        end
+      end
+
       include Dungeon::Core::Aspect
 
       attr_accessor :sprite
@@ -13,13 +28,21 @@ module Dungeon
       attr_accessor :sprite_key
       attr_accessor :sprite_translate
 
+      def self.included klass
+        super
+        klass.instance_eval do
+          extend ClassMethods
+        end
+      end
+
       def sprite= value
         @sprite = unless value.is_a? Dungeon::Core::Sprite
-          Dungeon::Core::Assets[value.to_s]
+          Dungeon::Core::Sprite.load value.to_s
         else
           value
         end
         self.sprite_tag = self.sprite.default_tag
+        self.sprite_size! if self.class.sprite_sized?
       end
 
       def sprite_tag= value
@@ -36,6 +59,13 @@ module Dungeon
           [ value[0].to_i, value[0].to_i ]
         else
           value.take(2).map { |e| e.to_i }
+        end
+      end
+
+      def sprite_size!
+        unless self.sprite.nil?
+          self.width = self.sprite.width
+          self.height = self.sprite.height
         end
       end
 
@@ -57,10 +87,12 @@ module Dungeon
       end
 
       on :draw do
-        get_var("ctx").draw_sprite(self.sprite.texture,  
-                                   x.to_i + self.sprite_translate[0],
-                                   y.to_i + self.sprite_translate[1],
-                                   *self.sprite.at(self.sprite_tag, self.sprite_frame))
+        get_var("ctx").tap do |ctx|
+          ctx.source = self.sprite.image
+          ctx.draw_image(x.to_i + self.sprite_translate[0],
+                         y.to_i + self.sprite_translate[1],
+                         *self.sprite.at(self.sprite_tag, self.sprite_frame))
+        end
       end
 
       def to_h

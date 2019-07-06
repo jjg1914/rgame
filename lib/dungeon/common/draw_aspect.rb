@@ -1,5 +1,4 @@
 require "dungeon/core/aspect"
-require "dungeon/core/assets"
 
 module Dungeon
   module Common

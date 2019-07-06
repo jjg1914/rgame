@@ -113,7 +113,7 @@ module Dungeon
 
         def self.extended klass
           klass.instance_exec do
-            @handlers = HandlerManager.new
+            @handlers ||= HandlerManager.new
           end
         end
       end
@@ -123,6 +123,7 @@ module Dungeon
       end
 
       def self.inherited klass
+        super
         Entity.registry << klass
         klass.instance_eval do
           extend ClassMethods
@@ -178,6 +179,7 @@ module Dungeon
         if @klass == self.class
           @klass = class << self; self; end
           self.class.inherited(@klass)
+          Entity.registry.pop
         end
         @klass.on(message, &block)
       end
@@ -186,6 +188,7 @@ module Dungeon
         if @klass == self.class
           @klass = class << self; self; end
           self.class.inherited(@klass)
+          Entity.registry.pop
         end
         @klass.before(message, &block)
       end
@@ -194,6 +197,7 @@ module Dungeon
         if @klass == self.class
           @klass = class << self; self; end
           self.class.inherited(@klass)
+          Entity.registry.pop
         end
         @klass.after(message, &block)
       end
@@ -202,6 +206,7 @@ module Dungeon
         if @klass == self.class
           @klass = class << self; self; end
           self.class.inherited(@klass)
+          Entity.registry.pop
         end
         @klass.around(message, &block)
       end

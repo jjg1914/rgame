@@ -1,14 +1,14 @@
 require "dungeon/core/map"
 
 describe Dungeon::Core::Map do
-  describe ".load_file" do
+  describe ".load" do
     describe "with tiled" do
       it "should load json" do
-        path = File.join(File.dirname(__FILE__), "data/map_test_tiled.json")
-        map = Dungeon::Core::Map.load_file(path)
+        path = File.join(File.dirname(__FILE__), "data/map_test_tiled")
+        map = Dungeon::Core::Map.load(path)
 
         expect(map.name).must_equal "map_test_tiled"
-        expect(map.path).must_equal path
+        expect(map.path).must_equal "%s.json" % path
         expect(map.width).must_equal 160
         expect(map.height).must_equal 144
         expect(map.background).must_equal 0x202020
@@ -65,11 +65,11 @@ describe Dungeon::Core::Map do
 
     describe "with dungeon" do
       it "should load json" do
-        path = File.join(File.dirname(__FILE__), "data/map_test_dungeon.json")
-        map = Dungeon::Core::Map.load_file(path)
+        path = File.join(File.dirname(__FILE__), "data/map_test_dungeon")
+        map = Dungeon::Core::Map.load(path)
 
         expect(map.name).must_equal "map_test_dungeon"
-        expect(map.path).must_equal path
+        expect(map.path).must_equal "%s.json" % path
         expect(map.width).must_equal 272
         expect(map.height).must_equal 288
         expect(map.background).must_equal 0x2800BA
@@ -90,9 +90,9 @@ describe Dungeon::Core::Map do
 
     describe "with invalid" do
       it "should load json" do
-        path = File.join(File.dirname(__FILE__), "data/map_test_invalid.json")
+        path = File.join(File.dirname(__FILE__), "data/map_test_invalid")
         expect(proc do
-          Dungeon::Core::Map.load_file(path)
+          Dungeon::Core::Map.load(path)
         end).must_raise
       end
     end
