@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Dungeon
   module Core
     class Entity
@@ -9,43 +11,43 @@ module Dungeon
         attr_reader :children
 
         def initialize parent = nil
-          @own = (Hash.new { |h,k| h[k] = []})
-          @cache = (Hash.new { |h,k| h[k] = []})
-          @push_index = (Hash.new { |h,k| h[k] = 0})
+          @own = (Hash.new { |h, k| h[k] = [] })
+          @cache = (Hash.new { |h, k| h[k] = [] })
+          @push_index = (Hash.new { |h, k| h[k] = 0 })
           @parent = parent
           @children = []
           parent.children << self unless parent.nil?
         end
 
-        def push message, p
-          own[message.to_sym].push(p)
+        def push message, callable
+          own[message.to_sym].push(callable)
           rebuild_handler_cache
 
           proc do
-            own[message.to_sym].delete(p)
+            own[message.to_sym].delete(callable)
             rebuild_handler_cache
           end
         end
 
-        def unshift message, p
-          own[message.to_sym].unshift(p)
+        def unshift message, callable
+          own[message.to_sym].unshift(callable)
           push_index[message.to_sym] += 1
           rebuild_handler_cache
 
           proc do
-            own[message.to_sym].delete(p)
+            own[message.to_sym].delete(callable)
             push_index[message.to_sym] -= 1
             rebuild_handler_cache
           end
         end
 
         def rebuild_handler_cache
-          @cache = (Hash.new { |h,k| h[k] = []})
+          @cache = (Hash.new { |h, k| h[k] = [] })
 
           [ self ].tap do |o|
             o << o.last.parent until o.last.parent.nil?
           end.reverse.each do |e|
-            e.own.each do |k,v|
+            e.own.each do |k, v|
               index = e.push_index[k]
               head = v.take(index)
               tail = v.drop(index)
@@ -53,7 +55,7 @@ module Dungeon
             end
           end
 
-          children.each { |e| e.rebuild_handler_cache }
+          children.each(&:rebuild_handler_cache)
         end
       end
 
@@ -89,15 +91,20 @@ module Dungeon
 
         def deliver reciever, message, *args
           return unless reciever.active?
+
           message = message.to_sym
           catch(:stop!) do
-            target, index = 0, 0
+            target = 0
+            index = 0
+
             p = proc do
               if index < handlers.cache[message].size
-                target, index = index, index + 1
+                target = index
+                index += 1
+
                 handlers.cache[message][target].call(p, reciever, *args)
-              else
-                yield if block_given?
+              elsif block_given?
+                yield
               end
             end
             p.call
@@ -106,8 +113,8 @@ module Dungeon
 
         def inherited klass
           super
-          klass.instance_exec(self) do |_self|
-            @handlers = HandlerManager.new _self.handlers
+          klass.instance_exec(self) do |parent|
+            @handlers = HandlerManager.new parent.handlers
           end
         end
 
@@ -118,38 +125,34 @@ module Dungeon
         end
       end
 
-      def self.registry
-        (@registry ||= [])
-      end
+      class << self
+        attr_accessor :id_counter
+        attr_reader :registry
 
-      def self.inherited klass
-        super
-        Entity.registry << klass
-        klass.instance_eval do
-          extend ClassMethods
+        def inherited klass
+          super
+          Entity.registry << klass
+          klass.instance_eval do
+            extend ClassMethods
+          end
+        end
+
+        def new
+          super(Entity.id_counter_next).tap { |o| o.emit(:new) }
+        end
+
+        def id_counter_next
+          self.id_counter += 1
         end
       end
 
-      def self.id_counter
-        (@id_counter ||= 0)
-      end
-
-      def self.id_counter= value
-        @id_counter = value
-      end
-
-      def self.id_counter_next
-        self.id_counter += 1
-      end
-
-      def self.new
-        super(Entity.id_counter_next).tap { |o| o.emit(:new) }
-      end
+      @id_counter = 0
+      @registry = []
 
       attr_reader :id
       attr_accessor :parent
       attr_accessor :active
-      alias_method :active?, :active
+      alias active? active
 
       def initialize id
         @id = id
@@ -158,10 +161,14 @@ module Dungeon
       end
 
       def broadcast message, *args
-        peer, target = parent, self
+        target = self
+        peer = parent
+
         until peer.nil?
-          peer, target = peer.parent, peer
+          target = peer
+          peer = peer.parent
         end
+
         target.emit message, *args
       end
 
@@ -172,7 +179,7 @@ module Dungeon
       end
 
       def remove
-        parent.remove(self) unless parent.nil?
+        parent&.remove(self)
       end
 
       def on message, &block
@@ -230,14 +237,14 @@ module Dungeon
       def to_h
         {
           "id" => self.id,
-          "type" => self.class.to_s.
-            split("::").
-            map do |e|
-              e.split(/(?=[A-Z])/).
-              tap { |o| o.pop if o.last == "Entity" }.
-              map { |e| e.downcase }.
-              join("_")
-            end.join("::"),
+          "type" => self.class.to_s
+                        .split("::")
+                        .map do |e|
+                          e.split(/(?=[A-Z])/)
+                           .tap { |o| o.pop if o.last == "Entity" }
+                           .map(&:downcase)
+                           .join("_")
+                        end.join("::"),
           "active" => self.active,
         }
       end
@@ -246,7 +253,10 @@ module Dungeon
         "#<%s id=%i %s>" % [
           self.class,
           self.id,
-          self.to_h.tap { |o| o.delete("id"); o.delete("type") }.to_a.map do |e|
+          self.to_h.tap do |o|
+            o.delete("id")
+            o.delete("type")
+          end.to_a.map do |e|
             [ e[0].to_s, e[1].inspect ].join("=")
           end.join(" "),
         ]

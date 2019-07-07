@@ -272,7 +272,6 @@ describe Dungeon::Core::Entity do
       subject = klass.new
 
       mock = Minitest::Mock.new
-      mock.expect "nil?", false, []
       mock.expect "remove", nil, [ subject ]
 
       subject.parent = mock
@@ -284,12 +283,8 @@ describe Dungeon::Core::Entity do
       klass = Class.new(Dungeon::Core::Entity)
       subject = klass.new
 
-      mock = Minitest::Mock.new
-      mock.expect "nil?", true, []
-
-      subject.parent = mock
+      subject.parent = nil
       expect(subject.remove).must_be :nil?
-      mock.verify
     end
   end
 

@@ -73,8 +73,10 @@ module Dungeon
         end
 
         def self.load_json json
-          self.new(json["width"] * json["tilewidth"],
-                   json["height"] * json["tileheight"]).tap do |o|
+          width = json["width"] * json["tilewidth"]
+          height = json["height"] * json["tileheight"]
+
+          self.new(width, height).tap do |o|
             if /#([[:xdigit:]]{6})/ =~ json["backgroundcolor"]
               o.background = $~[1].to_i(16)
             end

@@ -1,8 +1,10 @@
+# frozen_string_literal: true
+
 require "dungeon/core/dynamic_scope"
 
 class Integer
-  def self.from_rgb r, g, b
-    (r << 16) | (r << 8) | (b)
+  def self.from_rgb red, green, blue
+    (red << 16) | (green << 8) | blue
   end
 
   def red_value

@@ -1,29 +1,32 @@
+# frozen_string_literal: true
+
 require "ffi"
 
 module Dungeon
   module Core
+    # rubocop:disable Metrics/ModuleLength
     module SDL2
       extend FFI::Library
       ffi_lib "SDL2"
 
-      enum :SDL_WindowEventID, [
-        :SDL_WINDOWEVENT_NONE,
-        :SDL_WINDOWEVENT_SHOWN,
-        :SDL_WINDOWEVENT_HIDDEN,
-        :SDL_WINDOWEVENT_EXPOSED,
-        :SDL_WINDOWEVENT_MOVED,
-        :SDL_WINDOWEVENT_RESIZED,
-        :SDL_WINDOWEVENT_SIZE_CHANGED,
-        :SDL_WINDOWEVENT_MINIMIZED,
-        :SDL_WINDOWEVENT_MAXIMIZED,
-        :SDL_WINDOWEVENT_RESTORED,
-        :SDL_WINDOWEVENT_ENTER,
-        :SDL_WINDOWEVENT_LEAVE,
-        :SDL_WINDOWEVENT_FOCUS_GAINED,
-        :SDL_WINDOWEVENT_FOCUS_LOST,
-        :SDL_WINDOWEVENT_CLOSE,
-        :SDL_WINDOWEVENT_TAKE_FOCUS,
-        :SDL_WINDOWEVENT_HIT_TEST ,
+      enum :SDLWindowEventID, %i[
+        SDL_WINDOWEVENT_NONE
+        SDL_WINDOWEVENT_SHOWN
+        SDL_WINDOWEVENT_HIDDEN
+        SDL_WINDOWEVENT_EXPOSED
+        SDL_WINDOWEVENT_MOVED
+        SDL_WINDOWEVENT_RESIZED
+        SDL_WINDOWEVENT_SIZE_CHANGED
+        SDL_WINDOWEVENT_MINIMIZED
+        SDL_WINDOWEVENT_MAXIMIZED
+        SDL_WINDOWEVENT_RESTORED
+        SDL_WINDOWEVENT_ENTER
+        SDL_WINDOWEVENT_LEAVE
+        SDL_WINDOWEVENT_FOCUS_GAINED
+        SDL_WINDOWEVENT_FOCUS_LOST
+        SDL_WINDOWEVENT_CLOSE
+        SDL_WINDOWEVENT_TAKE_FOCUS
+        SDL_WINDOWEVENT_HIT_TEST
       ]
 
       enum :SDL_Scancode, [
@@ -66,47 +69,51 @@ module Dungeon
         :SDL_SCANCODE_RGUI, 231, # windows, command (apple), meta
         :SDL_NUM_SCANCODES, 512,
       ]
-      attach_function :SDL_Init, [ :uint32 ], :int
+
+      attach_function :SDL_Init, %i[uint32], :int
       attach_function :SDL_Quit, [], :void
       attach_function :SDL_GetError, [], :string
-      attach_function :SDL_Delay, [ :int ], :void
+      attach_function :SDL_Delay, %i[int], :void
       attach_function :SDL_GetTicks, [], :uint32
-      attach_function :SDL_CreateWindow, [ :string,
-                                           :int, :int, :int, :int,
-                                           :uint32 ], :pointer
-      attach_function :SDL_DestroyWindow, [ :pointer ], :void
-      attach_function :SDL_CreateRenderer, [ :pointer, :int, :uint32 ], :pointer
-      attach_function :SDL_DestroyRenderer, [ :pointer ], :void
-      attach_function :SDL_PollEvent, [ :pointer ], :int
-      attach_function :SDL_RenderPresent, [ :pointer ], :void
-      attach_function :SDL_SetRenderDrawColor, [ :pointer, :int, :int, :int, :int ], :int
-      attach_function :SDL_GetRenderDrawColor, [
-        :pointer,
-        :pointer,
-        :pointer,
-        :pointer,
-        :pointer,
+      attach_function :SDL_CreateWindow, %i[string
+                                            int int int int
+                                            uint32], :pointer
+      attach_function :SDL_DestroyWindow, %i[pointer], :void
+      attach_function :SDL_CreateRenderer, %i[pointer int uint32], :pointer
+      attach_function :SDL_DestroyRenderer, %i[pointer], :void
+      attach_function :SDL_PollEvent, %i[pointer], :int
+      attach_function :SDL_RenderPresent, %i[pointer], :void
+      attach_function :SDL_SetRenderDrawColor, %i[pointer int int int int], :int
+      attach_function :SDL_GetRenderDrawColor, %i[
+        pointer
+        pointer
+        pointer
+        pointer
+        pointer
       ], :int
-      attach_function :SDL_RenderSetScale, [ :pointer, :float, :float ], :int
-      attach_function :SDL_SetRenderTarget, [ :pointer, :pointer ], :int
-      attach_function :SDL_GetRenderTarget, [ :pointer ], :pointer
-      attach_function :SDL_GetHint, [ :string ], :string
-      attach_function :SDL_SetHint, [ :string, :string ], :int
-      attach_function :SDL_RenderClear, [ :pointer ], :int
-      attach_function :SDL_RenderDrawRect, [ :pointer, :pointer ], :int
-      attach_function :SDL_RenderFillRect, [ :pointer, :pointer ], :int
-      attach_function :SDL_RenderCopy, [ :pointer, :pointer, :pointer, :pointer ], :int
-      attach_function :SDL_CreateTextureFromSurface, [ :pointer, :pointer ], :pointer
-      attach_function :SDL_CreateTexture, [ :pointer, :uint32, :int, :int, :int ], :pointer
+      attach_function :SDL_RenderSetScale, %i[pointer float float], :int
+      attach_function :SDL_SetRenderTarget, %i[pointer pointer], :int
+      attach_function :SDL_GetRenderTarget, %i[pointer], :pointer
+      attach_function :SDL_GetHint, %i[string], :string
+      attach_function :SDL_SetHint, %i[string string], :int
+      attach_function :SDL_RenderClear, %i[pointer], :int
+      attach_function :SDL_RenderDrawRect, %i[pointer pointer], :int
+      attach_function :SDL_RenderFillRect, %i[pointer pointer], :int
+      attach_function :SDL_RenderCopy, %i[pointer pointer pointer pointer], :int
+      attach_function :SDL_CreateTextureFromSurface, %i[pointer
+                                                        pointer], :pointer
+      attach_function :SDL_CreateTexture, %i[pointer uint32 int
+                                             int int], :pointer
       attach_function :SDL_DestroyTexture, [ :pointer ], :void
-      attach_function :SDL_QueryTexture, [ :pointer, :pointer, :pointer, :pointer, :pointer ], :int
-      attach_function :SDL_CreateRGBSurface, [ :uint32, :int, :int, :int,
-                                               :uint32, :uint32, :uint32,
-                                               :uint32 ], :pointer
-      attach_function :SDL_FreeSurface, [ :pointer ], :void
-      attach_function :SDL_SetTextureBlendMode, [ :pointer, :int ], :int
-      attach_function :SDL_GetTextureBlendMode, [ :pointer, :pointer ], :int
-      attach_function :SDL_GetWindowPixelFormat, [ :pointer ], :uint32
+      attach_function :SDL_QueryTexture, %i[pointer pointer pointer
+                                            pointer pointer], :int
+      attach_function :SDL_CreateRGBSurface, %i[uint32 int int int
+                                                uint32 uint32 uint32
+                                                uint32], :pointer
+      attach_function :SDL_FreeSurface, %i[pointer], :void
+      attach_function :SDL_SetTextureBlendMode, %i[pointer int], :int
+      attach_function :SDL_GetTextureBlendMode, %i[pointer pointer], :int
+      attach_function :SDL_GetWindowPixelFormat, %i[pointer], :uint32
       attach_function :SDL_StartTextInput, [], :void
       attach_function :SDL_StopTextInput, [], :void
       attach_function :SDL_SetTextInputRect, [ :pointer ], :void
@@ -114,18 +121,18 @@ module Dungeon
       attach_function :SDL_SetClipboardText, [ :string ], :int
       attach_function :SDL_HasClipboardText, [], :bool
 
-      class SDL_Keysym < FFI::Struct
+      class SDLKeysym < FFI::Struct
         layout :scancode, :SDL_Scancode,
                :sym, :int32,
                :mod, :uint16,
                :unused, :uint32
       end
 
-      class SDL_WindowEvent < FFI::Struct
+      class SDLWindowEvent < FFI::Struct
         layout :type, :uint32,
                :timestamp, :uint32,
                :windowID, :uint32,
-               :event, :SDL_WindowEventID,
+               :event, :SDLWindowEventID,
                :padding1, :uint8,
                :padding2, :uint8,
                :padding3, :uint8,
@@ -133,7 +140,7 @@ module Dungeon
                :data2, :int32
       end
 
-      class SDL_KeyboardEvent < FFI::Struct
+      class SDLKeyboardEvent < FFI::Struct
         layout :type, :uint32,
                :timestamp, :uint32,
                :windowID, :uint32,
@@ -141,10 +148,10 @@ module Dungeon
                :repeat, :uint8,
                :padding2, :uint8,
                :padding3, :uint8,
-               :keysym, SDL_Keysym
+               :keysym, SDLKeysym
       end
 
-      class SDL_MouseMotionEvent < FFI::Struct
+      class SDLMouseMotionEvent < FFI::Struct
         layout :type, :uint32,
                :timestamp, :uint32,
                :windowID, :uint32,
@@ -156,7 +163,7 @@ module Dungeon
                :yrel, :int32
       end
 
-      class SDL_MouseButtonEvent < FFI::Struct
+      class SDLMouseButtonEvent < FFI::Struct
         layout :type, :uint32,
                :timestamp, :uint32,
                :windowID, :uint32,
@@ -169,7 +176,7 @@ module Dungeon
                :y, :int32
       end
 
-      class SDL_MouseWheelEvent < FFI::Struct
+      class SDLMouseWheelEvent < FFI::Struct
         layout :type, :uint32,
                :timestamp, :uint32,
                :windowID, :uint32,
@@ -179,31 +186,31 @@ module Dungeon
                :direction, :uint32
       end
 
-      class SDL_TextInputEvent < FFI::Struct
+      class SDLTextInputEvent < FFI::Struct
         layout :type, :uint32,
                :timestamp, :uint32,
                :windowID, :uint32,
                :text, [ :char, 32 ]
       end
 
-      class SDL_Event < FFI::Union
+      class SDLEvent < FFI::Union
         layout :type, :uint32,
-               :window, SDL_WindowEvent,
-               :key, SDL_KeyboardEvent,
-               :text, SDL_TextInputEvent,
-               :motion, SDL_MouseMotionEvent,
-               :button, SDL_MouseButtonEvent,
-               :wheel, SDL_MouseWheelEvent
+               :window, SDLWindowEvent,
+               :key, SDLKeyboardEvent,
+               :text, SDLTextInputEvent,
+               :motion, SDLMouseMotionEvent,
+               :button, SDLMouseButtonEvent,
+               :wheel, SDLMouseWheelEvent
       end
 
-      class SDL_Rect < FFI::Struct
+      class SDLRect < FFI::Struct
         layout :x, :int,
                :y, :int,
                :w, :int,
                :h, :int
       end
 
-      class SDL_Color < FFI::Struct
+      class SDLColor < FFI::Struct
         layout :r, :uint8,
                :g, :uint8,
                :b, :uint8,
@@ -243,8 +250,8 @@ module Dungeon
       SDL_BUTTON_LEFT = 0x1
       SDL_BUTTON_MIDDLE = 0x2
       SDL_BUTTON_RIGHT = 0x3
-      SDL_BUTTON_X1= 0x4
-      SDL_BUTTON_X2= 0x5
+      SDL_BUTTON_X1 = 0x4
+      SDL_BUTTON_X2 = 0x5
     end
 
     module SDL2Image
@@ -264,18 +271,19 @@ module Dungeon
 
       attach_function :TTF_Init, [], :int
       attach_function :TTF_Quit, [], :void
-      attach_function :TTF_OpenFont, [ :string, :int ], :pointer
+      attach_function :TTF_OpenFont, %i[string int], :pointer
       attach_function :TTF_RenderText_Solid, [
         :pointer,
         :string,
-        SDL2::SDL_Color.by_value,
+        SDL2::SDLColor.by_value,
       ], :pointer
-      attach_function :TTF_SizeText, [
-        :pointer,
-        :string,
-        :pointer,
-        :pointer,
+      attach_function :TTF_SizeText, %i[
+        pointer
+        string
+        pointer
+        pointer
       ], :int
     end
+    # rubocop:enable Metrics/ModuleLength
   end
 end

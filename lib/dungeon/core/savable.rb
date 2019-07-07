@@ -1,16 +1,18 @@
+# frozen_string_literal: true
+
 module Dungeon
   module Core
     module Savable
       module ClassMethods
         def savable *fields
           (@savable ||= []).tap do |o|
-            o.concat fields.flatten.map { |e| e.to_s }
+            o.concat fields.flatten.map(&:to_s)
           end
         end
 
         def saveable_load data
           self.new.tap do |o|
-            data.select { |k,v| self.savable.include?(k) }.each do |k,v|
+            data.select { |k, _| self.savable.include?(k) }.each do |k, v|
               o.send("%s=" % k, v)
             end
           end
@@ -18,11 +20,12 @@ module Dungeon
       end
 
       def self.load_const name
-        const_get(name.split("::").reverse.each_with_index.map do |e,i|
+        const_get(name.split("::").reverse.each_with_index.map do |e, i|
           e.split("_").map do |f|
-            f.downcase.tap { |o| o[0] = o[0].upcase } + (if i == 0
-              "Entity"
-            end.to_s)
+            f.downcase.tap do |o|
+              o[0] = o[0].upcase
+              o << "Entity" if i.zero?
+            end
           end.join
         end.reverse.join("::"))
       end
@@ -40,8 +43,8 @@ module Dungeon
 
       def savable_dump
         h = self.to_h
-        ([ "type" ] + self.class.savable).reduce({}) do |m,v|
-          m.merge({ v => h[v]})
+        ([ "type" ] + self.class.savable).reduce({}) do |m, v|
+          m.merge({ v => h[v] })
         end
       end
     end

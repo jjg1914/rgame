@@ -59,10 +59,21 @@ Layout/IndentFirstArrayElement:
 Layout/EndAlignment:
   EnforcedStyleAlignWith: variable
 
+Layout/CaseIndentation:
+  EnforcedStyle: end
+
+Layout/BlockAlignment:
+  EnforcedStyleAlignWith: start_of_block
+
 Naming/UncommunicativeMethodParamName:
   AllowedNames:
     - x
     - y
+    - dx
+    - dy
+    - dt
+    - to
+    - id
 
 Metrics/MethodLength:
   Max: 24

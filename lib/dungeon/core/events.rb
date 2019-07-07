@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Dungeon
   module Core
     module Events
@@ -6,7 +8,7 @@ module Dungeon
 
       class IntervalEvent
         attr_reader :now
-        alias_method :t, :now
+        alias t now
         attr_reader :dt
 
         def initialize now, dt

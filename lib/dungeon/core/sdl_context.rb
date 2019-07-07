@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "forwardable"
 
 require "dungeon/core/env"
@@ -12,13 +14,64 @@ module Dungeon
       RENDERER_FLAGS = SDL2::SDL_RENDERER_ACCELERATED |
                        SDL2::SDL_RENDERER_PRESENTVSYNC
 
+      SCAN_CODE_STRINGS = {
+        :SDL_SCANCODE_RETURN => "return",
+        :SDL_SCANCODE_ESCAPE => "escape",
+        :SDL_SCANCODE_BACKSPACE => "backspace",
+        :SDL_SCANCODE_TAB => "tab",
+        :SDL_SCANCODE_SPACE => "space",
+        :SDL_SCANCODE_F1 => "f1",
+        :SDL_SCANCODE_F2 => "f2",
+        :SDL_SCANCODE_F3 => "f3",
+        :SDL_SCANCODE_F4 => "f4",
+        :SDL_SCANCODE_F5 => "f5",
+        :SDL_SCANCODE_F6 => "f6",
+        :SDL_SCANCODE_F7 => "f7",
+        :SDL_SCANCODE_F8 => "f8",
+        :SDL_SCANCODE_F9 => "f9",
+        :SDL_SCANCODE_F10 => "f10",
+        :SDL_SCANCODE_F11 => "f11",
+        :SDL_SCANCODE_F12 => "f12",
+        :SDL_SCANCODE_INSERT => "insert",
+        :SDL_SCANCODE_HOME => "home",
+        :SDL_SCANCODE_PAGEUP => "page_up",
+        :SDL_SCANCODE_DELETE => "delete",
+        :SDL_SCANCODE_END => "end",
+        :SDL_SCANCODE_PAGEDOWN => "page_down",
+        :SDL_SCANCODE_RIGHT => "right",
+        :SDL_SCANCODE_LEFT => "left",
+        :SDL_SCANCODE_DOWN => "down",
+        :SDL_SCANCODE_UP => "up",
+        :SDL_SCANCODE_LCTRL => "left_ctrl",
+        :SDL_SCANCODE_LSHIFT => "left_shift",
+        :SDL_SCANCODE_LALT => "left_alt", # alt, option
+        :SDL_SCANCODE_LGUI => "left_super", # windows, command (apple), meta
+        :SDL_SCANCODE_RCTRL => "right_ctrl",
+        :SDL_SCANCODE_RSHIFT => "right_shift",
+        :SDL_SCANCODE_RALT => "right_alt", # alt gr, option
+        :SDL_SCANCODE_RGUI => "right_super", # windows, command (apple), meta
+        :SDL_SCANCODE_ENTER => "enter",
+      }.freeze
+
+      BUTTON_STRINGS = {
+        SDL2::SDL_BUTTON_LEFT => "left",
+        SDL2::SDL_BUTTON_MIDDLE => "middle",
+        SDL2::SDL_BUTTON_RIGHT => "right",
+        SDL2::SDL_BUTTON_X1 => "x1",
+        SDL2::SDL_BUTTON_X2 => "x2",
+      }.freeze
+
       def self.open title, width, height
-        raise SDL2.SDL_GetError if SDL2.SDL_Init(SDL2::SDL_INIT_VIDEO) != 0
-        raise SDL2.SDL_GetError if SDL2Image.IMG_Init(SDL2Image::IMG_INIT_PNG) == 0
-        raise SDL2.SDL_GetError if SDL2TTF.TTF_Init != 0
+        raise SDL2.SDL_GetError unless SDL2.SDL_Init(SDL2::SDL_INIT_VIDEO).zero?
+        raise SDL2.SDL_GetError unless SDL2TTF.TTF_Init.zero?
+
+        if SDL2Image.IMG_Init(SDL2Image::IMG_INIT_PNG).zero?
+          raise SDL2.SDL_GetError
+        end
 
         window = SDL2.SDL_CreateWindow title, 0, 0, width, height, WINDOW_FLAGS
         raise SDL2.SDL_GetError if window.nil?
+
         renderer = SDL2.SDL_CreateRenderer window, -1, RENDERER_FLAGS
         raise SDL2.SDL_GetError if renderer.nil?
 
@@ -33,33 +86,34 @@ module Dungeon
         extend Forwardable
         def_delegators :@events, :now, :fps, :fps=, :<<, :each, :each_event
         def_delegators :@stack, :save, :restore
-        def_delegators :@state, :target, :target=,
-                                :source, :source=,
-                                :color, :color=,
-                                :alpha, :alpha=,
-                                :scale, :scale=,
-                                :scale_quality, :scale_quality=,
-                                :font, :font=,
-                                :text_input_mode, :text_input_mode=
+        def_delegators :@state,
+                       :target, :target=,
+                       :source, :source=,
+                       :color, :color=,
+                       :alpha, :alpha=,
+                       :scale, :scale=,
+                       :scale_quality, :scale_quality=,
+                       :font, :font=,
+                       :text_input_mode, :text_input_mode=
 
         def initialize window, renderer
           @window = window
           @renderer = renderer
 
           @mem_ints = 8.times.map { FFI::MemoryPointer.new(:int, 1) }
-          @sdl_rects = 2.times.map { SDL2::SDL_Rect.new }
+          @sdl_rects = 2.times.map { SDL2::SDLRect.new }
 
           @state = StateHolder.new @renderer
-          @stack = StateSaver.new(self, [
-            "fps",
-            "target",
-            "source",
-            "color",
-            "alpha",
-            "scale",
-            "scale_quality",
-            "font",
-            "text_input_mode",
+          @stack = StateSaver.new(self, %w[
+            fps
+            target
+            source
+            color
+            alpha
+            scale
+            scale_quality
+            font
+            text_input_mode
           ])
 
           @events = EventSource.new
@@ -78,7 +132,7 @@ module Dungeon
         end
 
         def create_image width, height
-          format = SDL2.SDL_GetWindowPixelFormat(@window),
+          format = SDL2.SDL_GetWindowPixelFormat(@window)
           texture = SDL2.SDL_CreateTexture(@renderer, format,
                                            SDL2::SDL_TEXTUREACCESS_TARGET,
                                            width, height)
@@ -86,24 +140,24 @@ module Dungeon
         end
 
         def create_text text
-          unless @state.font_pointer.nil? or @state.font_pointer.null?
-            surface = SDL2TTF.TTF_RenderText_Solid @state.font_pointer,
-                                                   text,
-                                                   @state.color_struct
-            texture = SDL2.SDL_CreateTextureFromSurface(@renderer, surface).tap do |o|
-              SDL2.SDL_FreeSurface(o)
-            end
+          return if @state.font_pointer.nil? or @state.font_pointer.null?
 
-            Image.new texture
-          end
+          surface = SDL2TTF.TTF_RenderText_Solid @state.font_pointer,
+                                                 text,
+                                                 @state.color_struct
+          texture = SDL2.SDL_CreateTextureFromSurface(@renderer, surface)
+          SDL2.SDL_FreeSurface(surface)
+
+          Image.new texture
         end
 
         def size_of_text text
-          unless @state.font_pointer.nil? or @state.font_pointer.null?
-            SDL2TTF.TTF_SizeText(@state.font_pointer, text, @mem_ints[0], @mem_ints[1])
-            [ @mem_ints[0].get(:int, 0), @mem_ints[1].get(:int, 0) ]
-          else
+          if @state.font_pointer.nil? or @state.font_pointer.null?
             [ 0, 0 ]
+          else
+            SDL2TTF.TTF_SizeText(@state.font_pointer,
+                                 text, @mem_ints[0], @mem_ints[1])
+            [ @mem_ints[0].get(:int, 0), @mem_ints[1].get(:int, 0) ]
           end
         end
 
@@ -130,12 +184,12 @@ module Dungeon
         def draw_image x, y, dx = 0, dy = 0, width = nil, height = nil
           @sdl_rects[0][:x] = x
           @sdl_rects[0][:y] = y
-          @sdl_rects[0][:w] = width ? width : @state.source_image.width
-          @sdl_rects[0][:h] = height ? height : @state.source_image.height
+          @sdl_rects[0][:w] = width || @state.source_image.width
+          @sdl_rects[0][:h] = height || @state.source_image.height
           @sdl_rects[1][:x] = dx
           @sdl_rects[1][:y] = dy
-          @sdl_rects[1][:w] = width ? width : @state.source_image.width
-          @sdl_rects[1][:h] = height ? height : @state.source_image.height
+          @sdl_rects[1][:w] = width || @state.source_image.width
+          @sdl_rects[1][:h] = height || @state.source_image.height
           SDL2.SDL_RenderCopy(@renderer,
                               @state.source_image.texture,
                               @sdl_rects[1],
@@ -155,51 +209,54 @@ module Dungeon
 
           mem_ints = 2.times.map { FFI::MemoryPointer.new(:int, 1) }
           SDL2.SDL_QueryTexture(texture, nil, nil, mem_ints[0], mem_ints[1])
-          @width, @height = [ mem_ints[0].get(:int, 0), mem_ints[1].get(:int, 0) ]
+          @width = mem_ints[0].get(:int, 0)
+          @height = mem_ints[1].get(:int, 0)
 
           ObjectSpace.define_finalizer(self, &self.method(:free))
         ensure
-          mem_ints.each { |e| e.free unless e.null? } unless mem_ints.nil?
+          mem_ints&.each { |e| e&.free }
         end
 
         def free
-          unless @texture.nil?
-            SDL2.SDL_DestroyTexture @texture
-            @texture = nil
-          end
+          return if @texture.nil?
+
+          SDL2.SDL_DestroyTexture @texture
+          @texture = nil
         end
 
+        # rubocop:disable Metrics/CyclomaticComplexity
         def texture_blend_mode
           mem_int = FFI::MemoryPointer.new(:int, 1)
           SDL2.SDL_GetTextureBlendMode @texture, mem_int
           case mem_int.get(:int, 0)
-            when SDL2::SDL_BLENDMODE_NONE
-              "none"
-            when SDL2::SDL_BLENDMODE_BLEND
-              "blend"
-            when SDL2::SDL_BLENDMODE_ADD
-              "add"
-            when SDL2::SDL_BLENDMODE_MOD
-              "mod"
-            else
-              "invalid"
+          when SDL2::SDL_BLENDMODE_NONE
+            "none"
+          when SDL2::SDL_BLENDMODE_BLEND
+            "blend"
+          when SDL2::SDL_BLENDMODE_ADD
+            "add"
+          when SDL2::SDL_BLENDMODE_MOD
+            "mod"
+          else
+            "invalid"
           end
         ensure
           mem_int.free unless mem_int.nil? or mem_int.null?
         end
+        # rubocop:enable Metrics/CyclomaticComplexity
 
         def texture_blend_mode= value
           mode = case value
-            when "none"
-              SDL2::SDL_BLENDMODE_NONE
-            when "blend"
-              SDL2::SDL_BLENDMODE_BLEND
-            when "add"
-              SDL2::SDL_BLENDMODE_ADD
-            when "mod"
-              SDL2::SDL_BLENDMODE_MOD
-            else
-              SDL2::SDL_BLENDMODE_INVALID
+          when "none"
+            SDL2::SDL_BLENDMODE_NONE
+          when "blend"
+            SDL2::SDL_BLENDMODE_BLEND
+          when "add"
+            SDL2::SDL_BLENDMODE_ADD
+          when "mod"
+            SDL2::SDL_BLENDMODE_MOD
+          else
+            SDL2::SDL_BLENDMODE_INVALID
           end
 
           SDL2.SDL_SetTextureBlendMode(@target, mode)
@@ -228,10 +285,10 @@ module Dungeon
           @scale = 1
           @scale_quality = SDL2.SDL_GetHint(SDL2::SDL_HINT_RENDER_SCALE_QUALITY)
 
-          @color_struct = SDL2::SDL_Color.new
+          @color_struct = SDL2::SDLColor.new
           @font_cache = {}
-          @font_cache = Hash.new { |h,k| h[k] = _load_font(k) }
-          @image_cache = Hash.new { |h,k| h[k] = _load_image(k) }
+          @font_cache = Hash.new { |h, k| h[k] = _load_font(k) }
+          @image_cache = Hash.new { |h, k| h[k] = _load_image(k) }
 
           mem_int = FFI::MemoryPointer.new(:uint8, 4)
           SDL2.SDL_GetRenderDrawColor @renderer,
@@ -251,33 +308,33 @@ module Dungeon
         end
 
         def color= value
-          unless @color == value
-            SDL2.SDL_SetRenderDrawColor @renderer,
-                                        value.red_value,
-                                        value.green_value,
-                                        value.blue_value,
-                                        alpha
-            @color_struct[:r] = value.red_value
-            @color_struct[:g] = value.green_value
-            @color_struct[:b] = value.blue_value
-            @color_struct[:a] = alpha
-            @color = value
-          end
+          return if @color == value
+
+          SDL2.SDL_SetRenderDrawColor @renderer,
+                                      value.red_value,
+                                      value.green_value,
+                                      value.blue_value,
+                                      alpha
+          @color_struct[:r] = value.red_value
+          @color_struct[:g] = value.green_value
+          @color_struct[:b] = value.blue_value
+          @color_struct[:a] = alpha
+          @color = value
         end
 
         def alpha= value
-          unless @alpha == value
-            SDL2.SDL_SetRenderDrawColor @renderer,
-                                        color.red_value,
-                                        color.green_value,
-                                        color.blue_value,
-                                        value
-            @color_struct[:r] = color.red_value
-            @color_struct[:g] = color.green_value
-            @color_struct[:b] = color.blue_value
-            @color_struct[:a] = value
-            @alpha = value
-          end
+          return if @alpha == value
+
+          SDL2.SDL_SetRenderDrawColor @renderer,
+                                      color.red_value,
+                                      color.green_value,
+                                      color.blue_value,
+                                      value
+          @color_struct[:r] = color.red_value
+          @color_struct[:g] = color.green_value
+          @color_struct[:b] = color.blue_value
+          @color_struct[:a] = value
+          @alpha = value
         end
 
         def scale= value
@@ -287,47 +344,45 @@ module Dungeon
           elsif value.size == 1
             [ value[0].to_f, value[0].to_f ]
           else
-            value.take(2).map { |e| e.to_f }
+            value.take(2).map(&:to_f)
           end
 
-          unless @scale == value
-            SDL2.SDL_RenderSetScale @renderer, value[0], value[1]
-            @scale = value
-          end
+          return if @scale == value
+
+          SDL2.SDL_RenderSetScale @renderer, value[0], value[1]
+          @scale = value
         end
 
         def scale_quality= value
-          unless @scale_quality == value
-            SDL2.SDL_SetHint(SDL2::SDL_HINT_RENDER_SCALE_QUALITY, value.to_s)
-            @scale_quality = value
-          end
+          return if @scale_quality == value
+
+          SDL2.SDL_SetHint(SDL2::SDL_HINT_RENDER_SCALE_QUALITY, value.to_s)
+          @scale_quality = value
         end
 
         def target= value
-          unless @target == value
-            SDL2.SDL_SetRenderTarget(@renderer, value)
-            @target = value 
-          end
+          return if @target == value
+
+          SDL2.SDL_SetRenderTarget(@renderer, value)
+          @target = value
         end
 
         def source= value
-          unless @source == value
-            @source_image = if value.is_a? Image
-              value
-            else
-              @image_cache[value.to_s]
-            end
-            @source = value
+          return if @source == value
+
+          @source_image = if value.is_a? Image
+            value
+          else
+            @image_cache[value.to_s]
           end
+          @source = value
         end
 
         def font= value
-          unless @font == value
-            @font_pointer = unless value.nil?
-              @font_cache[value]
-            end
-            @font = value
-          end
+          return if @font == value
+
+          @font_pointer = (@font_cache[value] unless value.nil?)
+          @font = value
         end
 
         def text_input_mode= value
@@ -344,19 +399,20 @@ module Dungeon
         private
 
         def _load_font value
-          name, size = value.to_s.split(":", 2).map { |e| e.strip }
+          name, size = value.to_s.split(":", 2).map(&:strip)
 
-          path = (Env.font_path.split(":")).map do |e|
+          path = Env.font_path.split(":").map do |e|
             File.expand_path("%s.ttf" % name, e.strip)
           end.find do |e|
             File.exist?(e)
           end
           raise "font not found %s" % value.inspect if path.nil?
+
           SDL2TTF.TTF_OpenFont path, size.to_i
         end
 
         def _load_image value
-          path = (Env.image_path.split(":")).map do |e|
+          path = Env.image_path.split(":").map do |e|
             File.expand_path("%s.png" % value, e.strip)
           end.find do |e|
             File.exist?(e)
@@ -384,72 +440,25 @@ module Dungeon
 
         def save
           @stack << @props.map { |e| @target.send(e) }
-          if block_given?
-            begin
-              yield
-            ensure
-              self.restore
-            end
+          return unless block_given?
+
+          begin
+            yield
+          ensure
+            self.restore
           end
         end
 
         def restore
-          unless @stack.empty?
-            @props.zip(@stack.pop).each { |k,v| @target.send(("%s=" % k), v) }
-          end
+          return if @stack.empty?
+
+          @props.zip(@stack.pop).each { |k, v| @target.send(("%s=" % k), v) }
         end
       end
 
       class EventSource
         attr_reader :now
         attr_accessor :fps
-
-        SCAN_CODE_STRINGS = {
-          :SDL_SCANCODE_RETURN => "return",
-          :SDL_SCANCODE_ESCAPE=> "escape",
-          :SDL_SCANCODE_BACKSPACE => "backspace",
-          :SDL_SCANCODE_TAB => "tab",
-          :SDL_SCANCODE_SPACE => "space",
-          :SDL_SCANCODE_F1 => "f1",
-          :SDL_SCANCODE_F2 => "f2",
-          :SDL_SCANCODE_F3 => "f3",
-          :SDL_SCANCODE_F4 => "f4",
-          :SDL_SCANCODE_F5 => "f5",
-          :SDL_SCANCODE_F6 => "f6",
-          :SDL_SCANCODE_F7 => "f7",
-          :SDL_SCANCODE_F8 => "f8",
-          :SDL_SCANCODE_F9 => "f9",
-          :SDL_SCANCODE_F10 => "f10",
-          :SDL_SCANCODE_F11 => "f11",
-          :SDL_SCANCODE_F12 => "f12",
-          :SDL_SCANCODE_INSERT => "insert",
-          :SDL_SCANCODE_HOME => "home",
-          :SDL_SCANCODE_PAGEUP => "page_up",
-          :SDL_SCANCODE_DELETE => "delete",
-          :SDL_SCANCODE_END => "end",
-          :SDL_SCANCODE_PAGEDOWN => "page_down",
-          :SDL_SCANCODE_RIGHT => "right",
-          :SDL_SCANCODE_LEFT => "left",
-          :SDL_SCANCODE_DOWN => "down",
-          :SDL_SCANCODE_UP => "up",
-          :SDL_SCANCODE_LCTRL => "left_ctrl",
-          :SDL_SCANCODE_LSHIFT => "left_shift",
-          :SDL_SCANCODE_LALT => "left_alt", # alt, option
-          :SDL_SCANCODE_LGUI => "left_super", # windows, command (apple), meta
-          :SDL_SCANCODE_RCTRL => "right_ctrl",
-          :SDL_SCANCODE_RSHIFT => "right_shift",
-          :SDL_SCANCODE_RALT => "right_alt", # alt gr, option
-          :SDL_SCANCODE_RGUI => "right_super", # windows, command (apple), meta
-          :SDL_SCANCODE_ENTER => "enter",
-        }
-
-        BUTTON_STRINGS = {
-          SDL2::SDL_BUTTON_LEFT => "left",
-          SDL2::SDL_BUTTON_MIDDLE => "middle",
-          SDL2::SDL_BUTTON_RIGHT => "right",
-          SDL2::SDL_BUTTON_X1 => "x1",
-          SDL2::SDL_BUTTON_X2 => "x2",
-        }
 
         def initialize
           @mutex = Mutex.new
@@ -464,37 +473,35 @@ module Dungeon
         end
 
         def each_event &block
-          if block_given?
-            self.each_event.each(&block)
-          else
-            waitticks = self.fps.nil? ? 0 : (1000 / self.fps).to_i
+          return self.each_event.each(&block) if block_given?
 
-            Enumerator.new do |yielder|
-              begin
-                catch :done do
-                  loop do
-                    flag = false
-                    @now, diff = _ticks_since @now
+          waitticks = self.fps.nil? ? 0 : (1000 / self.fps).to_i
 
-                    _pump_events.each do |e|
-                      yielder << e 
-                      flag ||= e.is_a?(Dungeon::Core::Events::QuitEvent)
-                    end
-                    throw :done if flag
-                    yielder << Events::IntervalEvent.new(@now, diff)
+          Enumerator.new do |yielder|
+            begin
+              catch :done do
+                loop do
+                  flag = false
+                  @now, diff = _ticks_since @now
 
-                    diff2 = _ticks_since(@now)[1]
-                    SDL2.SDL_Delay(waitticks - diff2) if diff2 < waitticks
+                  _pump_events.each do |e|
+                    yielder << e
+                    flag ||= e.is_a?(Dungeon::Core::Events::QuitEvent)
                   end
+                  throw :done if flag
+                  yielder << Events::IntervalEvent.new(@now, diff)
+
+                  diff2 = _ticks_since(@now)[1]
+                  SDL2.SDL_Delay(waitticks - diff2) if diff2 < waitticks
                 end
-              rescue Interrupt
-                yielder << Events::QuitEvent.new
               end
+            rescue Interrupt
+              yielder << Events::QuitEvent.new
             end
           end
         end
 
-        alias_method :each, :each_event
+        alias each each_event
 
         def << event
           @mutex.synchronize { @internal << event }
@@ -507,52 +514,24 @@ module Dungeon
           now >= last ? [ now, now - last ] : [ now, now + (0xFFFFFFFF - last) ]
         end
 
+        # rubocop:disable Metrics/CyclomaticComplexity
         def _pump_events
-          rval = []
+          rval = _read_event_buffer
 
-          unless @event_buffer.empty?
-            @mutex.synchronize do
-              rval.concat(@event_buffer)
-              @event_buffer.clear
-            end
-          end
-
-          while SDL2.SDL_PollEvent(@sdl_event) != 0
+          until SDL2.SDL_PollEvent(@sdl_event).zero?
             case @sdl_event[:type]
             when SDL2::SDL_KEYUP
-              _assign_modifier @sdl_event, false
-
-              key = _key_for(@sdl_event[:key][:keysym][:sym],
-                             @sdl_event[:key][:keysym][:scancode])
-              rval << Events::KeyupEvent.new(key, @modifiers)
+              rval << _pump_key_up
             when SDL2::SDL_KEYDOWN
-              key = _key_for(@sdl_event[:key][:keysym][:sym],
-                             @sdl_event[:key][:keysym][:scancode])
-              if @sdl_event[:key][:repeat] == 0
-                _assign_modifier @sdl_event, true
-
-                rval << Events::KeydownEvent.new(key, @modifiers)
-              else
-                rval << Events::KeyrepeatEvent.new(key, @modifiers)
-              end
+              rval << _pump_key_down
             when SDL2::SDL_TEXTINPUT
-              rval << Events::TextInputEvent.new(@sdl_event[:text][:text].to_ptr.read_string)
+              rval << _pump_text_input
             when SDL2::SDL_MOUSEMOTION
-              rval << Events::MouseMoveEvent.new(@sdl_event[:motion][:x],
-                                                 @sdl_event[:motion][:y],
-                                                 @modifiers)
+              rval << _pump_mouse_move
             when SDL2::SDL_MOUSEBUTTONDOWN
-              button = _button_for @sdl_event[:button][:button]
-              rval << Events::MouseButtondownEvent.new(@sdl_event[:button][:x],
-                                                       @sdl_event[:button][:y],
-                                                       button,
-                                                       @modifiers)
+              rval << _pump_mouse_down
             when SDL2::SDL_MOUSEBUTTONUP
-              button = _button_for @sdl_event[:button][:button]
-              rval << Events::MouseButtonupEvent.new(@sdl_event[:button][:x],
-                                                     @sdl_event[:button][:y],
-                                                     button,
-                                                     @modifiers)
+              rval << _pump_mouse_up
             when SDL2::SDL_WINDOWEVENT
               if @sdl_event[:window][:event] == :SDL_WINDOWEVENT_CLOSE
                 rval << Events::QuitEvent.new
@@ -564,25 +543,86 @@ module Dungeon
 
           rval
         end
+        # rubocop:enable Metrics/CyclomaticComplexity
 
+        def _pump_key_up
+          _assign_modifier @sdl_event, false
+
+          key = _key_for(@sdl_event[:key][:keysym][:sym],
+                         @sdl_event[:key][:keysym][:scancode])
+          Events::KeyupEvent.new(key, @modifiers)
+        end
+
+        def _pump_key_down
+          key = _key_for(@sdl_event[:key][:keysym][:sym],
+                         @sdl_event[:key][:keysym][:scancode])
+          if @sdl_event[:key][:repeat].zero?
+            _assign_modifier @sdl_event, true
+
+            Events::KeydownEvent.new(key, @modifiers)
+          else
+            Events::KeyrepeatEvent.new(key, @modifiers)
+          end
+        end
+
+        def _pump_text_input
+          text = @sdl_event[:text][:text].to_ptr.read_string
+          Events::TextInputEvent.new(text)
+        end
+
+        def _pump_mouse_move
+          Events::MouseMoveEvent.new(@sdl_event[:motion][:x],
+                                     @sdl_event[:motion][:y],
+                                     @modifiers)
+        end
+
+        def _pump_mouse_down
+          button = _button_for @sdl_event[:button][:button]
+          Events::MouseButtondownEvent.new(@sdl_event[:button][:x],
+                                           @sdl_event[:button][:y],
+                                           button,
+                                           @modifiers)
+        end
+
+        def _pump_mouse_up
+          button = _button_for @sdl_event[:button][:button]
+          Events::MouseButtonupEvent.new(@sdl_event[:button][:x],
+                                         @sdl_event[:button][:y],
+                                         button,
+                                         @modifiers)
+        end
+
+        # rubocop:disable Metrics/CyclomaticComplexity
         def _assign_modifier sdl_event, value
           case sdl_event[:key][:keysym][:scancode]
           when :SDL_SCANCODE_LCTRL
             @modifiers.left_ctrl = value
           when :SDL_SCANCODE_LSHIFT
-            @modifiers.left_shift = value 
+            @modifiers.left_shift = value
           when :SDL_SCANCODE_LALT
-            @modifiers.left_alt = value 
+            @modifiers.left_alt = value
           when :SDL_SCANCODE_LGUI
             @modifiers.left_super = value
           when :SDL_SCANCODE_RCTRL
             @modifiers.right_ctrl = value
           when :SDL_SCANCODE_RSHIFT
-            @modifiers.right_shift = value 
+            @modifiers.right_shift = value
           when :SDL_SCANCODE_RALT
-            @modifiers.right_alt = value 
+            @modifiers.right_alt = value
           when :SDL_SCANCODE_RGUI
             @modifiers.right_super = value
+          end
+        end
+        # rubocop:enable Metrics/CyclomaticComplexity
+
+        def _read_event_buffer
+          if @event_buffer.empty?
+            []
+          else
+            @mutex.synchronize do
+              rval.concat(@event_buffer)
+              @event_buffer.clear
+            end
           end
         end
 

@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+
+require "dungeon/core/env"
 require "json"
 
 module Dungeon
@@ -9,6 +12,9 @@ module Dungeon
 
       attr_reader :width
       attr_reader :height
+
+      attr_reader :frames
+      attr_reader :tags
 
       class FrameData
         attr_reader :x
@@ -25,6 +31,14 @@ module Dungeon
 
         def to_a
           [ @x, @y, @width, @height ]
+        end
+
+        def == other
+          other.is_a?(self.class) and
+            self.x == other.x and
+            self.y == other.y and
+            self.width == other.width and
+            self.height == other.height
         end
       end
 
@@ -45,6 +59,12 @@ module Dungeon
 
           [ frame, key ]
         end
+
+        def == other
+          other.is_a?(self.class) and
+            self.frames == other.frames and
+            self.keys == other.keys
+        end
       end
 
       def self.find_path_for name
@@ -61,7 +81,7 @@ module Dungeon
 
         data = JSON.parse File.read path
         self.load_json(data).tap do |o|
-          o.name = name
+          o.name = File.basename name
           o.path = path
         end
       end
@@ -74,7 +94,7 @@ module Dungeon
                         e["frame"]["h"]
         end
 
-        tags = if json["meta"]["frameTags"].empty?
+        tags = if json["meta"].fetch("frameTags", []).empty?
           range = self.range_for_direction("forward", 0, frames.size - 1)
           keys = range.map { |f| json["frames"][f]["duration"] }
 
@@ -94,13 +114,13 @@ module Dungeon
       end
 
       def self.range_for_direction direction, from, to
-        case
+        case direction
         when "forward"
           (from..to).to_a
-        when "backward"
-          (from..to).reverse.to_a
+        when "reverse"
+          (from..to).to_a.reverse
         when "pingpong"
-          (from..to).to_a + ((from + 1)..(to - 1)).to_a
+          (from..to).to_a + ((from + 1)..(to - 1)).to_a.reverse
         else
           (from..to).to_a
         end
@@ -125,13 +145,13 @@ module Dungeon
 
       def default_tag
         @default_tag ||= begin
-          @tags.map do |k,v|
+          @tags.map do |k, v|
             [ k, v.frames.first ]
-          end.reject do |k,v|
+          end.reject do |_, v|
             v.nil?
-          end.sort_by do |k,v|
+          end.min_by do |_, v|
             v
-          end.first.first
+          end.first
         end
       end
     end
