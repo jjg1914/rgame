@@ -16,7 +16,7 @@ Rake::TestTask.new do |t|
 end
 
 RuboCop::RakeTask.new(:lint) do |task|
-  task.patterns = [ 'lib/dungeon/core/**/*.rb', 'lib/dungeon/task.tb' ]
+  task.patterns = [ 'lib/**/*.rb' ]
   # only show the files with failures
   #task.formatters = ['files']
   # don't abort rake on failure
