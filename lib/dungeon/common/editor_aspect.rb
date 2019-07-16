@@ -34,10 +34,18 @@ module Dungeon
           when :edit_entity
             unless self.selected.empty?
               self.selected.map { |e| self.collection[e] }.each do |e|
-                e.instance_eval(value) rescue STDERR.puts $!
+                begin
+                  e.instance_eval(value)
+                rescue
+                  STDERR.puts $!
+                end
               end
             else
-              self.instance_eval(value) rescue STDERR.puts $!
+              begin
+                self.instance_eval(value)
+              rescue
+                STDERR.puts $!
+              end
             end
           when :save
             File.write(value, JSON.pretty_generate({
@@ -81,7 +89,7 @@ module Dungeon
                 self.set_new_entity_edit_mode
                 stop!
               else
-                self.add_bulk copies
+                self.parent.add_bulk copies
                 self.set_selection copies
               end
             when "space"
