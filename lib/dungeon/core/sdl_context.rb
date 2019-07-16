@@ -94,7 +94,8 @@ module Dungeon
                        :scale, :scale=,
                        :scale_quality, :scale_quality=,
                        :font, :font=,
-                       :text_input_mode, :text_input_mode=
+                       :text_input_mode, :text_input_mode=,
+                       :clip_bounds, :clip_bounds=
 
         def initialize window, renderer
           @window = window
@@ -114,6 +115,7 @@ module Dungeon
             scale_quality
             font
             text_input_mode
+            clip_bounds
           ])
 
           @events = EventSource.new
@@ -272,6 +274,7 @@ module Dungeon
         attr_reader :scale_quality
         attr_reader :font
         attr_reader :text_input_mode
+        attr_reader :clip_bounds
 
         attr_reader :font_pointer
         attr_reader :color_struct
@@ -286,6 +289,7 @@ module Dungeon
           @scale_quality = SDL2.SDL_GetHint(SDL2::SDL_HINT_RENDER_SCALE_QUALITY)
 
           @color_struct = SDL2::SDLColor.new
+          @sdl_rect = SDL2::SDLRect.new
           @font_cache = {}
           @font_cache = Hash.new { |h, k| h[k] = _load_font(k) }
           @image_cache = Hash.new { |h, k| h[k] = _load_image(k) }
@@ -396,6 +400,23 @@ module Dungeon
           @text_input_mode = value
         end
 
+        def clip_bounds= value
+          return if @clip_bounds == value
+
+          unless value.nil?
+            @sdl_rect[:x] = value["left"]
+            @sdl_rect[:y] = value["top"]
+            @sdl_rect[:w] = value["right"] - value["left"] + 1
+            @sdl_rect[:h] = value["bottom"] - value["top"] + 1
+
+            SDL2.SDL_RenderSetClipRect @renderer, @sdl_rect
+          else
+            SDL2.SDL_RenderSetClipRect @renderer, nil
+          end
+
+          @clip_bounds = value
+        end
+
         private
 
         def _load_font value
@@ -466,7 +487,7 @@ module Dungeon
           @modifiers = Dungeon::Core::Events::ModifierState.new
           @event_buffer = []
 
-          @sdl_event = SDL2::SDL_Event.new
+          @sdl_event = SDL2::SDLEvent.new
 
           @now = 0
           @fps = 60

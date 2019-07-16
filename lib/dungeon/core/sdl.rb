@@ -120,6 +120,7 @@ module Dungeon
       attach_function :SDL_GetClipboardText, [], :string
       attach_function :SDL_SetClipboardText, [ :string ], :int
       attach_function :SDL_HasClipboardText, [], :bool
+      attach_function :SDL_RenderSetClipRect, [ :pointer, :pointer ], :int
 
       class SDLKeysym < FFI::Struct
         layout :scancode, :SDL_Scancode,
