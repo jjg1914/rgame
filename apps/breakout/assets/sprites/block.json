@@ -52,6 +52,87 @@
     "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
     "sourceSize": { "w": 16, "h": 8 },
     "duration": 100
+   },
+   {
+    "filename": "block 6.ase",
+    "frame": { "x": 96, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "block 7.ase",
+    "frame": { "x": 112, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "block 8.ase",
+    "frame": { "x": 128, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "block 9.ase",
+    "frame": { "x": 144, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "block 10.ase",
+    "frame": { "x": 160, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "block 11.ase",
+    "frame": { "x": 176, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "block 12.ase",
+    "frame": { "x": 192, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "block 13.ase",
+    "frame": { "x": 208, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "block 14.ase",
+    "frame": { "x": 224, "y": 0, "w": 16, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 8 },
+    "sourceSize": { "w": 16, "h": 8 },
+    "duration": 100
    }
  ],
  "meta": {
@@ -59,7 +140,7 @@
   "version": "1.2.2",
   "image": "block.png",
   "format": "RGBA8888",
-  "size": { "w": 96, "h": 8 },
+  "size": { "w": 240, "h": 8 },
   "scale": "1",
   "frameTags": [
    { "name": "red", "from": 0, "to": 0, "direction": "forward" },
@@ -67,7 +148,16 @@
    { "name": "yellow", "from": 2, "to": 2, "direction": "forward" },
    { "name": "green", "from": 3, "to": 3, "direction": "forward" },
    { "name": "blue", "from": 4, "to": 4, "direction": "forward" },
-   { "name": "purple", "from": 5, "to": 5, "direction": "forward" }
+   { "name": "purple", "from": 5, "to": 5, "direction": "forward" },
+   { "name": "hard", "from": 6, "to": 6, "direction": "forward" },
+   { "name": "hard_broken", "from": 7, "to": 7, "direction": "forward" },
+   { "name": "invincible", "from": 8, "to": 8, "direction": "forward" },
+   { "name": "red_moving", "from": 9, "to": 9, "direction": "forward" },
+   { "name": "orange_moving", "from": 10, "to": 10, "direction": "forward" },
+   { "name": "yellow_moving", "from": 11, "to": 11, "direction": "forward" },
+   { "name": "green_moving", "from": 12, "to": 12, "direction": "forward" },
+   { "name": "blue_moving", "from": 13, "to": 13, "direction": "forward" },
+   { "name": "purple_moving", "from": 14, "to": 14, "direction": "forward" }
   ]
  }
 }

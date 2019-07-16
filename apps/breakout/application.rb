@@ -39,7 +39,7 @@ class Dungeon::Common::RootEntity
   end
 
   on :start do
-    self.add(StageEntity.new.tap { |o| o.map = "stage1" })
+    self.add(StageEntity.new.tap { |o| o.map = "stage2" })
   end
 
   on :gameover do
@@ -59,13 +59,13 @@ class StageEntity < Dungeon::Common::MapEntity
       o.x = ((self.width - 8 - o.width) / 2) + 8
       o.y = self.height - 32
 
-      o.x_restrict = (8..(self.width - o.width - 8))
+      o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
     end)
 
     self.add(BallEntity.new.tap do |o|
       o.player = @player
-      o.x_restrict = (8..(self.width - o.width - 8))
-      o.y_restrict = (8..)
+      o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
+      o.y_restrict = (playable_bounds["top"]..)
     end)
   end
 
@@ -74,8 +74,8 @@ class StageEntity < Dungeon::Common::MapEntity
 
     self.add(BallEntity.new.tap do |o|
       o.player = @player
-      o.x_restrict = (8..(self.width - o.width - 8))
-      o.y_restrict = (8..)
+      o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
+      o.y_restrict = (playable_bounds["top"]..)
     end)
   end
 
@@ -94,8 +94,8 @@ class StageEntity < Dungeon::Common::MapEntity
 
           self.add(BallEntity.new.tap do |o|
             o.player = @player
-            o.x_restrict = (8..(self.width - o.width - 8))
-            o.y_restrict = (8..)
+            o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
+            o.y_restrict = (playable_bounds["top"]..)
           end)
         end
       end
@@ -117,8 +117,8 @@ class StageEntity < Dungeon::Common::MapEntity
       @wide_timer = nil
     end)
     @player.sprite = "player_wide"
-    if @player.x + @player.width >= self.width - 8
-      @player.x = self.width - @player.width - 8
+    if @player.x + @player.width > playable_bounds["right"]
+      @player.x = self.width - playable_bounds["right"]
     end
   end
 
@@ -162,6 +162,15 @@ class StageEntity < Dungeon::Common::MapEntity
       ctx.draw_image 12, 12
     end
   end
+
+  def playable_bounds
+    {
+      "left" => 8,
+      "top" => 8,
+      "right" => self.width - 9,
+      "bottom" => self.height - 1,
+    }
+  end
 end
 
 class PlayerEntity < Dungeon::Core::Entity
@@ -184,18 +193,20 @@ class BlockEntity < Dungeon::Core::Entity
   include Dungeon::Common::SpriteAspect
   include Dungeon::Common::PositionAspect
   include Dungeon::Common::DrawAspect
-  include Dungeon::Common::MovementAspect
 
   include Dungeon::Core::Savable
 
   savable [ :x, :y, :sprite_tag ]
 
+  attr_accessor :score
+
   on :new do
     self.sprite = "block"
+    self.score = 100
   end
 
   on :ball_collision do
-    self.broadcast :score, 100
+    self.broadcast :score, self.score
     PowerupEntity.generate.tap do |o|
       unless o.nil?
         o.x = self.x
@@ -204,6 +215,72 @@ class BlockEntity < Dungeon::Core::Entity
       end
     end
     self.remove
+  end
+end
+
+class HardBlockEntity < BlockEntity
+  attr_accessor :hits
+
+  savable [ :hits ]
+
+  on :new do
+    self.sprite_tag = "hard"
+    self.hits = 2
+    self.score = 200
+  end
+
+  around :ball_collision do |p|
+    self.hits -= 1
+
+    if self.hits <= 0
+      p.call
+    else
+      self.sprite_tag = "hard_broken"
+    end
+  end
+
+  def to_h
+    super.merge({
+      "hits" => self.hits,
+    })
+  end
+end
+
+class InvincibleBlockEntity < BlockEntity
+  on :new do
+    self.sprite_tag = "invincible"
+  end
+
+  before :ball_collision do |p|
+    stop!
+  end
+end
+
+class MovingBlockEntity < BlockEntity
+  include Dungeon::Common::MovementAspect
+
+  savable [ :x_speed, :y_speed ]
+
+  on :new do
+    self.sprite_tag = "red_moving"
+    self.x_speed = 32
+  end
+
+  around :draw do |p|
+    get_var("ctx").tap do |ctx|
+      ctx.save do
+        ctx.clip_bounds = self.parent.playable_bounds
+        p.call
+      end
+    end
+  end
+
+  after :interval do |dt|
+    if self.x < (self.parent.playable_bounds["left"] - self.width)
+      self.x = self.parent.playable_bounds["right"]
+    elsif self.x > self.parent.playable_bounds["right"]
+      self.x = self.parent.playable_bounds["left"] - self.width
+    end
   end
 end
 
@@ -256,9 +333,10 @@ class BallEntity < Dungeon::Core::Entity
   end
 
   on :bump do |e,mtv|
-    self.x_speed = -self.x_speed if mtv[0] != 0
+    e&.emit :ball_collision 
 
-    if mtv[1] != 0 and (self.sprite_tag != "power_ball" or not e.is_a?(BlockEntity))
+    if mtv[1] != 0 and (self.sprite_tag != "power_ball" or
+                        e.nil? or not e&.parent.nil?)
       unless e.nil?
         v_1 = Vector[(self.x + (self.width / 2)), (self.y + (self.height / 2))]
         v_2 = Vector[(e.x + (e.width / 2)), (if mtv[1] < 0
@@ -293,9 +371,9 @@ class BallEntity < Dungeon::Core::Entity
       else
         self.y_speed = -self.y_speed
       end
+    elsif mtv[0] != 0
+      self.x_speed = -self.x_speed
     end
-
-    e.emit :ball_collision if e.is_a? BlockEntity
   end
 
   on :slow do
