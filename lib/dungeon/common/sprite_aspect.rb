@@ -18,6 +18,13 @@ module Dungeon
         def sprite_sized?
           @sprite_sized
         end
+
+        def inherited klass
+          super
+          klass.instance_exec(self) do |parent|
+            @sprite_sized = parent.sprite_sized?
+          end
+        end
       end
 
       include Dungeon::Core::Aspect
