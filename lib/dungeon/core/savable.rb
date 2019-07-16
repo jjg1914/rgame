@@ -17,6 +17,13 @@ module Dungeon
             end
           end
         end
+
+        def inherited klass
+          super
+          klass.instance_exec(self) do |parent|
+            @savable = parent.savable.dup
+          end
+        end
       end
 
       def self.load_const name
@@ -24,9 +31,10 @@ module Dungeon
           e.split("_").map do |f|
             f.downcase.tap do |o|
               o[0] = o[0].upcase
-              o << "Entity" if i.zero?
             end
-          end.join
+          end.join.tap do |o|
+            o << "Entity" if i.zero?
+          end
         end.reverse.join("::"))
       end
 
