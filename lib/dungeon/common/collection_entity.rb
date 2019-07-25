@@ -9,7 +9,7 @@ module Dungeon
       extend Forwardable
       def_delegators :@children, :empty?
 
-      def initialize id
+      def initialize id, context
         super
         @children = []
         @index = {}
@@ -38,6 +38,13 @@ module Dungeon
 
       def add_bulk targets
         targets.each { |e| self.add(e) }
+      end
+
+      def create klass
+        self.make(klass) do |o|
+          yield o if block_given?
+          self.add(o)
+        end
       end
 
       def remove target = nil

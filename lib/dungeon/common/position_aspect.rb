@@ -38,8 +38,8 @@ module Dungeon
         self.solid = true
       end
 
-      on :pre_collision do 
-        get_var("collision")&.add(self)
+      on :pre_collision do |collision|
+        collision.add(self)
       end
 
       def to_h

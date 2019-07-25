@@ -262,6 +262,39 @@ describe Dungeon::Core::Entity do
     end
   end
 
+  describe "#make" do
+    after do
+      Dungeon::Core::Entity.registry.clear
+    end
+
+    it "should return entity of class" do
+      klass = Class.new(Dungeon::Core::Entity)
+      klass2 = Class.new(Dungeon::Core::Entity)
+      subject = klass.new
+
+      expect(subject.make(klass2)).must_be_kind_of(klass2)
+    end
+
+    it "should yield new entity if block given" do
+      klass = Class.new(Dungeon::Core::Entity)
+      klass2 = Class.new(Dungeon::Core::Entity)
+      subject = klass.new
+
+      tmp = nil
+      rval = subject.make(klass2) { |o| tmp = o }
+      expect(tmp).must_be_same_as(rval)
+    end
+
+    it "should assign context" do
+      klass = Class.new(Dungeon::Core::Entity)
+      klass2 = Class.new(Dungeon::Core::Entity)
+      subject = klass.new "_context_"
+
+      rval = subject.make(klass2)
+      expect(rval.context).must_equal("_context_")
+    end
+  end
+
   describe "#remove" do
     after do
       Dungeon::Core::Entity.registry.clear

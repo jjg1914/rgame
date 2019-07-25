@@ -94,12 +94,10 @@ module Dungeon
       end
 
       on :draw do
-        get_var("ctx").tap do |ctx|
-          ctx.source = self.sprite.image
-          ctx.draw_image(x.to_i + self.sprite_translate[0],
-                         y.to_i + self.sprite_translate[1],
-                         *self.sprite.at(self.sprite_tag, self.sprite_frame))
-        end
+        self.ctx.source = self.sprite.image
+        self.ctx.draw_image(x.to_i + self.sprite_translate[0],
+                            y.to_i + self.sprite_translate[1],
+                            *self.sprite.at(self.sprite_tag, self.sprite_frame))
       end
 
       def to_h

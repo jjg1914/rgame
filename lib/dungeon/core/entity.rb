@@ -137,8 +137,8 @@ module Dungeon
           end
         end
 
-        def new
-          super(Entity.id_counter_next).tap { |o| o.emit(:new) }
+        def new context = nil
+          super(Entity.id_counter_next, context).tap { |o| o.emit(:new) }
         end
 
         def id_counter_next
@@ -154,8 +154,12 @@ module Dungeon
       attr_accessor :active
       alias active? active
 
-      def initialize id
+      attr_reader :context
+      alias ctx context
+
+      def initialize id, context = nil
         @id = id
+        @context = context
         @active = true
         @klass = self.class
       end
@@ -175,6 +179,12 @@ module Dungeon
       def emit message, *args
         @klass.deliver(self, message, *args) do
           self.send(:last, message.to_s, *args)
+        end
+      end
+
+      def make klass
+        klass.new(self.context).tap do |o|
+          yield o if block_given?
         end
       end
 

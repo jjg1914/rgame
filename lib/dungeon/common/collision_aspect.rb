@@ -6,12 +6,12 @@ module Dungeon
     module CollisionAspect 
       include Dungeon::Core::Aspect
 
-      around :post_collision do |p|
+      around :post_collision do |p, collision|
         @mtv = [ [ nil, 0 ], [ nil, 0 ] ]
 
         p.call
 
-        get_var("collision")&.query(self).each do |e|
+        collision.query(self).each do |e|
           mtv = Dungeon::Core::Collision.calculate_mtv(self, e)
           self.emit(:collision, e, mtv)
         end

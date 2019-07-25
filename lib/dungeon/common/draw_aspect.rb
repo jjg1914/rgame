@@ -61,16 +61,14 @@ module Dungeon
       end
 
       on :draw do 
-        get_var("ctx").tap do |ctx|
-          unless self.fill_color.nil?
-            ctx.color = self.fill_color
-            ctx.fill_rect x.to_i, y.to_i, width.to_i, height.to_i
-          end
+        unless self.fill_color.nil?
+          self.ctx.color = self.fill_color
+          self.ctx.fill_rect x.to_i, y.to_i, width.to_i, height.to_i
+        end
 
-          unless self.stroke_color.nil?
-            ctx.color = self.stroke_color
-            ctx.draw_rect x.to_i, y.to_i, width.to_i, height.to_i
-          end
+        unless self.stroke_color.nil?
+          self.ctx.color = self.stroke_color
+          self.ctx.draw_rect x.to_i, y.to_i, width.to_i, height.to_i
         end
       end
 

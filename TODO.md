@@ -1,11 +1,10 @@
 ## TODO
 
 # Simple
-[ ] remove ext.rb
-[ ] remove `dynamic_scope.rb`
 [ ] text image cache
 
 # Big
+[ ] batch rendering
 [.] unit tests
 [.] linting
 [ ] yard doc

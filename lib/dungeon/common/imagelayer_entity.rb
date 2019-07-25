@@ -11,10 +11,8 @@ module Dungeon
       savable :image
 
       on :draw do
-        get_var("ctx").tap do |ctx|
-          ctx.source = self.image
-          ctx.draw_image(0, 0)
-        end
+        self.ctx.source = self.image
+        self.ctx.draw_image(0, 0)
       end
 
       def to_h

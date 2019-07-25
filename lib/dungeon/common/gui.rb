@@ -89,11 +89,11 @@ module Dungeon
         end
 
         on :focus do
-          get_var("ctx").tap { |o| o.text_input_mode = true unless o.nil? }
+          self.ctx.text_input_mode = true
         end
 
         on :blur do
-          get_var("ctx").tap { |o| o.text_input_mode = false unless o.nil? }
+          self.ctx.text_input_mode = false
         end
 
         on :keydown do |key,mod|
@@ -214,9 +214,7 @@ module Dungeon
         end
 
         on :draw do
-          get_var("ctx").tap do |ctx|
-            self.paint ctx unless ctx.nil?
-          end
+          self.paint self.ctx
         end
 
         def move_cursor direction
@@ -674,9 +672,7 @@ module Dungeon
         end
 
         on :draw do
-          get_var("ctx").tap do |ctx|
-            self.paint ctx unless ctx.nil?
-          end
+          self.paint self.ctx
         end
 
         def cursor_move direction

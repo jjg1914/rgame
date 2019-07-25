@@ -300,9 +300,9 @@ module Dungeon
                                       mem_int + 1,
                                       mem_int + 2,
                                       mem_int + 3
-          @color = Integer.from_rgb(mem_int.get(:uint8, 0),
-                                    mem_int.get(:uint8, 1),
-                                    mem_int.get(:uint8, 2))
+          @color = _from_rgb(mem_int.get(:uint8, 0),
+                             mem_int.get(:uint8, 1),
+                             mem_int.get(:uint8, 2))
           @alpha = mem_int.get(:uint8, 3)
 
           SDL2.SDL_StopTextInput
@@ -315,13 +315,13 @@ module Dungeon
           return if @color == value
 
           SDL2.SDL_SetRenderDrawColor @renderer,
-                                      value.red_value,
-                                      value.green_value,
-                                      value.blue_value,
+                                      _red_value(value),
+                                      _green_value(value),
+                                      _blue_value(value),
                                       alpha
-          @color_struct[:r] = value.red_value
-          @color_struct[:g] = value.green_value
-          @color_struct[:b] = value.blue_value
+          @color_struct[:r] = _red_value(value)
+          @color_struct[:g] = _green_value(value)
+          @color_struct[:b] = _blue_value(value)
           @color_struct[:a] = alpha
           @color = value
         end
@@ -330,13 +330,13 @@ module Dungeon
           return if @alpha == value
 
           SDL2.SDL_SetRenderDrawColor @renderer,
-                                      color.red_value,
-                                      color.green_value,
-                                      color.blue_value,
+                                      _red_value(color),
+                                      _green_value(color),
+                                      _blue_value(color),
                                       value
-          @color_struct[:r] = color.red_value
-          @color_struct[:g] = color.green_value
-          @color_struct[:b] = color.blue_value
+          @color_struct[:r] = _red_value(color)
+          @color_struct[:g] = _green_value(color)
+          @color_struct[:b] = _blue_value(color)
           @color_struct[:a] = value
           @alpha = value
         end
@@ -448,6 +448,30 @@ module Dungeon
             o.name = File.basename(value)
             o.path = path
           end
+        end
+
+        def _from_rgb red, green, blue
+          (red << 16) | (green << 8) | blue
+        end
+
+        def _red_value rgba
+          # TODO ENDIAN
+          (rgba & 0x00FF0000) >> 16
+        end
+
+        def _green_value rgba
+          # TODO ENDIAN
+          (rgba & 0x0000FF00) >> 8
+        end
+
+        def _blue_value rgba
+          # TODO ENDIAN
+          (rgba & 0x000000FF)
+        end
+
+        def _alpha_value rgba
+          # TODO ENDIAN
+          (rgba & 0xFF000000) >> 24
         end
       end
 

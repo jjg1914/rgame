@@ -39,12 +39,11 @@ class Dungeon::Common::RootEntity
   end
 
   on :start do
-    self.add(StageEntity.new.tap { |o| o.map = "stage2" })
+    self.create(StageEntity) { |o| o.map = "stage2" }
   end
 
   on :gameover do
-    get_var("state").tap { |o| o.reset unless o.nil? }
-    self.add(StageEntity.new.tap { |o| o.map = "stage1" })
+    self.create(StageEntity) { |o| o.map = "stage1" }
   end
 end
 
@@ -55,28 +54,28 @@ class StageEntity < Dungeon::Common::MapEntity
   on :mapupdate do
     @state = State.new
 
-    self.add(@player = PlayerEntity.new.tap do |o|
+    @player = self.create(PlayerEntity) do |o|
       o.x = ((self.width - 8 - o.width) / 2) + 8
       o.y = self.height - 32
 
       o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
-    end)
+    end
 
-    self.add(BallEntity.new.tap do |o|
+    self.create(BallEntity) do |o|
       o.player = @player
       o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
       o.y_restrict = (playable_bounds["top"]..)
-    end)
+    end
   end
 
   on :ballin do
     @state.balls += 1
 
-    self.add(BallEntity.new.tap do |o|
+    self.create(BallEntity) do |o|
       o.player = @player
       o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
       o.y_restrict = (playable_bounds["top"]..)
-    end)
+    end
   end
 
   on :ballout do
@@ -92,11 +91,11 @@ class StageEntity < Dungeon::Common::MapEntity
 
           @state.lives -= 1
 
-          self.add(BallEntity.new.tap do |o|
+          self.create(BallEntity) do |o|
             o.player = @player
             o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
             o.y_restrict = (playable_bounds["top"]..)
-          end)
+          end
         end
       end
     end
@@ -124,43 +123,41 @@ class StageEntity < Dungeon::Common::MapEntity
 
   after :draw do |ctx|
     sprite = Dungeon::Core::Sprite.load "ball"
-    get_var("ctx").tap do |ctx|
-      if @state.lives > 5
-        if @cache_lives != @state.lives
-          @lives_image.free unless @lives_image.nil?
-          @cache_lives = @state.lives
-
-          ctx.font = "PressStart2P-Regular:8"
-          ctx.color = 0xFFFFFF
-
-          @lives_image = ctx.create_text @cache_lives.to_s.rjust(2, " ") + "x"
-        end
-
-        ctx.source = @lives_image
-        ctx.draw_image self.width - @lives_image.width - 20, 12
-
-        ctx.source = sprite.image
-        ctx.draw_image self.width - 20, 11, 0, 0, 8, 8
-      else
+    if @state.lives > 5
+      if @cache_lives != @state.lives
         @lives_image.free unless @lives_image.nil?
-        ctx.source = sprite.image
-        @state.lives.to_i.times do |i|
-          ctx.draw_image self.width - (8 + ((i + 1) * 12)), 11, 0, 0, 8, 8
-        end
+        @cache_lives = @state.lives
+
+        self.ctx.font = "PressStart2P-Regular:8"
+        self.ctx.color = 0xFFFFFF
+
+        @lives_image = self.ctx.create_text @cache_lives.to_s.rjust(2, " ") + "x"
       end
 
-      if @cache_score != @state.score
-        @score_image.free unless @score_image.nil?
-        @cache_score = @state.score
+      self.ctx.source = @lives_image
+      self.ctx.draw_image self.width - @lives_image.width - 20, 12
 
-        ctx.font = "PressStart2P-Regular:8"
-        ctx.color = 0xFFFFFF
-        @score_image = ctx.create_text @cache_score.to_s.rjust(6, "0")
+      self.ctx.source = sprite.image
+      self.ctx.draw_image self.width - 20, 11, 0, 0, 8, 8
+    else
+      @lives_image.free unless @lives_image.nil?
+      self.ctx.source = sprite.image
+      @state.lives.to_i.times do |i|
+        self.ctx.draw_image self.width - (8 + ((i + 1) * 12)), 11, 0, 0, 8, 8
       end
-
-      ctx.source = @score_image
-      ctx.draw_image 12, 12
     end
+
+    if @cache_score != @state.score
+      @score_image.free unless @score_image.nil?
+      @cache_score = @state.score
+
+      self.ctx.font = "PressStart2P-Regular:8"
+      self.ctx.color = 0xFFFFFF
+      @score_image = self.ctx.create_text @cache_score.to_s.rjust(6, "0")
+    end
+
+    self.ctx.source = @score_image
+    self.ctx.draw_image 12, 12
   end
 
   def playable_bounds
@@ -207,7 +204,7 @@ class BlockEntity < Dungeon::Core::Entity
 
   on :ball_collision do
     self.broadcast :score, self.score
-    PowerupEntity.generate.tap do |o|
+    PowerupEntity.generate(self.ctx).tap do |o|
       unless o.nil?
         o.x = self.x
         o.y = self.y
@@ -267,11 +264,9 @@ class MovingBlockEntity < BlockEntity
   end
 
   around :draw do |p|
-    get_var("ctx").tap do |ctx|
-      ctx.save do
-        ctx.clip_bounds = self.parent.playable_bounds
-        p.call
-      end
+    self.ctx.save do
+      self.ctx.clip_bounds = self.parent.playable_bounds
+      p.call
     end
   end
 
@@ -405,7 +400,7 @@ class PowerupEntity < Dungeon::Core::Entity
     [ nil, 30 ],
   ]
 
-  def self.generate
+  def self.generate context
     weight = FREQUENCIES.map { |e| e[1] }.sum
     table = FREQUENCIES.map do |e|
       [ e[0], e[1].to_f / weight.to_f]
@@ -416,7 +411,7 @@ class PowerupEntity < Dungeon::Core::Entity
     value = rand
     index = table.find_index { |e| e[1] >= value }.to_i
     unless table[index].first.nil?
-      self.new.tap { |o| o.sprite_tag = table[index].first }
+      self.new(context).tap { |o| o.sprite_tag = table[index].first }
     end
   end
 

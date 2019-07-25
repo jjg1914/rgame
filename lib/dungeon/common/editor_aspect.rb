@@ -24,11 +24,10 @@ module Dungeon
         on :commit do |value|
           case self.edit_mode
           when :new_entity
-            entity = value.new.tap do |o|
+            entity = self.parent.create(value) do |o|
               o.x = self.cursor[0]
               o.y = self.cursor[1]
             end
-            self.parent.add entity
 
             self.set_selection [ entity ]
           when :edit_entity
@@ -177,36 +176,36 @@ module Dungeon
 
         on :draw do
           next if not self.edit_mode
-          get_var("ctx").tap do |ctx|
-            return if ctx.nil?
-            ctx.color = 0xD602DD
 
-            @collection.each_with_index do |e,i|
-              if e.kind_of? Dungeon::Common::PositionAspect
-                if self.selected.include? i
-                  ctx.save do
-                    ctx.color = 0x00E08E
-                    ctx.stroke_rect e.x.to_i, e.y.to_i, e.width.to_i, e.height.to_i
-                  end
-                else 
-                  ctx.stroke_rect e.x.to_i, e.y.to_i, e.width.to_i, e.height.to_i
+          self.ctx.color = 0xD602DD
+
+          @collection.each_with_index do |e,i|
+            if e.kind_of? Dungeon::Common::PositionAspect
+              if self.selected.include? i
+                self.ctx.save do
+                  self.ctx.color = 0x00E08E
+                  self.ctx.stroke_rect e.x.to_i, e.y.to_i,
+                                       e.width.to_i, e.height.to_i
                 end
+              else 
+                self.ctx.stroke_rect e.x.to_i, e.y.to_i,
+                                     e.width.to_i, e.height.to_i
               end
             end
+          end
 
-            if self.edit_mode == :default
-              x = self.cursor[0] + [ self.cursor_inflate[0], 0 ].min
-              y = self.cursor[1] + [ self.cursor_inflate[1], 0 ].min
-              w = 8 + self.cursor_inflate[0].abs
-              h = 8 + self.cursor_inflate[1].abs
+          if self.edit_mode == :default
+            x = self.cursor[0] + [ self.cursor_inflate[0], 0 ].min
+            y = self.cursor[1] + [ self.cursor_inflate[1], 0 ].min
+            w = 8 + self.cursor_inflate[0].abs
+            h = 8 + self.cursor_inflate[1].abs
 
-              ctx.color = 0xFFFFFF
-              ctx.stroke_rect x, y, w, h
-            end
+            self.ctx.color = 0xFFFFFF
+            self.ctx.stroke_rect x, y, w, h
           end
         end
 
-        def initialize collection
+        def initialize collection, context
           super
 
           @collection = collection
@@ -219,50 +218,42 @@ module Dungeon
 
         def set_new_entity_edit_mode
           self.edit_mode = :new_entity
-          Gui::Menu.new.tap do |o|
+          self.create(Gui::Menu) do |o|
             o.items = Dungeon::Core::Entity.registry.select do |e|
               e.ancestors.include?(Dungeon::Common::PositionAspect) and
                 e.ancestors.include?(Dungeon::Core::Savable)
             end
             o.x = self.cursor[0]
             o.y = self.cursor[1]
-            self.add o
-            o.focus
-          end
+          end.focus
         end
 
         def set_edit_entity_edit_mode
           self.edit_mode = :edit_entity
-          Gui::Input.new.tap do |o|
+          self.create(Gui::Input) do |o|
             o.x = self.cursor[0]
             o.y = self.cursor[1]
-            self.add o
-            o.focus
-          end
+          end.focus
         end
 
         def set_save_edit_mode
           self.edit_mode = :save
-          Gui::Input.new.tap do |o|
+          self.create(Gui::Input) do |o|
             path = Pathname.new(self.parent.map.path.to_s)
             o.text = Pathname.new(path.relative_path_from(Pathname.new(Dir.pwd))).to_s
             o.x = self.cursor[0]
             o.y = self.cursor[1]
-            self.add o
-            o.focus
-          end
+          end.focus
         end
 
         def set_open_edit_mode
           self.edit_mode = :open
-          Gui::Input.new.tap do |o|
+          self.create(Gui::Input) do |o|
             path = Pathname.new(self.parent.map.path.to_s)
             o.text = Pathname.new(path.relative_path_from(Pathname.new(Dir.pwd))).to_s
             o.x = self.cursor[0]
             o.y = self.cursor[1]
-            self.add o
-            o.focus
-          end
+          end.focus
         end
 
         def toggle_edit_mode
@@ -460,7 +451,7 @@ module Dungeon
       end
 
       on :new do
-        @editor_state = EditorState.new.tap do |o|
+        @editor_state = self.make(EditorState) do |o|
           o.collection = self.children
           o.parent = self
         end
