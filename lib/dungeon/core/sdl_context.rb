@@ -265,7 +265,27 @@ module Dungeon
         end
       end
 
+      module TextInputState
+        def text_input_mode
+          @text_input_mode ||= SDL2.SDL_IsTextInputActive
+        end
+
+        def text_input_mode= value
+          if (self.text_input_mode or value) and
+             not (self.text_input_mode and value)
+            if value
+              SDL2.SDL_StartTextInput
+            else
+              SDL2.SDL_StopTextInput
+            end
+          end
+          @text_input_mode = value
+        end
+      end
+
       class StateHolder
+        include TextInputState
+
         attr_reader :target
         attr_reader :source
         attr_reader :color
@@ -273,7 +293,6 @@ module Dungeon
         attr_reader :scale
         attr_reader :scale_quality
         attr_reader :font
-        attr_reader :text_input_mode
         attr_reader :clip_bounds
 
         attr_reader :font_pointer
@@ -295,18 +314,14 @@ module Dungeon
           @image_cache = Hash.new { |h, k| h[k] = _load_image(k) }
 
           mem_int = FFI::MemoryPointer.new(:uint8, 4)
-          SDL2.SDL_GetRenderDrawColor @renderer,
-                                      mem_int + 0,
-                                      mem_int + 1,
-                                      mem_int + 2,
-                                      mem_int + 3
+          SDL2.SDL_GetRenderDrawColor @renderer, mem_int, mem_int + 1,
+                                      mem_int + 2, mem_int + 3
           @color = _from_rgb(mem_int.get(:uint8, 0),
                              mem_int.get(:uint8, 1),
                              mem_int.get(:uint8, 2))
           @alpha = mem_int.get(:uint8, 3)
 
-          SDL2.SDL_StopTextInput
-          @text_input_mode = false
+          self.text_input_mode = false
         ensure
           mem_int.free unless mem_int.nil? or mem_int.null?
         end
@@ -314,30 +329,18 @@ module Dungeon
         def color= value
           return if @color == value
 
-          SDL2.SDL_SetRenderDrawColor @renderer,
-                                      _red_value(value),
-                                      _green_value(value),
-                                      _blue_value(value),
-                                      alpha
-          @color_struct[:r] = _red_value(value)
-          @color_struct[:g] = _green_value(value)
-          @color_struct[:b] = _blue_value(value)
-          @color_struct[:a] = alpha
+          red, green, blue = _to_rgb(value)
+          SDL2.SDL_SetRenderDrawColor @renderer, red, green, blue, alpha
+          @color_struct.assign red, green, blue, value
           @color = value
         end
 
         def alpha= value
           return if @alpha == value
 
-          SDL2.SDL_SetRenderDrawColor @renderer,
-                                      _red_value(color),
-                                      _green_value(color),
-                                      _blue_value(color),
-                                      value
-          @color_struct[:r] = _red_value(color)
-          @color_struct[:g] = _green_value(color)
-          @color_struct[:b] = _blue_value(color)
-          @color_struct[:a] = value
+          red, green, blue = _to_rgb(color)
+          SDL2.SDL_SetRenderDrawColor @renderer, red, green, blue, value
+          @color_struct.assign red, green, blue, value
           @alpha = value
         end
 
@@ -389,29 +392,18 @@ module Dungeon
           @font = value
         end
 
-        def text_input_mode= value
-          if (@text_input_mode or value) and not (@text_input_mode and value)
-            if value
-              SDL2.SDL_StartTextInput
-            else
-              SDL2.SDL_StopTextInput
-            end
-          end
-          @text_input_mode = value
-        end
-
         def clip_bounds= value
           return if @clip_bounds == value
 
-          unless value.nil?
+          if value.nil?
+            SDL2.SDL_RenderSetClipRect @renderer, nil
+          else
             @sdl_rect[:x] = value["left"]
             @sdl_rect[:y] = value["top"]
             @sdl_rect[:w] = value["right"] - value["left"] + 1
             @sdl_rect[:h] = value["bottom"] - value["top"] + 1
 
             SDL2.SDL_RenderSetClipRect @renderer, @sdl_rect
-          else
-            SDL2.SDL_RenderSetClipRect @renderer, nil
           end
 
           @clip_bounds = value
@@ -448,6 +440,10 @@ module Dungeon
             o.name = File.basename(value)
             o.path = path
           end
+        end
+
+        def _to_rgb rgb
+          [ _red_value(rgb), _green_value(rgb), _blue_value(rgb) ]
         end
 
         def _from_rgb red, green, blue

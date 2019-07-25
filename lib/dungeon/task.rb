@@ -14,6 +14,13 @@ module Dungeon
     end
 
     def define
+      _define_tasks
+      _define_rules
+    end
+
+    private
+
+    def _define_tasks
       sprite_sources   = FileList["assets/sprites/*.ase"]
       map_sources      = FileList["assets/maps/*.json"]
       tileset_sources  = FileList["assets/tilesets/*.json"]
@@ -24,7 +31,7 @@ module Dungeon
                          tileset_sources +
                          xcf_sources.ext(".png")
 
-      task :assets => manifest_sources
+      task({ :assets => manifest_sources })
 
       task :clean_assets do
         rm_f sprite_sources.ext(".json")
@@ -32,8 +39,10 @@ module Dungeon
         rm_f xcf_sources.ext(".png")
         rm_f "assets/manifest.yaml"
       end
+    end
 
-      rule ".json" => ".ase" do |t|
+    def _define_rules
+      rule({ ".json" => ".ase" }) do |t|
         FileUtils.cd(File.dirname(t.name)) do
           sh([
             "aseprite",
@@ -46,7 +55,7 @@ module Dungeon
         end
       end
 
-      rule ".png" => ".xcf" do |t|
+      rule({ ".png" => ".xcf" }) do |t|
         sh "convert %s -define png:color-type=2 %s" % [ t.source, t.name ]
       end
     end

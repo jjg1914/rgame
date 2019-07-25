@@ -117,10 +117,11 @@ module Dungeon
       attach_function :SDL_StartTextInput, [], :void
       attach_function :SDL_StopTextInput, [], :void
       attach_function :SDL_SetTextInputRect, [ :pointer ], :void
+      attach_function :SDL_IsTextInputActive, [], :bool
       attach_function :SDL_GetClipboardText, [], :string
       attach_function :SDL_SetClipboardText, [ :string ], :int
       attach_function :SDL_HasClipboardText, [], :bool
-      attach_function :SDL_RenderSetClipRect, [ :pointer, :pointer ], :int
+      attach_function :SDL_RenderSetClipRect, %i[pointer pointer], :int
 
       class SDLKeysym < FFI::Struct
         layout :scancode, :SDL_Scancode,
@@ -216,6 +217,13 @@ module Dungeon
                :g, :uint8,
                :b, :uint8,
                :a, :uint8
+
+        def assign red, green, blue, alpha
+          self[:r] = red
+          self[:g] = green
+          self[:b] = blue
+          self[:a] = alpha
+        end
       end
 
       SDL_INIT_VIDEO = 0x10
