@@ -7,6 +7,6 @@
 [ ] batch rendering
 [.] unit tests
 [.] linting
-[ ] yard doc
+[.] yard doc
 [ ] packaging
 [ ] CI/CD

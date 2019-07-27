@@ -716,17 +716,18 @@ module Dungeon
         def == other
           other.is_a?(self.class) and
             self.is_a?(other.class) and
-            self.left_ctrl == other.left_ctrl and
-            self.left_shift == other.left_shift and
-            self.left_alt == other.left_alt and
-            self.left_super == other.left_super and
-            self.right_ctrl == other.right_ctrl and
-            self.right_shift == other.right_shift and
-            self.right_alt == other.right_alt and
-            self.right_super == other.right_super
+            (%i[
+              left_ctrl
+              left_shift
+              left_alt
+              left_super
+              right_ctrl
+              right_shift
+              right_alt
+              right_super
+            ].all? { |e| self.send(e) == other.send(e) })
         end
       end
-
     end
   end
 end
