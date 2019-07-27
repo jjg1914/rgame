@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "forwardable"
+require "monitor"
 
 require "dungeon/core/env"
 require "dungeon/core/events"
@@ -8,7 +9,7 @@ require "dungeon/core/sdl"
 
 module Dungeon
   module Core
-    module SDLContext
+    class SDLContext
       WINDOW_FLAGS = SDL2::SDL_WINDOW_SHOWN |
                      SDL2::SDL_WINDOW_OPENGL
       RENDERER_FLAGS = SDL2::SDL_RENDERER_ACCELERATED |
@@ -44,8 +45,8 @@ module Dungeon
         :SDL_SCANCODE_UP => "up",
         :SDL_SCANCODE_LCTRL => "left_ctrl",
         :SDL_SCANCODE_LSHIFT => "left_shift",
-        :SDL_SCANCODE_LALT => "left_alt", # alt, option
-        :SDL_SCANCODE_LGUI => "left_super", # windows, command (apple), meta
+        :SDL_SCANCODE_LALT => "left_alt",
+        :SDL_SCANCODE_LGUI => "left_super",
         :SDL_SCANCODE_RCTRL => "right_ctrl",
         :SDL_SCANCODE_RSHIFT => "right_shift",
         :SDL_SCANCODE_RALT => "right_alt", # alt gr, option
@@ -61,108 +62,234 @@ module Dungeon
         SDL2::SDL_BUTTON_X2 => "x2",
       }.freeze
 
-      def self.open title, width, height
-        raise SDL2.SDL_GetError unless SDL2.SDL_Init(SDL2::SDL_INIT_VIDEO).zero?
-        raise SDL2.SDL_GetError unless SDL2TTF.TTF_Init.zero?
+      module EventSource
+        attr_accessor :fps
 
-        if SDL2Image.IMG_Init(SDL2Image::IMG_INIT_PNG).zero?
-          raise SDL2.SDL_GetError
-        end
+        def each_event &block
+          return self.each_event.each(&block) if block_given?
 
-        window = SDL2.SDL_CreateWindow title, 0, 0, width, height, WINDOW_FLAGS
-        raise SDL2.SDL_GetError if window.nil?
+          waitticks = self.fps.nil? ? 0 : (1000 / self.fps).to_i
 
-        renderer = SDL2.SDL_CreateRenderer window, -1, RENDERER_FLAGS
-        raise SDL2.SDL_GetError if renderer.nil?
+          Enumerator.new do |yielder|
+            catch :done do
+              sdl_event = SDL2::SDLEvent.new
+              now = 0
 
-        SDL2.SDL_StopTextInput
+              loop do
+                flag = false
+                now, diff = _ticks_since now
 
-        Value.new window, renderer
-      end
+                _pump_events(sdl_event).each do |e|
+                  yielder << e
+                  flag ||= e.is_a?(Dungeon::Core::Events::QuitEvent)
+                end
+                throw :done if flag
+                yielder << Events::IntervalEvent.new(now, diff)
 
-      class Value
-        include Enumerable
-
-        extend Forwardable
-        def_delegators :@events, :now, :fps, :fps=, :<<, :each, :each_event
-        def_delegators :@stack, :save, :restore
-        def_delegators :@state,
-                       :target, :target=,
-                       :source, :source=,
-                       :color, :color=,
-                       :alpha, :alpha=,
-                       :scale, :scale=,
-                       :scale_quality, :scale_quality=,
-                       :font, :font=,
-                       :text_input_mode, :text_input_mode=,
-                       :clip_bounds, :clip_bounds=
-
-        def initialize window, renderer
-          @window = window
-          @renderer = renderer
-
-          @mem_ints = 8.times.map { FFI::MemoryPointer.new(:int, 1) }
-          @sdl_rects = 2.times.map { SDL2::SDLRect.new }
-
-          @state = StateHolder.new @renderer
-          @stack = StateSaver.new(self, %w[
-            fps
-            target
-            source
-            color
-            alpha
-            scale
-            scale_quality
-            font
-            text_input_mode
-            clip_bounds
-          ])
-
-          @events = EventSource.new
-        end
-
-        def close
-          SDL2.SDL_DestroyRenderer @renderer unless @renderer.nil?
-          SDL2.SDL_DestroyWindow @window unless @window.nil?
-          SDL2TTF.TTF_Quit
-          SDL2Image.IMG_Quit
-          SDL2.SDL_Quit
-        end
-
-        def present
-          SDL2.SDL_RenderPresent @renderer
-        end
-
-        def create_image width, height
-          format = SDL2.SDL_GetWindowPixelFormat(@window)
-          texture = SDL2.SDL_CreateTexture(@renderer, format,
-                                           SDL2::SDL_TEXTUREACCESS_TARGET,
-                                           width, height)
-          Image.new texture
-        end
-
-        def create_text text
-          return if @state.font_pointer.nil? or @state.font_pointer.null?
-
-          surface = SDL2TTF.TTF_RenderText_Solid @state.font_pointer,
-                                                 text,
-                                                 @state.color_struct
-          texture = SDL2.SDL_CreateTextureFromSurface(@renderer, surface)
-          SDL2.SDL_FreeSurface(surface)
-
-          Image.new texture
-        end
-
-        def size_of_text text
-          if @state.font_pointer.nil? or @state.font_pointer.null?
-            [ 0, 0 ]
-          else
-            SDL2TTF.TTF_SizeText(@state.font_pointer,
-                                 text, @mem_ints[0], @mem_ints[1])
-            [ @mem_ints[0].get(:int, 0), @mem_ints[1].get(:int, 0) ]
+                diff2 = _ticks_since(now)[1]
+                SDL2.SDL_Delay(waitticks - diff2) if diff2 < waitticks
+              end
+            end
           end
         end
 
+        alias each each_event
+
+        def << event
+          self.tap { self.synchronize { _event_buffer << event } }
+        end
+
+        private
+
+        def _ticks_since last
+          now = SDL2.SDL_GetTicks
+          now >= last ? [ now, now - last ] : [ now, now + (0xFFFFFFFF - last) ]
+        end
+
+        # rubocop:disable Metrics/CyclomaticComplexity
+        def _pump_events sdl_event
+          rval = _read_event_buffer
+
+          until SDL2.SDL_PollEvent(sdl_event).zero?
+            case sdl_event[:type]
+            when SDL2::SDL_KEYUP
+              rval << _pump_key_up(sdl_event)
+            when SDL2::SDL_KEYDOWN
+              rval << _pump_key_down(sdl_event)
+            when SDL2::SDL_TEXTINPUT
+              rval << _pump_text_input(sdl_event)
+            when SDL2::SDL_MOUSEMOTION
+              rval << _pump_mouse_move(sdl_event)
+            when SDL2::SDL_MOUSEBUTTONDOWN
+              rval << _pump_mouse_down(sdl_event)
+            when SDL2::SDL_MOUSEBUTTONUP
+              rval << _pump_mouse_up(sdl_event)
+            when SDL2::SDL_WINDOWEVENT
+              if sdl_event[:window][:event] == :SDL_WINDOWEVENT_CLOSE
+                rval << Events::QuitEvent.new
+              end
+            when SDL2::SDL_QUIT
+              rval << Events::QuitEvent.new
+            end
+          end
+
+          rval
+        end
+        # rubocop:enable Metrics/CyclomaticComplexity
+
+        def _pump_key_up sdl_event
+          _assign_modifier sdl_event, false
+
+          key = _key_for(sdl_event[:key][:keysym][:sym],
+                         sdl_event[:key][:keysym][:scancode])
+          Events::KeyupEvent.new(key, self.modifiers)
+        end
+
+        def _pump_key_down sdl_event
+          key = _key_for(sdl_event[:key][:keysym][:sym],
+                         sdl_event[:key][:keysym][:scancode])
+          if sdl_event[:key][:repeat].zero?
+            _assign_modifier sdl_event, true
+
+            Events::KeydownEvent.new(key, self.modifiers)
+          else
+            Events::KeyrepeatEvent.new(key, self.modifiers)
+          end
+        end
+
+        def _pump_text_input sdl_event
+          text = sdl_event[:text][:text].to_ptr.read_string
+          Events::TextInputEvent.new(text)
+        end
+
+        def _pump_mouse_move sdl_event
+          Events::MouseMoveEvent.new(sdl_event[:motion][:x],
+                                     sdl_event[:motion][:y],
+                                     self.modifiers)
+        end
+
+        def _pump_mouse_down sdl_event
+          button = _button_for sdl_event[:button][:button]
+          Events::MouseButtondownEvent.new(sdl_event[:button][:x],
+                                           sdl_event[:button][:y],
+                                           button,
+                                           self.modifiers)
+        end
+
+        def _pump_mouse_up sdl_event
+          button = _button_for sdl_event[:button][:button]
+          Events::MouseButtonupEvent.new(sdl_event[:button][:x],
+                                         sdl_event[:button][:y],
+                                         button,
+                                         self.modifiers)
+        end
+
+        # rubocop:disable Metrics/CyclomaticComplexity
+        def _assign_modifier sdl_event, value
+          case sdl_event[:key][:keysym][:scancode]
+          when :SDL_SCANCODE_LCTRL
+            self.modifiers.left_ctrl = value
+          when :SDL_SCANCODE_LSHIFT
+            self.modifiers.left_shift = value
+          when :SDL_SCANCODE_LALT
+            self.modifiers.left_alt = value
+          when :SDL_SCANCODE_LGUI
+            self.modifiers.left_super = value
+          when :SDL_SCANCODE_RCTRL
+            self.modifiers.right_ctrl = value
+          when :SDL_SCANCODE_RSHIFT
+            self.modifiers.right_shift = value
+          when :SDL_SCANCODE_RALT
+            self.modifiers.right_alt = value
+          when :SDL_SCANCODE_RGUI
+            self.modifiers.right_super = value
+          end
+        end
+        # rubocop:enable Metrics/CyclomaticComplexity
+
+        def _read_event_buffer
+          [].tap do |rval|
+            unless _event_buffer.empty?
+              self.synchronize do
+                rval.concat(_event_buffer)
+                _event_buffer.clear
+              end
+            end
+          end
+        end
+
+        def _event_buffer
+          @_event_buffer ||= []
+        end
+
+        def _key_for key_code, scan_code
+          default = if key_code < 256
+            key_code.chr
+          else
+            scan_code
+          end
+          SCAN_CODE_STRINGS.fetch(scan_code, default)
+        end
+
+        def _button_for button
+          BUTTON_STRINGS.fetch(button, button)
+        end
+      end
+
+      class ModifierState
+        attr_accessor :left_ctrl
+        attr_accessor :left_shift
+        attr_accessor :left_alt
+        attr_accessor :left_super
+        attr_accessor :right_ctrl
+        attr_accessor :right_shift
+        attr_accessor :right_alt
+        attr_accessor :right_super
+
+        def initialize
+          @left_ctrl = false
+          @left_shift = false
+          @left_alt = false
+          @left_super = false
+          @right_ctrl = false
+          @right_shift = false
+          @right_alt = false
+          @right_super = false
+        end
+
+        def ctrl
+          self.left_ctrl or self.right_ctrl
+        end
+
+        def shift
+          self.left_shift or self.right_shift
+        end
+
+        def alt
+          self.left_alt or self.right_alt
+        end
+
+        def super
+          self.left_super or self.right_super
+        end
+
+        def == other
+          other.is_a?(self.class) and
+            self.is_a?(other.class) and
+            (%i[
+              left_ctrl
+              left_shift
+              left_alt
+              left_super
+              right_ctrl
+              right_shift
+              right_alt
+              right_super
+            ].all? { |e| self.send(e) == other.send(e) })
+        end
+      end
+
+      module DrawMethods
         def clear
           SDL2.SDL_RenderClear @renderer
         end
@@ -196,6 +323,119 @@ module Dungeon
                               @state.source_image.texture,
                               @sdl_rects[1],
                               @sdl_rects[0])
+        end
+      end
+
+      class << self
+        def open title, width, height
+          unless SDL2.SDL_Init(SDL2::SDL_INIT_VIDEO).zero?
+            raise SDL2.SDL_GetError
+          end
+
+          raise SDL2.SDL_GetError unless SDL2TTF.TTF_Init.zero?
+
+          if SDL2Image.IMG_Init(SDL2Image::IMG_INIT_PNG).zero?
+            raise SDL2.SDL_GetError
+          end
+
+          window = SDL2.SDL_CreateWindow title, 0, 0,
+                                         width, height,
+                                         WINDOW_FLAGS
+          raise SDL2.SDL_GetError if window.nil?
+
+          renderer = SDL2.SDL_CreateRenderer window, -1, RENDERER_FLAGS
+          raise SDL2.SDL_GetError if renderer.nil?
+
+          SDL2.SDL_StopTextInput
+
+          self.new window, renderer
+        end
+      end
+
+      include Enumerable
+      include MonitorMixin
+      include EventSource
+      include DrawMethods
+
+      extend Forwardable
+      def_delegators :@stack, :save, :restore
+      def_delegators :@state,
+                     :target, :target=,
+                     :source, :source=,
+                     :color, :color=,
+                     :alpha, :alpha=,
+                     :scale, :scale=,
+                     :scale_quality, :scale_quality=,
+                     :font, :font=,
+                     :text_input_mode, :text_input_mode=,
+                     :clip_bounds, :clip_bounds=
+
+      attr_reader :modifiers
+
+      def initialize window, renderer
+        @window = window
+        @renderer = renderer
+
+        @mem_ints = 8.times.map { FFI::MemoryPointer.new(:int, 1) }
+        @sdl_rects = 2.times.map { SDL2::SDLRect.new }
+
+        @state = StateHolder.new @renderer
+        @stack = StateSaver.new(self, %w[
+          fps
+          target
+          source
+          color
+          alpha
+          scale
+          scale_quality
+          font
+          text_input_mode
+          clip_bounds
+        ])
+
+        @modifiers = ModifierState.new
+        self.fps = 60
+      end
+
+      def close
+        SDL2.SDL_DestroyRenderer @renderer unless @renderer.nil?
+        SDL2.SDL_DestroyWindow @window unless @window.nil?
+        SDL2TTF.TTF_Quit
+        SDL2Image.IMG_Quit
+        SDL2.SDL_Quit
+      end
+
+      def present
+        SDL2.SDL_RenderPresent @renderer
+      end
+
+      def create_image width, height
+        format = SDL2.SDL_GetWindowPixelFormat(@window)
+        texture = SDL2.SDL_CreateTexture(@renderer, format,
+                                         SDL2::SDL_TEXTUREACCESS_TARGET,
+                                         width, height)
+        Image.new texture
+      end
+
+      def create_text text
+        return if @state.font_pointer.nil? or @state.font_pointer.null?
+
+        surface = SDL2TTF.TTF_RenderText_Solid @state.font_pointer,
+                                               text,
+                                               @state.color_struct
+        texture = SDL2.SDL_CreateTextureFromSurface(@renderer, surface)
+        SDL2.SDL_FreeSurface(surface)
+
+        Image.new texture
+      end
+
+      def size_of_text text
+        if @state.font_pointer.nil? or @state.font_pointer.null?
+          [ 0, 0 ]
+        else
+          SDL2TTF.TTF_SizeText(@state.font_pointer,
+                               text, @mem_ints[0], @mem_ints[1])
+          [ @mem_ints[0].get(:int, 0), @mem_ints[1].get(:int, 0) ]
         end
       end
 
@@ -494,238 +734,6 @@ module Dungeon
           return if @stack.empty?
 
           @props.zip(@stack.pop).each { |k, v| @target.send(("%s=" % k), v) }
-        end
-      end
-
-      class EventSource
-        attr_reader :now
-        attr_accessor :fps
-
-        def initialize
-          @mutex = Mutex.new
-
-          @modifiers = ModifierState.new
-          @event_buffer = []
-
-          @sdl_event = SDL2::SDLEvent.new
-
-          @now = 0
-          @fps = 60
-        end
-
-        def each_event &block
-          return self.each_event.each(&block) if block_given?
-
-          waitticks = self.fps.nil? ? 0 : (1000 / self.fps).to_i
-
-          Enumerator.new do |yielder|
-            catch :done do
-              loop do
-                flag = false
-                @now, diff = _ticks_since @now
-
-                _pump_events.each do |e|
-                  yielder << e
-                  flag ||= e.is_a?(Dungeon::Core::Events::QuitEvent)
-                end
-                throw :done if flag
-                yielder << Events::IntervalEvent.new(@now, diff)
-
-                diff2 = _ticks_since(@now)[1]
-                SDL2.SDL_Delay(waitticks - diff2) if diff2 < waitticks
-              end
-            end
-          end
-        end
-
-        alias each each_event
-
-        def << event
-          self.tap { @mutex.synchronize { @event_buffer << event } }
-        end
-
-        private
-
-        def _ticks_since last
-          now = SDL2.SDL_GetTicks
-          now >= last ? [ now, now - last ] : [ now, now + (0xFFFFFFFF - last) ]
-        end
-
-        # rubocop:disable Metrics/CyclomaticComplexity
-        def _pump_events
-          rval = _read_event_buffer
-
-          until SDL2.SDL_PollEvent(@sdl_event).zero?
-            case @sdl_event[:type]
-            when SDL2::SDL_KEYUP
-              rval << _pump_key_up
-            when SDL2::SDL_KEYDOWN
-              rval << _pump_key_down
-            when SDL2::SDL_TEXTINPUT
-              rval << _pump_text_input
-            when SDL2::SDL_MOUSEMOTION
-              rval << _pump_mouse_move
-            when SDL2::SDL_MOUSEBUTTONDOWN
-              rval << _pump_mouse_down
-            when SDL2::SDL_MOUSEBUTTONUP
-              rval << _pump_mouse_up
-            when SDL2::SDL_WINDOWEVENT
-              if @sdl_event[:window][:event] == :SDL_WINDOWEVENT_CLOSE
-                rval << Events::QuitEvent.new
-              end
-            when SDL2::SDL_QUIT
-              rval << Events::QuitEvent.new
-            end
-          end
-
-          rval
-        end
-        # rubocop:enable Metrics/CyclomaticComplexity
-
-        def _pump_key_up
-          _assign_modifier @sdl_event, false
-
-          key = _key_for(@sdl_event[:key][:keysym][:sym],
-                         @sdl_event[:key][:keysym][:scancode])
-          Events::KeyupEvent.new(key, @modifiers)
-        end
-
-        def _pump_key_down
-          key = _key_for(@sdl_event[:key][:keysym][:sym],
-                         @sdl_event[:key][:keysym][:scancode])
-          if @sdl_event[:key][:repeat].zero?
-            _assign_modifier @sdl_event, true
-
-            Events::KeydownEvent.new(key, @modifiers)
-          else
-            Events::KeyrepeatEvent.new(key, @modifiers)
-          end
-        end
-
-        def _pump_text_input
-          text = @sdl_event[:text][:text].to_ptr.read_string
-          Events::TextInputEvent.new(text)
-        end
-
-        def _pump_mouse_move
-          Events::MouseMoveEvent.new(@sdl_event[:motion][:x],
-                                     @sdl_event[:motion][:y],
-                                     @modifiers)
-        end
-
-        def _pump_mouse_down
-          button = _button_for @sdl_event[:button][:button]
-          Events::MouseButtondownEvent.new(@sdl_event[:button][:x],
-                                           @sdl_event[:button][:y],
-                                           button,
-                                           @modifiers)
-        end
-
-        def _pump_mouse_up
-          button = _button_for @sdl_event[:button][:button]
-          Events::MouseButtonupEvent.new(@sdl_event[:button][:x],
-                                         @sdl_event[:button][:y],
-                                         button,
-                                         @modifiers)
-        end
-
-        # rubocop:disable Metrics/CyclomaticComplexity
-        def _assign_modifier sdl_event, value
-          case sdl_event[:key][:keysym][:scancode]
-          when :SDL_SCANCODE_LCTRL
-            @modifiers.left_ctrl = value
-          when :SDL_SCANCODE_LSHIFT
-            @modifiers.left_shift = value
-          when :SDL_SCANCODE_LALT
-            @modifiers.left_alt = value
-          when :SDL_SCANCODE_LGUI
-            @modifiers.left_super = value
-          when :SDL_SCANCODE_RCTRL
-            @modifiers.right_ctrl = value
-          when :SDL_SCANCODE_RSHIFT
-            @modifiers.right_shift = value
-          when :SDL_SCANCODE_RALT
-            @modifiers.right_alt = value
-          when :SDL_SCANCODE_RGUI
-            @modifiers.right_super = value
-          end
-        end
-        # rubocop:enable Metrics/CyclomaticComplexity
-
-        def _read_event_buffer
-          [].tap do |rval|
-            unless @event_buffer.empty?
-              @mutex.synchronize do
-                rval.concat(@event_buffer)
-                @event_buffer.clear
-              end
-            end
-          end
-        end
-
-        def _key_for key_code, scan_code
-          SCAN_CODE_STRINGS.fetch(scan_code, if key_code < 256
-            key_code.chr
-          else
-            scan_code
-          end)
-        end
-
-        def _button_for button
-          BUTTON_STRINGS.fetch(button, button)
-        end
-      end
-
-      class ModifierState
-        attr_accessor :left_ctrl
-        attr_accessor :left_shift
-        attr_accessor :left_alt
-        attr_accessor :left_super
-        attr_accessor :right_ctrl
-        attr_accessor :right_shift
-        attr_accessor :right_alt
-        attr_accessor :right_super
-
-        def initialize
-          @left_ctrl = false
-          @left_shift = false
-          @left_alt = false
-          @left_super = false
-          @right_ctrl = false
-          @right_shift = false
-          @right_alt = false
-          @right_super = false
-        end
-
-        def ctrl
-          self.left_ctrl or self.right_ctrl
-        end
-
-        def shift
-          self.left_shift or self.right_shift
-        end
-
-        def alt
-          self.left_alt or self.right_alt
-        end
-
-        def super
-          self.left_super or self.right_super
-        end
-
-        def == other
-          other.is_a?(self.class) and
-            self.is_a?(other.class) and
-            (%i[
-              left_ctrl
-              left_shift
-              left_alt
-              left_super
-              right_ctrl
-              right_shift
-              right_alt
-              right_super
-            ].all? { |e| self.send(e) == other.send(e) })
         end
       end
     end

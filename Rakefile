@@ -29,6 +29,8 @@ YARD::Rake::YardocTask.new do |t|
  t.files = ['lib/**/*.rb']
 end
 
+task :check => [ :test, :lint ]
+
 SDL2_SOURCE = "https://libsdl.org/release/SDL2-2.0.9.tar.gz"
 SDL2_DEST = File.join("vendor", File.basename(SDL2_SOURCE))
 SDL2_DIR = File.join("vendor", File.basename(SDL2_DEST, ".tar.gz"))

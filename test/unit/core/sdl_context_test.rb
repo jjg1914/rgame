@@ -9,7 +9,19 @@ describe Dungeon::Core::SDLContext do
 
         @modifiers = Dungeon::Core::SDLContext::ModifierState.new
 
-        @subject = Dungeon::Core::SDLContext::EventSource.new
+        @subject = Object.new.tap do |o|
+          o.instance_eval do 
+            extend Dungeon::Core::SDLContext::EventSource
+            extend MonitorMixin
+            @fps = 60
+            @modifiers = Dungeon::Core::SDLContext::ModifierState.new
+
+            class << self
+              attr_reader :modifiers
+              attr_reader :fps
+            end
+          end
+        end
       end
 
       it "should yield custom events" do
