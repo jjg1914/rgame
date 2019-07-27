@@ -15,4 +15,5 @@ group :development do
   gem "minitest-reporters"
   gem "simplecov"
   gem "rubocop"
+  gem "yard"
 end

@@ -1,5 +1,6 @@
 require "rake/testtask"
 require 'rubocop/rake_task'
+require 'yard'
 
 $:.unshift File.expand_path "lib", File.dirname(__FILE__)
 
@@ -22,6 +23,10 @@ RuboCop::RakeTask.new(:lint) do |task|
   #task.formatters = ['files']
   # don't abort rake on failure
   #task.fail_on_error = false
+end
+
+YARD::Rake::YardocTask.new do |t|
+ t.files = ['lib/**/*.rb']
 end
 
 SDL2_SOURCE = "https://libsdl.org/release/SDL2-2.0.9.tar.gz"

@@ -1,7 +1,9 @@
 vendor/
 coverage/
+doc/
 assets/manifest.yaml
 assets/sprites/*.json
 assets/sprites/*.png
 assets/tilesets/*.png
 .consolehst
+.yardoc
