@@ -504,7 +504,7 @@ module Dungeon
         def initialize
           @mutex = Mutex.new
 
-          @modifiers = Dungeon::Core::Events::ModifierState.new
+          @modifiers = ModifierState.new
           @event_buffer = []
 
           @sdl_event = SDL2::SDLEvent.new
@@ -519,25 +519,21 @@ module Dungeon
           waitticks = self.fps.nil? ? 0 : (1000 / self.fps).to_i
 
           Enumerator.new do |yielder|
-            begin
-              catch :done do
-                loop do
-                  flag = false
-                  @now, diff = _ticks_since @now
+            catch :done do
+              loop do
+                flag = false
+                @now, diff = _ticks_since @now
 
-                  _pump_events.each do |e|
-                    yielder << e
-                    flag ||= e.is_a?(Dungeon::Core::Events::QuitEvent)
-                  end
-                  throw :done if flag
-                  yielder << Events::IntervalEvent.new(@now, diff)
-
-                  diff2 = _ticks_since(@now)[1]
-                  SDL2.SDL_Delay(waitticks - diff2) if diff2 < waitticks
+                _pump_events.each do |e|
+                  yielder << e
+                  flag ||= e.is_a?(Dungeon::Core::Events::QuitEvent)
                 end
+                throw :done if flag
+                yielder << Events::IntervalEvent.new(@now, diff)
+
+                diff2 = _ticks_since(@now)[1]
+                SDL2.SDL_Delay(waitticks - diff2) if diff2 < waitticks
               end
-            rescue Interrupt
-              yielder << Events::QuitEvent.new
             end
           end
         end
@@ -545,7 +541,7 @@ module Dungeon
         alias each each_event
 
         def << event
-          @mutex.synchronize { @internal << event }
+          self.tap { @mutex.synchronize { @event_buffer << event } }
         end
 
         private
@@ -657,12 +653,12 @@ module Dungeon
         # rubocop:enable Metrics/CyclomaticComplexity
 
         def _read_event_buffer
-          if @event_buffer.empty?
-            []
-          else
-            @mutex.synchronize do
-              rval.concat(@event_buffer)
-              @event_buffer.clear
+          [].tap do |rval|
+            unless @event_buffer.empty?
+              @mutex.synchronize do
+                rval.concat(@event_buffer)
+                @event_buffer.clear
+              end
             end
           end
         end
@@ -679,6 +675,58 @@ module Dungeon
           BUTTON_STRINGS.fetch(button, button)
         end
       end
+
+      class ModifierState
+        attr_accessor :left_ctrl
+        attr_accessor :left_shift
+        attr_accessor :left_alt
+        attr_accessor :left_super
+        attr_accessor :right_ctrl
+        attr_accessor :right_shift
+        attr_accessor :right_alt
+        attr_accessor :right_super
+
+        def initialize
+          @left_ctrl = false
+          @left_shift = false
+          @left_alt = false
+          @left_super = false
+          @right_ctrl = false
+          @right_shift = false
+          @right_alt = false
+          @right_super = false
+        end
+
+        def ctrl
+          self.left_ctrl or self.right_ctrl
+        end
+
+        def shift
+          self.left_shift or self.right_shift
+        end
+
+        def alt
+          self.left_alt or self.right_alt
+        end
+
+        def super
+          self.left_super or self.right_super
+        end
+
+        def == other
+          other.is_a?(self.class) and
+            self.is_a?(other.class) and
+            self.left_ctrl == other.left_ctrl and
+            self.left_shift == other.left_shift and
+            self.left_alt == other.left_alt and
+            self.left_super == other.left_super and
+            self.right_ctrl == other.right_ctrl and
+            self.right_shift == other.right_shift and
+            self.right_alt == other.right_alt and
+            self.right_super == other.right_super
+        end
+      end
+
     end
   end
 end

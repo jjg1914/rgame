@@ -4,6 +4,9 @@ module Dungeon
   module Core
     module Events
       class QuitEvent
+        def == other
+          other.is_a?(self.class) and self.is_a?(other.class)
+        end
       end
 
       class IntervalEvent
@@ -15,43 +18,12 @@ module Dungeon
           @now = now
           @dt = dt
         end
-      end
 
-      class ModifierState
-        attr_accessor :left_ctrl
-        attr_accessor :left_shift
-        attr_accessor :left_alt
-        attr_accessor :left_super
-        attr_accessor :right_ctrl
-        attr_accessor :right_shift
-        attr_accessor :right_alt
-        attr_accessor :right_super
-
-        def initialize
-          @left_ctrl = false
-          @left_shift = false
-          @left_alt = false
-          @left_super = false
-          @right_ctrl = false
-          @right_shift = false
-          @right_alt = false
-          @right_super = false
-        end
-
-        def ctrl
-          self.left_ctrl or self.right_ctrl
-        end
-
-        def shift
-          self.left_shift or self.right_shift
-        end
-
-        def alt
-          self.left_alt or self.right_alt
-        end
-
-        def super
-          self.left_super or self.right_super
+        def == other
+          other.is_a?(self.class) and
+            self.is_a?(other.class) and
+            self.now == other.now and
+            self.dt == other.dt
         end
       end
 
@@ -62,6 +34,13 @@ module Dungeon
         def initialize key, modifiers
           @key = key
           @modifiers = modifiers
+        end
+
+        def == other
+          other.is_a?(self.class) and
+            self.is_a?(other.class) and
+            self.key == other.key and
+            self.modifiers == other.modifiers
         end
       end
 
@@ -79,6 +58,14 @@ module Dungeon
           @y = y
           @modifiers = modifiers
         end
+
+        def == other
+          other.is_a?(self.class) and
+            self.is_a?(other.class) and
+            self.x == other.x and
+            self.y == other.y and
+            self.modifiers == other.modifiers
+        end
       end
 
       class MouseButtonEvent
@@ -93,6 +80,15 @@ module Dungeon
           @button = button
           @modifiers = modifiers
         end
+
+        def == other
+          other.is_a?(self.class) and
+            self.is_a?(other.class) and
+            self.x == other.x and
+            self.y == other.y and
+            self.button == other.button and
+            self.modifiers == other.modifiers
+        end
       end
 
       class MouseButtondownEvent < MouseButtonEvent; end
@@ -103,6 +99,12 @@ module Dungeon
 
         def initialize text
           @text = text
+        end
+
+        def == other
+          other.is_a?(self.class) and
+            self.is_a?(other.class) and
+            self.text == other.text
         end
       end
     end

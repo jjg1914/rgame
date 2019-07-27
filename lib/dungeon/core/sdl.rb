@@ -82,6 +82,7 @@ module Dungeon
       attach_function :SDL_CreateRenderer, %i[pointer int uint32], :pointer
       attach_function :SDL_DestroyRenderer, %i[pointer], :void
       attach_function :SDL_PollEvent, %i[pointer], :int
+      attach_function :SDL_PushEvent, %i[pointer], :int
       attach_function :SDL_RenderPresent, %i[pointer], :void
       attach_function :SDL_SetRenderDrawColor, %i[pointer int int int int], :int
       attach_function :SDL_GetRenderDrawColor, %i[
