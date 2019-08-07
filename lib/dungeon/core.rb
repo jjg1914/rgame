@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "dungeon/core/aspect"
 require "dungeon/core/collision"
 require "dungeon/core/entity"

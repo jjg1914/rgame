@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "dungeon/core/aspect"
 
 module Dungeon
@@ -24,7 +26,24 @@ module Dungeon
         "grey" => 0x888888,
         "bright_gray" => 0xBBBBBB,
         "bright_grey" => 0xBBBBBB,
-      }
+      }.freeze
+
+      def self.parse_color_string value
+        value = value.to_s.strip.downcase
+        if COLOR_MAP.key? value
+          COLOR_MAP[value]
+        elsif value.start_with? "0x"
+          value[2..-1].to_i 16
+        elsif value.start_with? "0b"
+          value[2..-1].to_i 2
+        elsif value.start_with? "#"
+          value[1..-1].to_i 16
+        elsif value.start_with? "0"
+          value[1..-1].to_i 8
+        else
+          value.to_i 10
+        end
+      end
 
       def self.parse_color value
         if value.nil?
@@ -32,20 +51,7 @@ module Dungeon
         elsif value.is_a? Numeric
           value.to_i
         else
-          value = value.to_s.strip.downcase
-          if COLOR_MAP.has_key? value
-            COLOR_MAP[value]
-          elsif value.start_with? "0x"
-            value[2..-1].to_i 16
-          elsif value.start_with? "0b"
-            value[2..-1].to_i 2
-          elsif value.start_with? "#"
-            value[1..-1].to_i 16
-          elsif value.start_with? "0"
-            value[1..-1].to_i 8
-          else
-            value.to_i 10
-          end
+          self.parse_color_string value
         end
       end
 
@@ -60,7 +66,7 @@ module Dungeon
         @stroke_color = DrawAspect.parse_color(value)
       end
 
-      on :draw do 
+      on :draw do
         unless self.fill_color.nil?
           self.ctx.color = self.fill_color
           self.ctx.fill_rect x.to_i, y.to_i, width.to_i, height.to_i

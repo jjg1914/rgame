@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "dungeon/core/events"
 require "dungeon/core/sdl_context"
 require "dungeon/common/collection_entity"
@@ -10,35 +12,7 @@ module Dungeon
 
         self.emit :start
 
-        self.context.each do |e|
-          case e
-          when Dungeon::Core::Events::KeyupEvent
-            self.emit :keyup, e.key, e.modifiers
-          when Dungeon::Core::Events::KeydownEvent
-            self.emit :keydown, e.key, e.modifiers
-          when Dungeon::Core::Events::KeyrepeatEvent
-            self.emit :keyrepeat, e.key, e.modifiers
-          when Dungeon::Core::Events::TextInputEvent
-            self.emit :textinput, e.text
-          when Dungeon::Core::Events::IntervalEvent
-            self.emit :interval, e.dt
-          when Dungeon::Core::Events::MouseMoveEvent
-            scale = self.context.scale
-            self.emit :mousemove, (e.x / scale[0]).to_i,
-                                  (e.y / scale[1]).to_i,
-                                  e.modifiers
-          when Dungeon::Core::Events::MouseButtonupEvent
-            scale = self.context.scale
-            self.emit :mouseup, (e.x / scale[0]).to_i,
-                                (e.y / scale[1]).to_i,
-                                e.button, e.modifiers
-          when Dungeon::Core::Events::MouseButtondownEvent
-            scale = self.context.scale
-            self.emit :mousedown, (e.x / scale[0]).to_i,
-                                  (e.y / scale[1]).to_i,
-                                  e.button, e.modifiers
-          end
-        end
+        self.context.each(60) { |e| event_loop_step(e) }
 
         self.emit :end
       end
@@ -54,6 +28,72 @@ module Dungeon
 
       def open_context title, width, height
         @context = Dungeon::Core::SDLContext.open(title, width, height)
+      end
+
+      private
+
+      # rubocop:disable Metrics/CyclomaticComplexity
+      def event_loop_step event
+        case event
+        when Dungeon::Core::Events::KeyupEvent
+          event_loop_keyup event
+        when Dungeon::Core::Events::KeydownEvent
+          event_loop_keydown event
+        when Dungeon::Core::Events::KeyrepeatEvent
+          event_loop_keyrepeat event
+        when Dungeon::Core::Events::TextInputEvent
+          event_loop_textinput event
+        when Dungeon::Core::Events::IntervalEvent
+          event_loop_interval event
+        when Dungeon::Core::Events::MouseMoveEvent
+          event_loop_mousemove event
+        when Dungeon::Core::Events::MouseButtonupEvent
+          event_loop_mouseup event
+        when Dungeon::Core::Events::MouseButtondownEvent
+          event_loop_mousedown event
+        end
+      end
+      # rubocop:enable Metrics/CyclomaticComplexity
+
+      def event_loop_keyup event
+        self.emit :keyup, event.key, event.modifiers
+      end
+
+      def event_loop_keydown event
+        self.emit :keydown, event.key, event.modifiers
+      end
+
+      def event_loop_keyrepeat event
+        self.emit :keyrepeat, event.key, event.modifiers
+      end
+
+      def event_loop_textinput event
+        self.emit :textinput, event.text
+      end
+
+      def event_loop_interval event
+        self.emit :interval, event.dt
+      end
+
+      def event_loop_mousemove event
+        self.emit :mousemove,
+                  (event.x / self.context.scale[0]).to_i,
+                  (event.y / self.context.scale[1]).to_i,
+                  event.modifiers
+      end
+
+      def event_loop_mouseup event
+        self.emit :mouseup,
+                  (event.x / self.context.scale[0]).to_i,
+                  (event.y / self.context.scale[1]).to_i,
+                  event.button, event.modifiers
+      end
+
+      def event_loop_mousedown event
+        self.emit :mousedown,
+                  (event.x / self.context.scale[0]).to_i,
+                  (event.y / self.context.scale[1]).to_i,
+                  event.button, event.modifiers
       end
     end
   end

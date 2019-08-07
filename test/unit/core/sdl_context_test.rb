@@ -13,12 +13,8 @@ describe Dungeon::Core::SDLContext do
           o.instance_eval do 
             extend Dungeon::Core::SDLContext::EventSource
             extend MonitorMixin
-            @fps = 60
-            @modifiers = Dungeon::Core::SDLContext::ModifierState.new
 
             class << self
-              attr_reader :modifiers
-              attr_reader :fps
             end
           end
         end
@@ -92,7 +88,7 @@ describe Dungeon::Core::SDLContext do
       it "should yield all interval events" do
         events = []
 
-        @subject.each_event do |e|
+        @subject.each_event(60) do |e|
           if events.size == 3
             @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
             Dungeon::Core::SDL2.SDL_PushEvent @sdl_event

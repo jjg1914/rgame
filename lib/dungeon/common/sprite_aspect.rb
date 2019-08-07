@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "dungeon/core/aspect"
 require "dungeon/core/sprite"
 
@@ -29,11 +31,11 @@ module Dungeon
 
       include Dungeon::Core::Aspect
 
-      attr_accessor :sprite
-      attr_accessor :sprite_tag
+      attr_reader :sprite
+      attr_reader :sprite_tag
       attr_accessor :sprite_frame
       attr_accessor :sprite_key
-      attr_accessor :sprite_translate
+      attr_reader :sprite_translate
 
       def self.included klass
         super
@@ -43,17 +45,17 @@ module Dungeon
       end
 
       def sprite= value
-        @sprite = unless value.is_a? Dungeon::Core::Sprite
-          Dungeon::Core::Sprite.load value.to_s
-        else
+        @sprite = if value.is_a? Dungeon::Core::Sprite
           value
+        else
+          Dungeon::Core::Sprite.load value.to_s
         end
         self.sprite_tag = self.sprite.default_tag
         self.sprite_size! if self.class.sprite_sized?
       end
 
       def sprite_tag= value
-        @sprite_tag = if value.nil? then self.sprite.default_tag else value end
+        @sprite_tag = value.nil? ? self.sprite.default_tag : value
         self.sprite_frame = 0
         self.sprite_key = 0
       end
@@ -65,15 +67,15 @@ module Dungeon
         elsif value.size == 1
           [ value[0].to_i, value[0].to_i ]
         else
-          value.take(2).map { |e| e.to_i }
+          value.take(2).map(&:to_i)
         end
       end
 
       def sprite_size!
-        unless self.sprite.nil?
-          self.width = self.sprite.width
-          self.height = self.sprite.height
-        end
+        return if self.sprite.nil?
+
+        self.width = self.sprite.width
+        self.height = self.sprite.height
       end
 
       on :new do

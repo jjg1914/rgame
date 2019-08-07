@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "forwardable"
 require "dungeon/core/entity"
 
@@ -16,7 +18,8 @@ module Dungeon
       end
 
       def add_front target
-        raise IndexError if @index.has_key? target.id
+        raise IndexError if @index.key? target.id
+
         @index.keys.each { |e| @index[e] += 1 }
         @index[target.id] = 0
         @children.unshift target
@@ -26,7 +29,8 @@ module Dungeon
       end
 
       def add_back target
-        raise IndexError if @index.has_key? target.id
+        raise IndexError if @index.key? target.id
+
         @index[target.id] = @children.size
         @children.push target
 
@@ -34,7 +38,7 @@ module Dungeon
         target.emit(:add)
       end
 
-      alias_method :add, :add_back
+      alias add add_back
 
       def add_bulk targets
         targets.each { |e| self.add(e) }
@@ -48,15 +52,15 @@ module Dungeon
       end
 
       def remove target = nil
-        unless target.nil?
+        if target.nil?
+          super()
+        else
           index = @index.fetch target.id
           @children[index].emit(:remove)
           @children[index].parent = nil
 
           @children.delete_at(index)
           @index.keys.each { |e| @index[e] -= 1 if @index[e] > index }
-        else
-          super()
         end
       end
 
@@ -68,21 +72,21 @@ module Dungeon
         self.each { |e| self.remove(e) }
       end
 
-      def each(&b)
-        @children.each(&b)
+      def each &block
+        @children.each(&block)
       end
 
       def inspect
-        tmp = self.each.map { |e| e.inspect }.join("\n")
+        tmp = self.each.map(&:inspect).join("\n")
         ([ super ] + tmp.each_line.map { |e| "  " + e.chomp }).join("\n")
       end
 
       private
 
       def last message, *args
-        unless message == "new"
-          self.each { |e| e.emit(message, *args) }
-        end
+        return if message == "new"
+
+        self.each { |e| e.emit(message, *args) }
       end
     end
   end

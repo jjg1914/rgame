@@ -1,23 +1,20 @@
+# frozen_string_literal: true
+
 require "dungeon/core/aspect"
 
 module Dungeon
   module Common
-    module PositionAspect 
+    module PositionAspect
       module ClassMethods
-        def set_collisions value
-          @collisions = !!value
-        end
-
-        def collisions?
-          @collisions
-        end
+        attr_accessor :check_collisions
+        alias check_collisions? check_collisions
       end
 
       def self.included klass
         super
         klass.instance_eval do
           extend Dungeon::Common::PositionAspect::ClassMethods
-          set_collisions true
+          self.check_collisions = true
         end
       end
 
@@ -30,7 +27,7 @@ module Dungeon
 
       attr_accessor :solid
 
-      on :new do 
+      on :new do
         self.x = 0
         self.y = 0
         self.width = 0

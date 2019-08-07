@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require "dungeon/core/collision"
 require "dungeon/core/aspect"
 
 module Dungeon
   module Common
-    module TimerAspect 
+    module TimerAspect
       include Dungeon::Core::Aspect
 
       attr_reader :timers
@@ -38,10 +40,10 @@ module Dungeon
 
       def clear_timer timer
         index = self.timers.find_index(timer)
-        unless index.nil?
-          self.timers.delete_at(index)
-          self.timers.delete_at(index - 1)
-        end
+        return if index.nil?
+
+        self.timers.delete_at(index)
+        self.timers.delete_at(index - 1)
       end
     end
   end

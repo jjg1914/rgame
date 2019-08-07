@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "dungeon/common/collection_entity.rb"
 require "dungeon/common/collision_aspect.rb"
 require "dungeon/common/control_4way_aspect.rb"

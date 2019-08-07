@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "dungeon/core/entity"
 require "dungeon/core/tileset"
 require "dungeon/core/savable"
@@ -12,7 +14,7 @@ module Dungeon
       attr_reader :width
       attr_reader :height
 
-      savable [ :tileset, :data ]
+      savable %i[tileset data]
 
       on :new do
         @data = []
@@ -25,15 +27,15 @@ module Dungeon
       def to_h
         super.merge({
           "tileset" => @tileset.name,
-          "data" => @data
+          "data" => @data,
         })
       end
 
       def tileset= value
-        @tileset = unless value.is_a? Dungeon::Core::Tileset
-          Dungeon::Core::Tileset.load value.to_s
-        else
+        @tileset = if value.is_a? Dungeon::Core::Tileset
           value
+        else
+          Dungeon::Core::Tileset.load value.to_s
         end
 
         _paint
@@ -42,7 +44,7 @@ module Dungeon
       def data= value
         @width = 0
         @data = value.to_a.map do |e|
-          e.to_a.map { |f| f.to_i }.tap do |o|
+          e.to_a.map(&:to_i).tap do |o|
             @width = [ @width, o.size ].max
           end
         end
@@ -58,7 +60,7 @@ module Dungeon
           @texture = ctx.create_texture(@width * @tileset.tile_width,
                                         @height * @tileset.tile_height)
           self.ctx.target = @texture
-   
+
           self.ctx.texture_blend_mode @texture, :blend
           self.ctx.color = 0x0
           self.ctx.alpha = 0x0

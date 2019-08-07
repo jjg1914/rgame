@@ -1,21 +1,31 @@
+# frozen_string_literal: true
+
 require "dungeon/core/aspect"
 
 module Dungeon
   module Common
     module RestrictAspect
+      def self.normalize_begin_end value
+        if value.respond_to?(:end) and value.begin != value.end
+          [ value.begin, value.end ]
+        else
+          [ 0, value.begin ]
+        end
+      end
+
+      def self.normalize_first_last value
+        if value.respond_to?(:last) and value.first != value.last
+          [ value.first, value.last ]
+        else
+          [ 0, value.first ]
+        end
+      end
+
       def self.normalize_value value
         if value.respond_to? :begin
-          if value.respond_to?(:end) and value.begin != value.end
-            [ value.begin, value.end ]
-          else
-            [ 0, value.begin ]
-          end
+          self.normalize_begin_end value
         elsif value.respond_to? :first
-          if value.respond_to?(:last) and value.first != value.last
-            [ value.first, value.last ]
-          else
-            [ 0, value.first ]
-          end
+          self.normalize_first_last value
         elsif not value.nil?
           [ 0, value ]
         else
@@ -23,7 +33,7 @@ module Dungeon
         end.map do |e|
           e.to_i unless e.nil?
         end.tap do |o|
-          o.sort! if o.none? { |e| e.nil? }
+          o.sort! if o.none?(&:nil?)
         end
       end
 

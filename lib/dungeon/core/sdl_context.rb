@@ -63,23 +63,22 @@ module Dungeon
       }.freeze
 
       module EventSource
-        attr_accessor :fps
+        def each_event fps = nil, &block
+          return self.each_event(fps).each(&block) if block_given?
 
-        def each_event &block
-          return self.each_event.each(&block) if block_given?
-
-          waitticks = self.fps.nil? ? 0 : (1000 / self.fps).to_i
+          waitticks = fps.nil? ? 0 : (1000 / fps).to_i
 
           Enumerator.new do |yielder|
             catch :done do
               sdl_event = SDL2::SDLEvent.new
+              modifiers = ModifierState.new
               now = 0
 
               loop do
                 flag = false
                 now, diff = _ticks_since now
 
-                _pump_events(sdl_event).each do |e|
+                _pump_events(sdl_event, modifiers).each do |e|
                   yielder << e
                   flag ||= e.is_a?(Dungeon::Core::Events::QuitEvent)
                 end
@@ -107,23 +106,23 @@ module Dungeon
         end
 
         # rubocop:disable Metrics/CyclomaticComplexity
-        def _pump_events sdl_event
+        def _pump_events sdl_event, modifiers
           rval = _read_event_buffer
 
           until SDL2.SDL_PollEvent(sdl_event).zero?
             case sdl_event[:type]
             when SDL2::SDL_KEYUP
-              rval << _pump_key_up(sdl_event)
+              rval << _pump_key_up(sdl_event, modifiers)
             when SDL2::SDL_KEYDOWN
-              rval << _pump_key_down(sdl_event)
+              rval << _pump_key_down(sdl_event, modifiers)
             when SDL2::SDL_TEXTINPUT
               rval << _pump_text_input(sdl_event)
             when SDL2::SDL_MOUSEMOTION
-              rval << _pump_mouse_move(sdl_event)
+              rval << _pump_mouse_move(sdl_event, modifiers)
             when SDL2::SDL_MOUSEBUTTONDOWN
-              rval << _pump_mouse_down(sdl_event)
+              rval << _pump_mouse_down(sdl_event, modifiers)
             when SDL2::SDL_MOUSEBUTTONUP
-              rval << _pump_mouse_up(sdl_event)
+              rval << _pump_mouse_up(sdl_event, modifiers)
             when SDL2::SDL_WINDOWEVENT
               if sdl_event[:window][:event] == :SDL_WINDOWEVENT_CLOSE
                 rval << Events::QuitEvent.new
@@ -137,23 +136,23 @@ module Dungeon
         end
         # rubocop:enable Metrics/CyclomaticComplexity
 
-        def _pump_key_up sdl_event
-          _assign_modifier sdl_event, false
+        def _pump_key_up sdl_event, modifiers
+          _assign_modifier sdl_event, modifiers, false
 
           key = _key_for(sdl_event[:key][:keysym][:sym],
                          sdl_event[:key][:keysym][:scancode])
-          Events::KeyupEvent.new(key, self.modifiers)
+          Events::KeyupEvent.new(key, modifiers)
         end
 
-        def _pump_key_down sdl_event
+        def _pump_key_down sdl_event, modifiers
           key = _key_for(sdl_event[:key][:keysym][:sym],
                          sdl_event[:key][:keysym][:scancode])
           if sdl_event[:key][:repeat].zero?
-            _assign_modifier sdl_event, true
+            _assign_modifier sdl_event, modifiers, true
 
-            Events::KeydownEvent.new(key, self.modifiers)
+            Events::KeydownEvent.new(key, modifiers)
           else
-            Events::KeyrepeatEvent.new(key, self.modifiers)
+            Events::KeyrepeatEvent.new(key, modifiers)
           end
         end
 
@@ -162,47 +161,47 @@ module Dungeon
           Events::TextInputEvent.new(text)
         end
 
-        def _pump_mouse_move sdl_event
+        def _pump_mouse_move sdl_event, modifiers
           Events::MouseMoveEvent.new(sdl_event[:motion][:x],
                                      sdl_event[:motion][:y],
-                                     self.modifiers)
+                                     modifiers)
         end
 
-        def _pump_mouse_down sdl_event
+        def _pump_mouse_down sdl_event, modifiers
           button = _button_for sdl_event[:button][:button]
           Events::MouseButtondownEvent.new(sdl_event[:button][:x],
                                            sdl_event[:button][:y],
                                            button,
-                                           self.modifiers)
+                                           modifiers)
         end
 
-        def _pump_mouse_up sdl_event
+        def _pump_mouse_up sdl_event, modifiers
           button = _button_for sdl_event[:button][:button]
           Events::MouseButtonupEvent.new(sdl_event[:button][:x],
                                          sdl_event[:button][:y],
                                          button,
-                                         self.modifiers)
+                                         modifiers)
         end
 
         # rubocop:disable Metrics/CyclomaticComplexity
-        def _assign_modifier sdl_event, value
+        def _assign_modifier sdl_event, modifiers, value
           case sdl_event[:key][:keysym][:scancode]
           when :SDL_SCANCODE_LCTRL
-            self.modifiers.left_ctrl = value
+            modifiers.left_ctrl = value
           when :SDL_SCANCODE_LSHIFT
-            self.modifiers.left_shift = value
+            modifiers.left_shift = value
           when :SDL_SCANCODE_LALT
-            self.modifiers.left_alt = value
+            modifiers.left_alt = value
           when :SDL_SCANCODE_LGUI
-            self.modifiers.left_super = value
+            modifiers.left_super = value
           when :SDL_SCANCODE_RCTRL
-            self.modifiers.right_ctrl = value
+            modifiers.right_ctrl = value
           when :SDL_SCANCODE_RSHIFT
-            self.modifiers.right_shift = value
+            modifiers.right_shift = value
           when :SDL_SCANCODE_RALT
-            self.modifiers.right_alt = value
+            modifiers.right_alt = value
           when :SDL_SCANCODE_RGUI
-            self.modifiers.right_super = value
+            modifiers.right_super = value
           end
         end
         # rubocop:enable Metrics/CyclomaticComplexity
@@ -370,8 +369,6 @@ module Dungeon
                      :text_input_mode, :text_input_mode=,
                      :clip_bounds, :clip_bounds=
 
-      attr_reader :modifiers
-
       def initialize window, renderer
         @window = window
         @renderer = renderer
@@ -381,7 +378,6 @@ module Dungeon
 
         @state = StateHolder.new @renderer
         @stack = StateSaver.new(self, %w[
-          fps
           target
           source
           color
@@ -392,9 +388,6 @@ module Dungeon
           text_input_mode
           clip_bounds
         ])
-
-        @modifiers = ModifierState.new
-        self.fps = 60
       end
 
       def close

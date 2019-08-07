@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "dungeon/core/entity"
 require "dungeon/core/savable"
 

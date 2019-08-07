@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "forwardable"
 
 require "dungeon/core/map"
@@ -11,9 +13,13 @@ module Dungeon
   module Common
     class MapEntity < CollectionEntity
       extend Forwardable
-      def_delegators :@map, :width, :width=,
-                            :height, :height=,
-                            :background, :background=
+      def_delegators :@map,
+                     :width,
+                     :width=,
+                     :height,
+                     :height=,
+                     :background,
+                     :background=
 
       attr_reader :map
 
@@ -31,10 +37,10 @@ module Dungeon
       def map= value
         self.remove_all
 
-        @map = unless value.is_a? Dungeon::Core::Map
-          Dungeon::Core::Map.load value.to_s
-        else
+        @map = if value.is_a? Dungeon::Core::Map
           value
+        else
+          Dungeon::Core::Map.load value.to_s
         end
 
         @collision = Dungeon::Core::Collision.new(@map.width.to_i,

@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require "dungeon/core/collision"
 require "dungeon/core/aspect"
 
 module Dungeon
   module Common
-    module CollisionAspect 
+    module CollisionAspect
       include Dungeon::Core::Aspect
 
       around :post_collision do |p, collision|
@@ -17,21 +19,21 @@ module Dungeon
         end
 
         if @mtv[0][0].equal? @mtv[1][0]
-          unless @mtv[0][1] == 0 and @mtv[1][1] == 0
+          unless @mtv[0][1].zero? and @mtv[1][1].zero?
             self.emit(:bump, @mtv[0][0], [ @mtv[0][1], @mtv[1][1] ])
           end
         else
-          if @mtv[0][1] != 0
+          unless @mtv[0][1].zero?
             self.emit(:bump, @mtv[0][0], [ @mtv[0][1], 0 ])
           end
 
-          if @mtv[1][1] != 0
+          unless @mtv[1][1].zero?
             self.emit(:bump, @mtv[1][0], [ 0, @mtv[1][1] ])
           end
         end
       end
 
-      on :collision do |e,mtv|
+      on :collision do |e, mtv|
         if (self.respond_to?(:solid) and self.solid) and
            (e.respond_to?(:solid) and e.solid) or e.nil?
           @mtv[0] = [ @mtv[0], [ e, mtv[0] ] ].max_by { |f| f[1].abs }

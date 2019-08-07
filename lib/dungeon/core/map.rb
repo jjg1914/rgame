@@ -107,14 +107,20 @@ module Dungeon
         end
       end
 
+      def self.load_path path
+        data = JSON.parse File.read path
+        self.load_json(data).tap do |o|
+          o.name = File.basename path, ".json"
+          o.path = path
+        end
+      end
+
       def self.load name
         path = find_path_for(name)
         raise "map not found %s" % name.inspect if path.nil?
 
-        data = JSON.parse File.read path
-        self.load_json(data).tap do |o|
+        self.load_path(path).tap do |o|
           o.name = File.basename name
-          o.path = path
         end
       end
 

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "dungeon/core/aspect"
 
 module Dungeon
@@ -12,7 +14,7 @@ module Dungeon
       attr_accessor :x_change
       attr_accessor :y_change
 
-      on :new do 
+      on :new do
         self.x_subpixel = 0
         self.y_subpixel = 0
         self.x_speed = 0
@@ -25,14 +27,14 @@ module Dungeon
         self.x_subpixel += x_speed * dt
         self.y_subpixel += y_speed * dt
 
-        self.x_change = if x_subpixel >= 1000 or x_subpixel < 0
+        self.x_change = if x_subpixel >= 1000 or x_subpixel.negative?
           d, r = x_subpixel.divmod 1000
           self.x += d
           self.x_subpixel = r
           d
         end.to_i
 
-        self.y_change = if y_subpixel >= 1000 or y_subpixel < 0
+        self.y_change = if y_subpixel >= 1000 or y_subpixel.negative?
           d, r = y_subpixel.divmod 1000
           self.y += d
           self.y_subpixel = r
@@ -51,7 +53,7 @@ module Dungeon
       end
 
       def speed
-        Math.sqrt((self.x_speed ** 2) + (self.y_speed ** 2))
+        Math.sqrt((self.x_speed**2) + (self.y_speed**2))
       end
 
       def speed= value
