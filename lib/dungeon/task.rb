@@ -56,7 +56,14 @@ module Dungeon
       end
 
       rule({ ".png" => ".xcf" }) do |t|
-        sh "convert %s -define png:color-type=2 %s" % [ t.source, t.name ]
+        sh([
+          "convert",
+          t.source,
+          "-define", "png:color-type=2",
+          "-background", "transparent",
+          "-layers", "flatten",
+          t.name,
+        ].join(" "))
       end
     end
   end

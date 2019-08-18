@@ -2,11 +2,11 @@
 
 require "dungeon/core/events"
 require "dungeon/core/sdl_context"
-require "dungeon/common/collection_entity"
+require "dungeon/common/stack_entity"
 
 module Dungeon
   module Common
-    class RootEntity < CollectionEntity
+    class RootEntity < StackEntity
       on :event_loop do
         raise "context not opened" if self.context.nil?
 

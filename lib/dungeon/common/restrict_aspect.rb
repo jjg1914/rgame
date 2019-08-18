@@ -37,12 +37,12 @@ module Dungeon
         end
       end
 
-      def self.restrict_value value, restrict_value
+      def self.restrict_value low, high, restrict_value
         unless restrict_value.nil?
-          if not restrict_value.first.nil? and value < restrict_value.first
-            restrict_value.first - value
-          elsif not restrict_value.last.nil? and value > restrict_value.last
-            restrict_value.last - value
+          if not restrict_value.first.nil? and low < restrict_value.first
+            restrict_value.first - low 
+          elsif not restrict_value.last.nil? and high > restrict_value.last
+            restrict_value.last - high
           end
         end.to_i
       end
@@ -54,8 +54,8 @@ module Dungeon
 
       on :post_collision do
         restrict_mtv = [
-          RestrictAspect.restrict_value(x, x_restrict),
-          RestrictAspect.restrict_value(y, y_restrict),
+          RestrictAspect.restrict_value(x, x + width - 1, x_restrict),
+          RestrictAspect.restrict_value(y, y + height - 1, y_restrict),
         ]
 
         if restrict_mtv.any? { |e| e != 0 }

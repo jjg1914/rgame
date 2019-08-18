@@ -33,17 +33,43 @@ end
 
 class Dungeon::Common::RootEntity
   before :event_loop do
-    open_context "Breakout", WINDOW_WIDTH, WINDOW_HEIGHT
+    open_context "Arkanoid", WINDOW_WIDTH, WINDOW_HEIGHT
     context.scale = SCALE_FACTOR
     context.scale_quality = 0
   end
 
   on :start do
-    self.create(StageEntity) { |o| o.map = "stage2" }
+    self.create(TitleEntity)
   end
 
   on :gameover do
-    self.create(StageEntity) { |o| o.map = "stage1" }
+    self.pop
+  end
+end
+
+class TitleEntity < Dungeon::Common::CollectionEntity
+  on :new do
+    self.create(Dungeon::Common::ImagelayerEntity) { |o| o.image = "stage-bg"}
+    self.create(Dungeon::Common::ImagelayerEntity) { |o| o.image = "title"}
+  end
+
+  on :keydown do |key, _|
+    case key
+    when "enter", "return"
+      self.parent.create(StageQueueEntity)
+    end
+  end
+end
+
+class StageQueueEntity < Dungeon::Common::QueueEntity
+  on :push do
+    %w[stage1 stage2].each do |e|
+      self.create(StageEntity) { |o| o.map = e }
+    end
+  end
+
+  on :empty do
+    self.parent.pop
   end
 end
 
@@ -65,6 +91,10 @@ class StageEntity < Dungeon::Common::MapEntity
       o.player = @player
       o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
       o.y_restrict = (playable_bounds["top"]..)
+    end
+
+    @blocks = self.children.count do |e|
+      e.is_a?(BlockEntity) and not e.is_a?(InvincibleBlockEntity)
     end
   end
 
@@ -107,6 +137,9 @@ class StageEntity < Dungeon::Common::MapEntity
 
   on :score do |value|
     @state.score += value
+    @blocks -= 1
+
+    set_timer(1000) { self.parent.dequeue } if @blocks.zero?
   end
 
   on :widen_player do
