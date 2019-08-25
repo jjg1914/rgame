@@ -40,7 +40,7 @@ module Dungeon
       def self.restrict_value low, high, restrict_value
         unless restrict_value.nil?
           if not restrict_value.first.nil? and low < restrict_value.first
-            restrict_value.first - low 
+            restrict_value.first - low
           elsif not restrict_value.last.nil? and high > restrict_value.last
             restrict_value.last - high
           end

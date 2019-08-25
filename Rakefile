@@ -9,6 +9,22 @@ ENV["LD_LIBRARY_PATH"] = [
   ENV["LD_LIBRARY_PATH"],
 ].join(":")
 
+namespace :test do
+  Rake::TestTask.new(:unit) do |t|
+    t.pattern = "test/unit/**/*_test.rb"
+    t.libs = [ "lib", "test" ]
+    t.ruby_opts = [ "-rtest_helper" ]
+    t.verbose = true
+  end
+
+  Rake::TestTask.new(:integration) do |t|
+    t.pattern = "test/integration/**/*_test.rb"
+    t.libs = [ "lib", "test" ]
+    t.ruby_opts = [ "-rtest_helper" ]
+    t.verbose = true
+  end
+end
+
 Rake::TestTask.new do |t|
   t.pattern = "test/**/*_test.rb"
   t.libs = [ "lib", "test" ]

@@ -5,6 +5,12 @@ module Dungeon
     module Env
       extend self
 
+      def enable_headless_mode
+        not ENV["ENABLE_HEADLESS_MODE"].to_i.zero?
+      end
+
+      alias enable_headless_mode? enable_headless_mode
+
       def font_path
         ENV.fetch("FONT_PATH", begin
           _expand_all_paths([

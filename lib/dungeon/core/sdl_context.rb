@@ -326,7 +326,7 @@ module Dungeon
       end
 
       class << self
-        def open title, width, height
+        def init_sdl
           unless SDL2.SDL_Init(SDL2::SDL_INIT_VIDEO).zero?
             raise SDL2.SDL_GetError
           end
@@ -336,6 +336,11 @@ module Dungeon
           if SDL2Image.IMG_Init(SDL2Image::IMG_INIT_PNG).zero?
             raise SDL2.SDL_GetError
           end
+
+        end
+
+        def open_window title, width, height
+          self.init_sdl
 
           window = SDL2.SDL_CreateWindow title, 0, 0,
                                          width, height,
@@ -347,7 +352,19 @@ module Dungeon
 
           SDL2.SDL_StopTextInput
 
-          self.new window, renderer
+          self.new renderer, window, nil
+        end
+
+        def open_software width, height
+          self.init_sdl
+
+          surface = SDL2.SDL_CreateRGBSurfaceWithFormat 0, width, height, 32, SDL2::SDL_PIXELFORMAT_ARGB8888
+          raise SDL2.SDL_GetError if surface.nil?
+
+          renderer = SDL2.SDL_CreateSoftwareRenderer surface
+          raise SDL2.SDL_GetError if renderer.nil?
+
+          self.new renderer, nil, surface
         end
       end
 
@@ -369,9 +386,10 @@ module Dungeon
                      :text_input_mode, :text_input_mode=,
                      :clip_bounds, :clip_bounds=
 
-      def initialize window, renderer
-        @window = window
+      def initialize renderer, window, surface
         @renderer = renderer
+        @window = window
+        @surface = surface
 
         @mem_ints = 8.times.map { FFI::MemoryPointer.new(:int, 1) }
         @sdl_rects = 2.times.map { SDL2::SDLRect.new }
@@ -402,8 +420,17 @@ module Dungeon
         SDL2.SDL_RenderPresent @renderer
       end
 
+      def save_surface filename
+        rw = SDL2.SDL_RWFromFile filename, "wb"
+        SDL2.SDL_SaveBMP_RW @surface, rw, 1
+      end
+
       def create_image width, height
-        format = SDL2.SDL_GetWindowPixelFormat(@window)
+        format = if @window.nil?
+          SDL2::SDL_PIXELFORMAT_ARGB8888
+        else
+          SDL2.SDL_GetWindowPixelFormat(@window)
+        end
         texture = SDL2.SDL_CreateTexture(@renderer, format,
                                          SDL2::SDL_TEXTUREACCESS_TARGET,
                                          width, height)
@@ -535,6 +562,7 @@ module Dungeon
         def initialize renderer
           @renderer = renderer
 
+          SDL2.SDL_SetRenderDrawColor @renderer, 0x0, 0x0, 0x0, 0xFF
           @color = 0x000000
           @alpha = 0xFF
           @scale = 1
@@ -603,7 +631,7 @@ module Dungeon
         def target= value
           return if @target == value
 
-          SDL2.SDL_SetRenderTarget(@renderer, value)
+          SDL2.SDL_SetRenderTarget(@renderer, value&.texture)
           @target = value
         end
 

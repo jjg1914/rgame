@@ -32,11 +32,11 @@ class State
 end
 
 class Dungeon::Common::RootEntity
-  before :event_loop do
-    open_context "Arkanoid", WINDOW_WIDTH, WINDOW_HEIGHT
-    context.scale = SCALE_FACTOR
-    context.scale_quality = 0
-  end
+  window.title = "Arkanoid"
+  window.size = [ WINDOW_WIDTH, WINDOW_HEIGHT ]
+
+  context.scale = SCALE_FACTOR
+  context.scale_quality = "nearest"
 
   on :start do
     self.create(TitleEntity)

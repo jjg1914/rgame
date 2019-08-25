@@ -80,6 +80,7 @@ module Dungeon
                                             uint32], :pointer
       attach_function :SDL_DestroyWindow, %i[pointer], :void
       attach_function :SDL_CreateRenderer, %i[pointer int uint32], :pointer
+      attach_function :SDL_CreateSoftwareRenderer, %i[pointer], :pointer
       attach_function :SDL_DestroyRenderer, %i[pointer], :void
       attach_function :SDL_PollEvent, %i[pointer], :int
       attach_function :SDL_PushEvent, %i[pointer], :int
@@ -111,10 +112,17 @@ module Dungeon
       attach_function :SDL_CreateRGBSurface, %i[uint32 int int int
                                                 uint32 uint32 uint32
                                                 uint32], :pointer
+      attach_function :SDL_CreateRGBSurfaceWithFormat, %i[uint32 int int
+                                                          int uint32], :pointer
       attach_function :SDL_FreeSurface, %i[pointer], :void
       attach_function :SDL_SetTextureBlendMode, %i[pointer int], :int
       attach_function :SDL_GetTextureBlendMode, %i[pointer pointer], :int
       attach_function :SDL_GetWindowPixelFormat, %i[pointer], :uint32
+      attach_function :SDL_MasksToPixelFormatEnum, %i[int
+                                                      uint32
+                                                      uint32
+                                                      uint32
+                                                      uint32], :uint32
       attach_function :SDL_StartTextInput, [], :void
       attach_function :SDL_StopTextInput, [], :void
       attach_function :SDL_SetTextInputRect, [ :pointer ], :void
@@ -123,6 +131,9 @@ module Dungeon
       attach_function :SDL_SetClipboardText, [ :string ], :int
       attach_function :SDL_HasClipboardText, [], :bool
       attach_function :SDL_RenderSetClipRect, %i[pointer pointer], :int
+
+      attach_function :SDL_RWFromFile, %i[string string], :pointer
+      attach_function :SDL_SaveBMP_RW, %i[pointer pointer int], :int
 
       class SDLKeysym < FFI::Struct
         layout :scancode, :SDL_Scancode,
@@ -262,6 +273,32 @@ module Dungeon
       SDL_BUTTON_RIGHT = 0x3
       SDL_BUTTON_X1 = 0x4
       SDL_BUTTON_X2 = 0x5
+
+      SDL_PIXELFORMAT_BGRX8888 = self.SDL_MasksToPixelFormatEnum 32,
+                                                                 0x0,
+                                                                 0xFF0000,
+                                                                 0xFF00,
+                                                                 0xFF
+      SDL_PIXELFORMAT_ARGB8888 = self.SDL_MasksToPixelFormatEnum 32,
+                                                                 0xFF000000,
+                                                                 0xFF0000,
+                                                                 0xFF00,
+                                                                 0xFF
+      SDL_PIXELFORMAT_RGBA8888 = self.SDL_MasksToPixelFormatEnum 32,
+                                                                 0xFF0000,
+                                                                 0xFF00,
+                                                                 0xFF,
+                                                                 0xFF000000
+      SDL_PIXELFORMAT_ABGR8888 = self.SDL_MasksToPixelFormatEnum 32,
+                                                                 0xFF000000,
+                                                                 0xFF,
+                                                                 0xFF00,
+                                                                 0xFF0000
+      SDL_PIXELFORMAT_BGRA8888 = self.SDL_MasksToPixelFormatEnum 32,
+                                                                 0xFF00,
+                                                                 0xFF0000,
+                                                                 0xFF000000,
+                                                                 0xFF
     end
 
     module SDL2Image

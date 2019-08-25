@@ -47,7 +47,7 @@ module Dungeon
       end
 
       def empty?
-        self.size == 0
+        self.size.zero?
       end
 
       private
