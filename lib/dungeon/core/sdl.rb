@@ -4,6 +4,32 @@ require "ffi"
 
 module Dungeon
   module Core
+    module Internal
+      extend FFI::Library
+      ffi_lib FFI::Library::LIBC
+
+      PROT_NONE = 0x0
+      PROT_READ = 0x1
+      PROT_WRITE = 0x2
+      PROT_EXEC = 0x4
+
+      MAP_SHARED = 0x1
+      MAP_PRIVATE = 0x2
+
+      attach_function :getpagesize, %i[], :int
+      attach_function :ftruncate, %i[int int64], :int
+      attach_function :shm_open, %i[string int uint32], :int
+      attach_function :shm_unlink, %i[string], :int
+
+      attach_function :mmap, %i[pointer
+                                ulong
+                                int
+                                int
+                                int
+                                uint], :pointer
+      attach_function :munmap, %i[pointer ulong], :pointer
+    end
+
     # rubocop:disable Metrics/ModuleLength
     module SDL2
       extend FFI::Library
@@ -70,70 +96,41 @@ module Dungeon
         :SDL_NUM_SCANCODES, 512,
       ]
 
-      attach_function :SDL_Init, %i[uint32], :int
-      attach_function :SDL_Quit, [], :void
-      attach_function :SDL_GetError, [], :string
-      attach_function :SDL_Delay, %i[int], :void
-      attach_function :SDL_GetTicks, [], :uint32
-      attach_function :SDL_CreateWindow, %i[string
-                                            int int int int
-                                            uint32], :pointer
-      attach_function :SDL_DestroyWindow, %i[pointer], :void
-      attach_function :SDL_CreateRenderer, %i[pointer int uint32], :pointer
-      attach_function :SDL_CreateSoftwareRenderer, %i[pointer], :pointer
-      attach_function :SDL_DestroyRenderer, %i[pointer], :void
-      attach_function :SDL_PollEvent, %i[pointer], :int
-      attach_function :SDL_PushEvent, %i[pointer], :int
-      attach_function :SDL_RenderPresent, %i[pointer], :void
-      attach_function :SDL_SetRenderDrawColor, %i[pointer int int int int], :int
-      attach_function :SDL_GetRenderDrawColor, %i[
-        pointer
-        pointer
-        pointer
-        pointer
-        pointer
-      ], :int
-      attach_function :SDL_RenderSetScale, %i[pointer float float], :int
-      attach_function :SDL_SetRenderTarget, %i[pointer pointer], :int
-      attach_function :SDL_GetRenderTarget, %i[pointer], :pointer
-      attach_function :SDL_GetHint, %i[string], :string
-      attach_function :SDL_SetHint, %i[string string], :int
-      attach_function :SDL_RenderClear, %i[pointer], :int
-      attach_function :SDL_RenderDrawRect, %i[pointer pointer], :int
-      attach_function :SDL_RenderFillRect, %i[pointer pointer], :int
-      attach_function :SDL_RenderCopy, %i[pointer pointer pointer pointer], :int
-      attach_function :SDL_CreateTextureFromSurface, %i[pointer
-                                                        pointer], :pointer
-      attach_function :SDL_CreateTexture, %i[pointer uint32 int
-                                             int int], :pointer
-      attach_function :SDL_DestroyTexture, [ :pointer ], :void
-      attach_function :SDL_QueryTexture, %i[pointer pointer pointer
-                                            pointer pointer], :int
-      attach_function :SDL_CreateRGBSurface, %i[uint32 int int int
-                                                uint32 uint32 uint32
-                                                uint32], :pointer
-      attach_function :SDL_CreateRGBSurfaceWithFormat, %i[uint32 int int
-                                                          int uint32], :pointer
-      attach_function :SDL_FreeSurface, %i[pointer], :void
-      attach_function :SDL_SetTextureBlendMode, %i[pointer int], :int
-      attach_function :SDL_GetTextureBlendMode, %i[pointer pointer], :int
-      attach_function :SDL_GetWindowPixelFormat, %i[pointer], :uint32
-      attach_function :SDL_MasksToPixelFormatEnum, %i[int
-                                                      uint32
-                                                      uint32
-                                                      uint32
-                                                      uint32], :uint32
-      attach_function :SDL_StartTextInput, [], :void
-      attach_function :SDL_StopTextInput, [], :void
-      attach_function :SDL_SetTextInputRect, [ :pointer ], :void
-      attach_function :SDL_IsTextInputActive, [], :bool
-      attach_function :SDL_GetClipboardText, [], :string
-      attach_function :SDL_SetClipboardText, [ :string ], :int
-      attach_function :SDL_HasClipboardText, [], :bool
-      attach_function :SDL_RenderSetClipRect, %i[pointer pointer], :int
+      SDL_INIT_VIDEO = 0x10
+      SDL_WINDOW_SHOWN = 0x4
+      SDL_WINDOW_OPENGL = 0x2
+      SDL_RENDERER_ACCELERATED = 0x2
+      SDL_RENDERER_PRESENTVSYNC = 0x4
 
-      attach_function :SDL_RWFromFile, %i[string string], :pointer
-      attach_function :SDL_SaveBMP_RW, %i[pointer pointer int], :int
+      SDL_QUIT = 0x100
+      SDL_WINDOWEVENT = 0x200
+      SDL_KEYDOWN = 0x300
+      SDL_KEYUP = 0x301
+      SDL_TEXTEDITING = 0x302
+      SDL_TEXTINPUT = 0x303
+      SDL_MOUSEMOTION = 0x400
+      SDL_MOUSEBUTTONDOWN = 0x401
+      SDL_MOUSEBUTTONUP = 0x402
+      SDL_MOUSEWHEEL = 0x403
+
+      SDL_HINT_RENDER_SCALE_QUALITY = "SDL_RENDER_SCALE_QUALITY"
+      SDL_HINT_RENDER_VSYNC = "SDL_RENDER_VSYNC"
+
+      SDL_TEXTUREACCESS_STATIC = 0x0
+      SDL_TEXTUREACCESS_STREAMING = 0x1
+      SDL_TEXTUREACCESS_TARGET = 0x2
+
+      SDL_BLENDMODE_NONE = 0x0
+      SDL_BLENDMODE_BLEND = 0x1
+      SDL_BLENDMODE_ADD = 0x2
+      SDL_BLENDMODE_MOD = 0x4
+      SDL_BLENDMODE_INVALID = 0x7FFFFFFF
+
+      SDL_BUTTON_LEFT = 0x1
+      SDL_BUTTON_MIDDLE = 0x2
+      SDL_BUTTON_RIGHT = 0x3
+      SDL_BUTTON_X1 = 0x4
+      SDL_BUTTON_X2 = 0x5
 
       class SDLKeysym < FFI::Struct
         layout :scancode, :SDL_Scancode,
@@ -238,41 +235,95 @@ module Dungeon
         end
       end
 
-      SDL_INIT_VIDEO = 0x10
-      SDL_WINDOW_SHOWN = 0x4
-      SDL_WINDOW_OPENGL = 0x2
-      SDL_RENDERER_ACCELERATED = 0x2
-      SDL_RENDERER_PRESENTVSYNC = 0x4
+      class SDLSurface < FFI::Struct
+        layout :flags, :uint32,
+               :format, :pointer,
+               :w, :int,
+               :h, :int,
+               :pitch, :int,
+               :pixels, :pointer,
+               :userdata, :pointer,
+               :locked, :int,
+               :lock_data, :pointer,
+               :clip_rect, SDLRect,
+               :map, :pointer,
+               :refcount, :int
+      end
 
-      SDL_QUIT = 0x100
-      SDL_WINDOWEVENT = 0x200
-      SDL_KEYDOWN = 0x300
-      SDL_KEYUP = 0x301
-      SDL_TEXTEDITING = 0x302
-      SDL_TEXTINPUT = 0x303
-      SDL_MOUSEMOTION = 0x400
-      SDL_MOUSEBUTTONDOWN = 0x401
-      SDL_MOUSEBUTTONUP = 0x402
-      SDL_MOUSEWHEEL = 0x403
+      attach_function :SDL_Init, %i[uint32], :int
+      attach_function :SDL_Quit, [], :void
+      attach_function :SDL_GetError, [], :string
+      attach_function :SDL_Delay, %i[int], :void
+      attach_function :SDL_GetTicks, [], :uint32
+      attach_function :SDL_CreateWindow, %i[string
+                                            int int int int
+                                            uint32], :pointer
+      attach_function :SDL_DestroyWindow, %i[pointer], :void
+      attach_function :SDL_CreateRenderer, %i[pointer int uint32], :pointer
+      attach_function :SDL_CreateSoftwareRenderer, %i[pointer], :pointer
+      attach_function :SDL_DestroyRenderer, %i[pointer], :void
+      attach_function :SDL_PollEvent, %i[pointer], :int
+      attach_function :SDL_PushEvent, %i[pointer], :int
+      attach_function :SDL_RenderPresent, %i[pointer], :void
+      attach_function :SDL_SetRenderDrawColor, %i[pointer int int int int], :int
+      attach_function :SDL_GetRenderDrawColor, %i[
+        pointer
+        pointer
+        pointer
+        pointer
+        pointer
+      ], :int
+      attach_function :SDL_RenderSetScale, %i[pointer float float], :int
+      attach_function :SDL_SetRenderTarget, %i[pointer pointer], :int
+      attach_function :SDL_GetRenderTarget, %i[pointer], :pointer
+      attach_function :SDL_GetHint, %i[string], :string
+      attach_function :SDL_SetHint, %i[string string], :int
+      attach_function :SDL_RenderClear, %i[pointer], :int
+      attach_function :SDL_RenderDrawRect, %i[pointer pointer], :int
+      attach_function :SDL_RenderFillRect, %i[pointer pointer], :int
+      attach_function :SDL_RenderCopy, %i[pointer pointer pointer pointer], :int
+      attach_function :SDL_CreateTextureFromSurface, %i[pointer
+                                                        pointer], :pointer
+      attach_function :SDL_CreateTexture, %i[pointer uint32 int
+                                             int int], :pointer
+      attach_function :SDL_DestroyTexture, [ :pointer ], :void
+      attach_function :SDL_QueryTexture, %i[pointer pointer pointer
+                                            pointer pointer], :int
+      attach_function :SDL_CreateRGBSurface, %i[uint32 int int int
+                                                uint32 uint32 uint32
+                                                uint32], SDLSurface.ptr
+      attach_function :SDL_CreateRGBSurfaceFrom, %i[pointer
+                                                    int
+                                                    int
+                                                    int
+                                                    int
+                                                    uint32
+                                                    uint32
+                                                    uint32
+                                                    uint32], SDLSurface.ptr
+      attach_function :SDL_CreateRGBSurfaceWithFormat,
+                      %i[uint32 int int int uint32],
+                      SDLSurface.ptr
+      attach_function :SDL_FreeSurface, %i[pointer], :void
+      attach_function :SDL_SetTextureBlendMode, %i[pointer int], :int
+      attach_function :SDL_GetTextureBlendMode, %i[pointer pointer], :int
+      attach_function :SDL_GetWindowPixelFormat, %i[pointer], :uint32
+      attach_function :SDL_MasksToPixelFormatEnum, %i[int
+                                                      uint32
+                                                      uint32
+                                                      uint32
+                                                      uint32], :uint32
+      attach_function :SDL_StartTextInput, [], :void
+      attach_function :SDL_StopTextInput, [], :void
+      attach_function :SDL_SetTextInputRect, [ :pointer ], :void
+      attach_function :SDL_IsTextInputActive, [], :bool
+      attach_function :SDL_GetClipboardText, [], :string
+      attach_function :SDL_SetClipboardText, [ :string ], :int
+      attach_function :SDL_HasClipboardText, [], :bool
+      attach_function :SDL_RenderSetClipRect, %i[pointer pointer], :int
 
-      SDL_HINT_RENDER_SCALE_QUALITY = "SDL_RENDER_SCALE_QUALITY"
-      SDL_HINT_RENDER_VSYNC = "SDL_RENDER_VSYNC"
-
-      SDL_TEXTUREACCESS_STATIC = 0x0
-      SDL_TEXTUREACCESS_STREAMING = 0x1
-      SDL_TEXTUREACCESS_TARGET = 0x2
-
-      SDL_BLENDMODE_NONE = 0x0
-      SDL_BLENDMODE_BLEND = 0x1
-      SDL_BLENDMODE_ADD = 0x2
-      SDL_BLENDMODE_MOD = 0x4
-      SDL_BLENDMODE_INVALID = 0x7FFFFFFF
-
-      SDL_BUTTON_LEFT = 0x1
-      SDL_BUTTON_MIDDLE = 0x2
-      SDL_BUTTON_RIGHT = 0x3
-      SDL_BUTTON_X1 = 0x4
-      SDL_BUTTON_X2 = 0x5
+      attach_function :SDL_RWFromFile, %i[string string], :pointer
+      attach_function :SDL_SaveBMP_RW, %i[pointer pointer int], :int
 
       SDL_PIXELFORMAT_BGRX8888 = self.SDL_MasksToPixelFormatEnum 32,
                                                                  0x0,

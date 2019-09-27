@@ -2,6 +2,7 @@
 
 require "forwardable"
 require "monitor"
+require "fcntl"
 
 require "dungeon/core/env"
 require "dungeon/core/events"
@@ -15,52 +16,54 @@ module Dungeon
       RENDERER_FLAGS = SDL2::SDL_RENDERER_ACCELERATED |
                        SDL2::SDL_RENDERER_PRESENTVSYNC
 
-      SCAN_CODE_STRINGS = {
-        :SDL_SCANCODE_RETURN => "return",
-        :SDL_SCANCODE_ESCAPE => "escape",
-        :SDL_SCANCODE_BACKSPACE => "backspace",
-        :SDL_SCANCODE_TAB => "tab",
-        :SDL_SCANCODE_SPACE => "space",
-        :SDL_SCANCODE_F1 => "f1",
-        :SDL_SCANCODE_F2 => "f2",
-        :SDL_SCANCODE_F3 => "f3",
-        :SDL_SCANCODE_F4 => "f4",
-        :SDL_SCANCODE_F5 => "f5",
-        :SDL_SCANCODE_F6 => "f6",
-        :SDL_SCANCODE_F7 => "f7",
-        :SDL_SCANCODE_F8 => "f8",
-        :SDL_SCANCODE_F9 => "f9",
-        :SDL_SCANCODE_F10 => "f10",
-        :SDL_SCANCODE_F11 => "f11",
-        :SDL_SCANCODE_F12 => "f12",
-        :SDL_SCANCODE_INSERT => "insert",
-        :SDL_SCANCODE_HOME => "home",
-        :SDL_SCANCODE_PAGEUP => "page_up",
-        :SDL_SCANCODE_DELETE => "delete",
-        :SDL_SCANCODE_END => "end",
-        :SDL_SCANCODE_PAGEDOWN => "page_down",
-        :SDL_SCANCODE_RIGHT => "right",
-        :SDL_SCANCODE_LEFT => "left",
-        :SDL_SCANCODE_DOWN => "down",
-        :SDL_SCANCODE_UP => "up",
-        :SDL_SCANCODE_LCTRL => "left_ctrl",
-        :SDL_SCANCODE_LSHIFT => "left_shift",
-        :SDL_SCANCODE_LALT => "left_alt",
-        :SDL_SCANCODE_LGUI => "left_super",
-        :SDL_SCANCODE_RCTRL => "right_ctrl",
-        :SDL_SCANCODE_RSHIFT => "right_shift",
-        :SDL_SCANCODE_RALT => "right_alt", # alt gr, option
-        :SDL_SCANCODE_RGUI => "right_super", # windows, command (apple), meta
-        :SDL_SCANCODE_ENTER => "enter",
-      }.freeze
+      module Contants
+        SCAN_CODE_STRINGS = {
+          :SDL_SCANCODE_RETURN => "return",
+          :SDL_SCANCODE_ESCAPE => "escape",
+          :SDL_SCANCODE_BACKSPACE => "backspace",
+          :SDL_SCANCODE_TAB => "tab",
+          :SDL_SCANCODE_SPACE => "space",
+          :SDL_SCANCODE_F1 => "f1",
+          :SDL_SCANCODE_F2 => "f2",
+          :SDL_SCANCODE_F3 => "f3",
+          :SDL_SCANCODE_F4 => "f4",
+          :SDL_SCANCODE_F5 => "f5",
+          :SDL_SCANCODE_F6 => "f6",
+          :SDL_SCANCODE_F7 => "f7",
+          :SDL_SCANCODE_F8 => "f8",
+          :SDL_SCANCODE_F9 => "f9",
+          :SDL_SCANCODE_F10 => "f10",
+          :SDL_SCANCODE_F11 => "f11",
+          :SDL_SCANCODE_F12 => "f12",
+          :SDL_SCANCODE_INSERT => "insert",
+          :SDL_SCANCODE_HOME => "home",
+          :SDL_SCANCODE_PAGEUP => "page_up",
+          :SDL_SCANCODE_DELETE => "delete",
+          :SDL_SCANCODE_END => "end",
+          :SDL_SCANCODE_PAGEDOWN => "page_down",
+          :SDL_SCANCODE_RIGHT => "right",
+          :SDL_SCANCODE_LEFT => "left",
+          :SDL_SCANCODE_DOWN => "down",
+          :SDL_SCANCODE_UP => "up",
+          :SDL_SCANCODE_LCTRL => "left_ctrl",
+          :SDL_SCANCODE_LSHIFT => "left_shift",
+          :SDL_SCANCODE_LALT => "left_alt",
+          :SDL_SCANCODE_LGUI => "left_super",
+          :SDL_SCANCODE_RCTRL => "right_ctrl",
+          :SDL_SCANCODE_RSHIFT => "right_shift",
+          :SDL_SCANCODE_RALT => "right_alt", # alt gr, option
+          :SDL_SCANCODE_RGUI => "right_super", # windows, command (apple), meta
+          :SDL_SCANCODE_ENTER => "enter",
+        }.freeze
 
-      BUTTON_STRINGS = {
-        SDL2::SDL_BUTTON_LEFT => "left",
-        SDL2::SDL_BUTTON_MIDDLE => "middle",
-        SDL2::SDL_BUTTON_RIGHT => "right",
-        SDL2::SDL_BUTTON_X1 => "x1",
-        SDL2::SDL_BUTTON_X2 => "x2",
-      }.freeze
+        BUTTON_STRINGS = {
+          SDL2::SDL_BUTTON_LEFT => "left",
+          SDL2::SDL_BUTTON_MIDDLE => "middle",
+          SDL2::SDL_BUTTON_RIGHT => "right",
+          SDL2::SDL_BUTTON_X1 => "x1",
+          SDL2::SDL_BUTTON_X2 => "x2",
+        }.freeze
+      end
 
       module EventSource
         def each_event fps = nil, &block
@@ -96,6 +99,10 @@ module Dungeon
 
         def << event
           self.tap { self.synchronize { _event_buffer << event } }
+        end
+
+        def quit!
+          self << Dungeon::Core::Events::QuitEvent.new
         end
 
         private
@@ -227,11 +234,11 @@ module Dungeon
           else
             scan_code
           end
-          SCAN_CODE_STRINGS.fetch(scan_code, default)
+          Contants::SCAN_CODE_STRINGS.fetch(scan_code, default)
         end
 
         def _button_for button
-          BUTTON_STRINGS.fetch(button, button)
+          Contants::BUTTON_STRINGS.fetch(button, button)
         end
       end
 
@@ -331,40 +338,26 @@ module Dungeon
             raise SDL2.SDL_GetError
           end
 
-          raise SDL2.SDL_GetError unless SDL2TTF.TTF_Init.zero?
-
           if SDL2Image.IMG_Init(SDL2Image::IMG_INIT_PNG).zero?
             raise SDL2.SDL_GetError
           end
 
+          raise SDL2.SDL_GetError unless SDL2TTF.TTF_Init.zero?
         end
 
         def open_window title, width, height
           self.init_sdl
-
-          window = SDL2.SDL_CreateWindow title, 0, 0,
-                                         width, height,
-                                         WINDOW_FLAGS
-          raise SDL2.SDL_GetError if window.nil?
-
-          renderer = SDL2.SDL_CreateRenderer window, -1, RENDERER_FLAGS
-          raise SDL2.SDL_GetError if renderer.nil?
-
-          SDL2.SDL_StopTextInput
-
-          self.new renderer, window, nil
+          SDLWindowContext.open title, width, height
         end
 
         def open_software width, height
           self.init_sdl
+          SDLSoftwareContext.open width, height
+        end
 
-          surface = SDL2.SDL_CreateRGBSurfaceWithFormat 0, width, height, 32, SDL2::SDL_PIXELFORMAT_ARGB8888
-          raise SDL2.SDL_GetError if surface.nil?
-
-          renderer = SDL2.SDL_CreateSoftwareRenderer surface
-          raise SDL2.SDL_GetError if renderer.nil?
-
-          self.new renderer, nil, surface
+        def open_mmap filename, width, height
+          self.init_sdl
+          SDLMmapContext.open filename, width, height
         end
       end
 
@@ -386,10 +379,10 @@ module Dungeon
                      :text_input_mode, :text_input_mode=,
                      :clip_bounds, :clip_bounds=
 
-      def initialize renderer, window, surface
+      def initialize renderer
+        super()
+
         @renderer = renderer
-        @window = window
-        @surface = surface
 
         @mem_ints = 8.times.map { FFI::MemoryPointer.new(:int, 1) }
         @sdl_rects = 2.times.map { SDL2::SDLRect.new }
@@ -410,7 +403,6 @@ module Dungeon
 
       def close
         SDL2.SDL_DestroyRenderer @renderer unless @renderer.nil?
-        SDL2.SDL_DestroyWindow @window unless @window.nil?
         SDL2TTF.TTF_Quit
         SDL2Image.IMG_Quit
         SDL2.SDL_Quit
@@ -418,11 +410,6 @@ module Dungeon
 
       def present
         SDL2.SDL_RenderPresent @renderer
-      end
-
-      def save_surface filename
-        rw = SDL2.SDL_RWFromFile filename, "wb"
-        SDL2.SDL_SaveBMP_RW @surface, rw, 1
       end
 
       def create_image width, height
@@ -456,6 +443,130 @@ module Dungeon
           SDL2TTF.TTF_SizeText(@state.font_pointer,
                                text, @mem_ints[0], @mem_ints[1])
           [ @mem_ints[0].get(:int, 0), @mem_ints[1].get(:int, 0) ]
+        end
+      end
+
+      class SDLWindowContext < self
+        class << self
+          def open title, width, height
+            window = SDL2.SDL_CreateWindow title, 0, 0,
+                                           width, height,
+                                           WINDOW_FLAGS
+            raise SDL2.SDL_GetError if window.nil?
+
+            renderer = SDL2.SDL_CreateRenderer window, -1, RENDERER_FLAGS
+            raise SDL2.SDL_GetError if renderer.nil?
+
+            SDL2.SDL_StopTextInput
+
+            self.new renderer, window
+          end
+        end
+
+        def initialize renderer, window
+          super(renderer)
+          @window = window
+        end
+
+        def close
+          SDL2.SDL_DestroyWindow @window unless @window.nil?
+          super
+        end
+      end
+
+      class SDLSoftwareContext < self
+        class << self
+          def open width, height
+            surface_flags = SDL2::SDL_PIXELFORMAT_ARGB8888
+            surface = SDL2.SDL_CreateRGBSurfaceWithFormat 0,
+                                                          width, height, 32,
+                                                          surface_flags
+
+            raise SDL2.SDL_GetError if surface.nil?
+
+            renderer = SDL2.SDL_CreateSoftwareRenderer surface
+            raise SDL2.SDL_GetError if renderer.nil?
+
+            self.new renderer, surface
+          end
+        end
+
+        def initialize renderer, surface
+          super(renderer)
+          @surface = surface
+        end
+
+        def save_to_file filename
+          rw = SDL2.SDL_RWFromFile filename, "wb"
+          SDL2.SDL_SaveBMP_RW @surface, rw, 1
+        end
+
+        def close
+          SDL2.SDL_FreeSurface @surface unless @surface.nil?
+          super
+        end
+      end
+
+      class SDLMmapContext < self
+        class << self
+          def open filename, width, height
+            data, io = self.create_mmap filename, width, height
+            surface = SDL2.SDL_CreateRGBSurfaceFrom data, width, height,
+                                                    32, 4 * width,
+                                                    0xFF0000,
+                                                    0xFF00,
+                                                    0xFF,
+                                                    0xFF000000
+            raise SDL2.SDL_GetError if surface.nil?
+
+            renderer = SDL2.SDL_CreateSoftwareRenderer surface
+            raise SDL2.SDL_GetError if renderer.nil?
+
+            self.new renderer, io, surface
+          end
+
+          def create_mmap filename, width, height
+            length = width * height * 4
+            mmap_prot = Internal::PROT_READ |
+                        Internal::PROT_WRITE
+            mmap_flags = Internal::MAP_SHARED
+            pagesize = Internal.getpagesize
+            mmap_length = ((length / pagesize) + 1) * pagesize
+
+            fcntl_flags = Fcntl::O_RDWR | Fcntl::O_CREAT
+            fd = Internal.shm_open filename, fcntl_flags, 0o644
+            io = IO.new(fd)
+            class << io; self; end.instance_eval do
+              define_method("path") { filename }
+            end
+            Internal.ftruncate fd, mmap_length if io.stat.size != mmap_length
+            data = Internal.mmap(nil, mmap_length,
+                                 mmap_prot, mmap_flags,
+                                 fd, 0)
+            [ data, io ]
+          end
+        end
+
+        def initialize renderer, io, surface
+          super(renderer)
+          @io = io
+          @surface = surface
+        end
+
+        def present
+          super
+        end
+
+        def close
+          data = @surface[:pixels]
+          length = @surface[:w] * @surface[:h] * 4
+          pagesize = Internal.getpagesize
+          mmap_length = ((length / pagesize) + 1) * pagesize
+
+          SDL2.SDL_FreeSurface @surface unless @surface.nil?
+          Internal.munmap(data, mmap_length)
+          Internal.shm_unlink @io.path
+          @io.close
         end
       end
 

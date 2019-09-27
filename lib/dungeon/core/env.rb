@@ -5,11 +5,24 @@ module Dungeon
     module Env
       extend self
 
-      def enable_headless_mode
+      def enable_software_mode
         not ENV["ENABLE_HEADLESS_MODE"].to_i.zero?
       end
 
-      alias enable_headless_mode? enable_headless_mode
+      def enable_mmap_mode
+        not ENV["ENABLE_MMAP_MODE"].to_i.zero?
+      end
+
+      alias enable_software_mode? enable_software_mode
+      alias enable_mmap_mode? enable_mmap_mode
+
+      def mmap_file
+        ENV.fetch("MMAP_FILE")
+      end
+
+      def mmap_file= value
+        ENV.store("MMAP_FILE", value)
+      end
 
       def font_path
         ENV.fetch("FONT_PATH", begin

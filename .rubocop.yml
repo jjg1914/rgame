@@ -74,6 +74,7 @@ Naming/UncommunicativeMethodParamName:
     - dt
     - to
     - id
+    - io
 
 Metrics/MethodLength:
   Max: 24

@@ -20,7 +20,9 @@ module Dungeon
 
         def mode
           if @mode.nil?
-            if Dungeon::Core::Env.enable_headless_mode?
+            if Dungeon::Core::Env.enable_mmap_mode?
+              "mmap"
+            elsif Dungeon::Core::Env.enable_software_mode?
               "software"
             else
               "window"
@@ -32,6 +34,8 @@ module Dungeon
 
         def open!
           case self.mode
+          when "mmap"
+            self.open_mmap!
           when "software"
             self.open_software!
           else
@@ -46,11 +50,16 @@ module Dungeon
         def open_software!
           Dungeon::Core::SDLContext.open_software(*self.size)
         end
+
+        def open_mmap!
+          Dungeon::Core::SDLContext.open_mmap(Dungeon::Core::Env.mmap_file,
+                                              *self.size)
+        end
       end
 
       class ContextConfig
         attr_accessor :scale
-        attr_accessor :scale_quality
+        attr_reader :scale_quality
 
         def initialize
           @scale = 1
@@ -96,32 +105,18 @@ module Dungeon
         self.context.scale_quality = self.class.context.scale_quality
       end
 
-      on :event_loop do
-        self.emit :start
-
-        self.context.each(60) { |e| event_loop_step(e) }
-
-        self.emit :end
-      end
-
       after :interval do
         self.emit :draw
         self.ctx.present
       end
 
       def self.run!
-        context = self.window.open!
-
-        case self.window.mode
-        when "software"
-          self.new(context).tap do |o|
-            o.emit :start
-            o.emit :draw
-            o.emit :stop
-            o.context.save_surface "%s.bmp" % self.window.title
+        self.new(self.window.open!).tap do |o|
+          o.instance_eval do
+            emit :start
+            context.each(60) { |e| event_loop_step(e) }
+            emit :end
           end
-        else
-          self.new(context).tap { |o| o.emit :event_loop }
         end
       end
 
