@@ -1,9 +1,9 @@
-require "dungeon/core/entity"
+require "rgame/core/entity"
 
-describe Dungeon::Core::Entity do
-  describe Dungeon::Core::Entity::ClassMethods do
+describe RGame::Core::Entity do
+  describe RGame::Core::Entity::ClassMethods do
     before do
-      @base_klass = Class.new(Dungeon::Core::Entity) do
+      @base_klass = Class.new(RGame::Core::Entity) do
         on "test" do |x,y|
           @mock.call "test_on", x, y
         end
@@ -67,7 +67,7 @@ describe Dungeon::Core::Entity do
     end
 
     after do
-      Dungeon::Core::Entity.registry.clear
+      RGame::Core::Entity.registry.clear
     end
 
     it "should deliver in order" do
@@ -104,7 +104,7 @@ describe Dungeon::Core::Entity do
     end
 
     it "should register subclasses" do
-      expect(Dungeon::Core::Entity.registry).
+      expect(RGame::Core::Entity.registry).
         must_equal([ @base_klass, @derived_klass ])
     end
   end
@@ -113,7 +113,7 @@ describe Dungeon::Core::Entity do
     before do
       @mock = Minitest::Mock.new
       _mock = @mock
-      @klass = Class.new(Dungeon::Core::Entity) do
+      @klass = Class.new(RGame::Core::Entity) do
         on :new do
           _mock.call "new"
         end
@@ -121,12 +121,12 @@ describe Dungeon::Core::Entity do
     end
 
     after do
-      Dungeon::Core::Entity.registry.clear
+      RGame::Core::Entity.registry.clear
     end
 
     it "should allocate new entity" do
       @mock.expect :call, nil, [ "new" ]
-      old_id = Dungeon::Core::Entity.id_counter
+      old_id = RGame::Core::Entity.id_counter
       subject = @klass.new
       expect(subject.id).must_equal(old_id + 1)
       @mock.verify
@@ -134,9 +134,9 @@ describe Dungeon::Core::Entity do
 
     it "should increment id counter" do
       @mock.expect :call, nil, [ "new" ]
-      old_id = Dungeon::Core::Entity.id_counter
+      old_id = RGame::Core::Entity.id_counter
       @klass.new
-      expect(Dungeon::Core::Entity.id_counter).must_equal(old_id + 1)
+      expect(RGame::Core::Entity.id_counter).must_equal(old_id + 1)
       @mock.verify
     end
   end
@@ -145,7 +145,7 @@ describe Dungeon::Core::Entity do
     before do
       @mock = Minitest::Mock.new
       _mock = @mock
-      @klass = Class.new(Dungeon::Core::Entity) do
+      @klass = Class.new(RGame::Core::Entity) do
         on :new do
           _mock.call "new", self
         end
@@ -157,7 +157,7 @@ describe Dungeon::Core::Entity do
     end
 
     after do
-      Dungeon::Core::Entity.registry.clear
+      RGame::Core::Entity.registry.clear
     end
 
     it "should use new id" do
@@ -215,7 +215,7 @@ describe Dungeon::Core::Entity do
 
   describe "#broadcast" do
     after do
-      Dungeon::Core::Entity.registry.clear
+      RGame::Core::Entity.registry.clear
     end
 
     it "should emit message to root parent" do
@@ -228,7 +228,7 @@ describe Dungeon::Core::Entity do
       mock2.expect "nil?", false, []
       mock2.expect "parent", mock, []
 
-      klass = Class.new(Dungeon::Core::Entity)
+      klass = Class.new(RGame::Core::Entity)
       subject = klass.new
       subject.parent = mock2
       expect(subject.broadcast("test", 1, 2)).must_be :nil?
@@ -242,7 +242,7 @@ describe Dungeon::Core::Entity do
       mock.expect "parent", nil, []
       mock.expect "emit", nil, [ "test", 1, 2 ]
 
-      klass = Class.new(Dungeon::Core::Entity)
+      klass = Class.new(RGame::Core::Entity)
       subject = klass.new
       subject.parent = mock
       expect(subject.broadcast("test", 1, 2)).must_be :nil?
@@ -253,7 +253,7 @@ describe Dungeon::Core::Entity do
       mock = Minitest::Mock.new
       mock.expect "call", nil, [ "test", 1, 2 ]
 
-      klass = Class.new(Dungeon::Core::Entity)
+      klass = Class.new(RGame::Core::Entity)
       subject = klass.new
       subject.stub(:emit, lambda { |msg, a, b| mock.call(msg, a, b) }) do
         expect(subject.broadcast("test", 1, 2)).must_be :nil?
@@ -264,20 +264,20 @@ describe Dungeon::Core::Entity do
 
   describe "#make" do
     after do
-      Dungeon::Core::Entity.registry.clear
+      RGame::Core::Entity.registry.clear
     end
 
     it "should return entity of class" do
-      klass = Class.new(Dungeon::Core::Entity)
-      klass2 = Class.new(Dungeon::Core::Entity)
+      klass = Class.new(RGame::Core::Entity)
+      klass2 = Class.new(RGame::Core::Entity)
       subject = klass.new
 
       expect(subject.make(klass2)).must_be_kind_of(klass2)
     end
 
     it "should yield new entity if block given" do
-      klass = Class.new(Dungeon::Core::Entity)
-      klass2 = Class.new(Dungeon::Core::Entity)
+      klass = Class.new(RGame::Core::Entity)
+      klass2 = Class.new(RGame::Core::Entity)
       subject = klass.new
 
       tmp = nil
@@ -286,8 +286,8 @@ describe Dungeon::Core::Entity do
     end
 
     it "should assign context" do
-      klass = Class.new(Dungeon::Core::Entity)
-      klass2 = Class.new(Dungeon::Core::Entity)
+      klass = Class.new(RGame::Core::Entity)
+      klass2 = Class.new(RGame::Core::Entity)
       subject = klass.new "_context_"
 
       rval = subject.make(klass2)
@@ -297,11 +297,11 @@ describe Dungeon::Core::Entity do
 
   describe "#remove" do
     after do
-      Dungeon::Core::Entity.registry.clear
+      RGame::Core::Entity.registry.clear
     end
 
     it "should remove from parent" do
-      klass = Class.new(Dungeon::Core::Entity)
+      klass = Class.new(RGame::Core::Entity)
       subject = klass.new
 
       mock = Minitest::Mock.new
@@ -313,7 +313,7 @@ describe Dungeon::Core::Entity do
     end
 
     it "should not remove from nil" do
-      klass = Class.new(Dungeon::Core::Entity)
+      klass = Class.new(RGame::Core::Entity)
       subject = klass.new
 
       subject.parent = nil
@@ -323,11 +323,11 @@ describe Dungeon::Core::Entity do
 
   describe "#on" do
     before do
-      @klass = Class.new(Dungeon::Core::Entity)
+      @klass = Class.new(RGame::Core::Entity)
     end
 
     after do
-      Dungeon::Core::Entity.registry.clear
+      RGame::Core::Entity.registry.clear
     end
 
     it "should only dispatch to entity" do
@@ -361,11 +361,11 @@ describe Dungeon::Core::Entity do
 
   describe "#before" do
     before do
-      @klass = Class.new(Dungeon::Core::Entity)
+      @klass = Class.new(RGame::Core::Entity)
     end
 
     after do
-      Dungeon::Core::Entity.registry.clear
+      RGame::Core::Entity.registry.clear
     end
 
     it "should only dispatch to entity" do
@@ -399,11 +399,11 @@ describe Dungeon::Core::Entity do
 
   describe "#after" do
     before do
-      @klass = Class.new(Dungeon::Core::Entity)
+      @klass = Class.new(RGame::Core::Entity)
     end
 
     after do
-      Dungeon::Core::Entity.registry.clear
+      RGame::Core::Entity.registry.clear
     end
 
     it "should only dispatch to entity" do
@@ -437,11 +437,11 @@ describe Dungeon::Core::Entity do
 
   describe "#around" do
     before do
-      @klass = Class.new(Dungeon::Core::Entity)
+      @klass = Class.new(RGame::Core::Entity)
     end
 
     after do
-      Dungeon::Core::Entity.registry.clear
+      RGame::Core::Entity.registry.clear
     end
 
     it "should only dispatch to entity" do
@@ -480,12 +480,12 @@ describe Dungeon::Core::Entity do
 
   describe "#active" do
     before do
-      klass = Class.new(Dungeon::Core::Entity)
+      klass = Class.new(RGame::Core::Entity)
       @subject = klass.new
     end
 
     after do
-      Dungeon::Core::Entity.registry.clear
+      RGame::Core::Entity.registry.clear
     end
 
     it "should activate" do
@@ -525,11 +525,11 @@ describe Dungeon::Core::Entity do
 
   describe "#to_h" do
     after do
-      Dungeon::Core::Entity.registry.clear
+      RGame::Core::Entity.registry.clear
     end
 
     it "should hasherize enitity" do
-      klass = Class.new(Dungeon::Core::Entity) do
+      klass = Class.new(RGame::Core::Entity) do
         def self.to_s
           "Bar::FooEntity"
         end
@@ -545,11 +545,11 @@ describe Dungeon::Core::Entity do
 
   describe "#inspect" do
     after do
-      Dungeon::Core::Entity.registry.clear
+      RGame::Core::Entity.registry.clear
     end
 
     it "should inspect enitity" do
-      klass = Class.new(Dungeon::Core::Entity) do
+      klass = Class.new(RGame::Core::Entity) do
         def self.to_s
           "Bar::FooEntity"
         end

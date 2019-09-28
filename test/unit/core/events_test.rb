@@ -1,1 +1,1 @@
-require "dungeon/core/events"
+require "rgame/core/events"

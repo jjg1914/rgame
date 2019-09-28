@@ -1,4 +1,4 @@
-require "dungeon/common/root_entity"
+require "rgame/common/root_entity"
 
-describe Dungeon::Common::RootEntity do
+describe RGame::Common::RootEntity do
 end

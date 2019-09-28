@@ -1,4 +1,4 @@
-require "dungeon/common/position_aspect"
+require "rgame/common/position_aspect"
 
-describe Dungeon::Common::PositionAspect do
+describe RGame::Common::PositionAspect do
 end

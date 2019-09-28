@@ -1,4 +1,4 @@
-require "dungeon/runtime"
+require "rgame/runtime"
 
 require "matrix"
 
@@ -31,7 +31,7 @@ class State
   end
 end
 
-class Dungeon::Common::RootEntity
+class RGame::Common::RootEntity
   window.title = "Arkanoid"
   window.size = [ WINDOW_WIDTH, WINDOW_HEIGHT ]
 
@@ -47,10 +47,10 @@ class Dungeon::Common::RootEntity
   end
 end
 
-class TitleEntity < Dungeon::Common::CollectionEntity
+class TitleEntity < RGame::Common::CollectionEntity
   on :new do
-    self.create(Dungeon::Common::ImagelayerEntity) { |o| o.image = "stage-bg"}
-    self.create(Dungeon::Common::ImagelayerEntity) { |o| o.image = "title"}
+    self.create(RGame::Common::ImagelayerEntity) { |o| o.image = "stage-bg"}
+    self.create(RGame::Common::ImagelayerEntity) { |o| o.image = "title"}
   end
 
   on :keydown do |key, _|
@@ -61,7 +61,7 @@ class TitleEntity < Dungeon::Common::CollectionEntity
   end
 end
 
-class StageQueueEntity < Dungeon::Common::QueueEntity
+class StageQueueEntity < RGame::Common::QueueEntity
   on :push do
     %w[stage1 stage2].each do |e|
       self.create(StageEntity) { |o| o.map = e }
@@ -73,9 +73,9 @@ class StageQueueEntity < Dungeon::Common::QueueEntity
   end
 end
 
-class StageEntity < Dungeon::Common::MapEntity
-  include Dungeon::Common::EditorAspect
-  include Dungeon::Common::TimerAspect
+class StageEntity < RGame::Common::MapEntity
+  include RGame::Common::EditorAspect
+  include RGame::Common::TimerAspect
 
   on :mapupdate do
     @state = State.new
@@ -155,7 +155,7 @@ class StageEntity < Dungeon::Common::MapEntity
   end
 
   after :draw do |ctx|
-    sprite = Dungeon::Core::Sprite.load "ball"
+    sprite = RGame::Core::Sprite.load "ball"
     if @state.lives > 5
       if @cache_lives != @state.lives
         @lives_image.free unless @lives_image.nil?
@@ -203,13 +203,13 @@ class StageEntity < Dungeon::Common::MapEntity
   end
 end
 
-class PlayerEntity < Dungeon::Core::Entity
-  include Dungeon::Common::CollisionAspect
-  include Dungeon::Common::SpriteAspect
-  include Dungeon::Common::Control4WayAspect
-  include Dungeon::Common::PositionAspect
-  include Dungeon::Common::MovementAspect
-  include Dungeon::Common::RestrictAspect
+class PlayerEntity < RGame::Core::Entity
+  include RGame::Common::CollisionAspect
+  include RGame::Common::SpriteAspect
+  include RGame::Common::Control4WayAspect
+  include RGame::Common::PositionAspect
+  include RGame::Common::MovementAspect
+  include RGame::Common::RestrictAspect
 
   on :new do
     self.sprite = "player"
@@ -219,12 +219,12 @@ class PlayerEntity < Dungeon::Core::Entity
   end
 end
 
-class BlockEntity < Dungeon::Core::Entity
-  include Dungeon::Common::SpriteAspect
-  include Dungeon::Common::PositionAspect
-  include Dungeon::Common::DrawAspect
+class BlockEntity < RGame::Core::Entity
+  include RGame::Common::SpriteAspect
+  include RGame::Common::PositionAspect
+  include RGame::Common::DrawAspect
 
-  include Dungeon::Core::Savable
+  include RGame::Core::Savable
 
   savable [ :x, :y, :sprite_tag ]
 
@@ -287,7 +287,7 @@ class InvincibleBlockEntity < BlockEntity
 end
 
 class MovingBlockEntity < BlockEntity
-  include Dungeon::Common::MovementAspect
+  include RGame::Common::MovementAspect
 
   savable [ :x_speed, :y_speed ]
 
@@ -312,13 +312,13 @@ class MovingBlockEntity < BlockEntity
   end
 end
 
-class BallEntity < Dungeon::Core::Entity
-  include Dungeon::Common::SpriteAspect
-  include Dungeon::Common::PositionAspect
-  include Dungeon::Common::MovementAspect
-  include Dungeon::Common::CollisionAspect
-  include Dungeon::Common::RestrictAspect
-  include Dungeon::Common::TimerAspect
+class BallEntity < RGame::Core::Entity
+  include RGame::Common::SpriteAspect
+  include RGame::Common::PositionAspect
+  include RGame::Common::MovementAspect
+  include RGame::Common::CollisionAspect
+  include RGame::Common::RestrictAspect
+  include RGame::Common::TimerAspect
 
   attr_accessor :player
 
@@ -423,7 +423,7 @@ class BallEntity < Dungeon::Core::Entity
   end
 end
 
-class PowerupEntity < Dungeon::Core::Entity
+class PowerupEntity < RGame::Core::Entity
   FREQUENCIES = [
     [ "power_ball", 1 ],
     [ "1up", 1 ],
@@ -448,10 +448,10 @@ class PowerupEntity < Dungeon::Core::Entity
     end
   end
 
-  include Dungeon::Common::CollisionAspect
-  include Dungeon::Common::SpriteAspect
-  include Dungeon::Common::PositionAspect
-  include Dungeon::Common::MovementAspect
+  include RGame::Common::CollisionAspect
+  include RGame::Common::SpriteAspect
+  include RGame::Common::PositionAspect
+  include RGame::Common::MovementAspect
 
   on :new do
     self.sprite = "powerup"

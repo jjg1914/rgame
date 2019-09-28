@@ -1,4 +1,4 @@
-require "dungeon/common/collision_aspect"
+require "rgame/common/collision_aspect"
 
-describe Dungeon::Common::CollisionAspect do
+describe RGame::Common::CollisionAspect do
 end

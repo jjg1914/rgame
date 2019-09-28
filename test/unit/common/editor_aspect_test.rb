@@ -1,4 +1,4 @@
-require "dungeon/common/editor_aspect"
+require "rgame/common/editor_aspect"
 
-describe Dungeon::Common::EditorAspect do
+describe RGame::Common::EditorAspect do
 end

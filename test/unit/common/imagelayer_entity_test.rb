@@ -1,4 +1,4 @@
-require "dungeon/common/imagelayer_entity"
+require "rgame/common/imagelayer_entity"
 
-describe Dungeon::Common::ImagelayerEntity do
+describe RGame::Common::ImagelayerEntity do
 end

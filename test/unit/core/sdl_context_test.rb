@@ -1,17 +1,17 @@
-require "dungeon/core/sdl_context" 
+require "rgame/core/sdl_context" 
 
-describe Dungeon::Core::SDLContext do
-  describe Dungeon::Core::SDLContext::EventSource do
+describe RGame::Core::SDLContext do
+  describe RGame::Core::SDLContext::EventSource do
     describe "#each_event" do
       before do
-        @sdl_event = Dungeon::Core::SDL2::SDLEvent.new
-        nil until Dungeon::Core::SDL2.SDL_PollEvent(@sdl_event).zero?
+        @sdl_event = RGame::Core::SDL2::SDLEvent.new
+        nil until RGame::Core::SDL2.SDL_PollEvent(@sdl_event).zero?
 
-        @modifiers = Dungeon::Core::SDLContext::ModifierState.new
+        @modifiers = RGame::Core::SDLContext::ModifierState.new
 
         @subject = Object.new.tap do |o|
           o.instance_eval do 
-            extend Dungeon::Core::SDLContext::EventSource
+            extend RGame::Core::SDLContext::EventSource
             extend MonitorMixin
 
             class << self
@@ -22,45 +22,45 @@ describe Dungeon::Core::SDLContext do
 
       it "should yield custom events" do
         @subject << "a" << "b" << "c"
-        @subject << Dungeon::Core::Events::QuitEvent.new
+        @subject << RGame::Core::Events::QuitEvent.new
 
         expect(@subject.each_event.to_a).must_equal([
           "a",
           "b",
           "c",
-          Dungeon::Core::Events::QuitEvent.new
+          RGame::Core::Events::QuitEvent.new
         ])
       end
 
       it "should yield quit event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::QuitEvent.new
+          RGame::Core::Events::QuitEvent.new
         ])
       end
 
       it "should yield window close event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_WINDOWEVENT
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_WINDOWEVENT
         @sdl_event[:window][:event] = :SDL_WINDOWEVENT_CLOSE
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::QuitEvent.new
+          RGame::Core::Events::QuitEvent.new
         ])
       end
 
       it "should not yield other window event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_WINDOWEVENT
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_WINDOWEVENT
         @sdl_event[:window][:event] = :SDL_WINDOWEVENT_NONE
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::QuitEvent.new
+          RGame::Core::Events::QuitEvent.new
         ])
       end
 
@@ -72,16 +72,16 @@ describe Dungeon::Core::SDLContext do
           if events.empty?
             ticks << e.t
 
-            @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-            Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+            @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+            RGame::Core::SDL2.SDL_PushEvent @sdl_event
           end
 
           events << e
         end
 
         expect(events).must_equal([
-          Dungeon::Core::Events::IntervalEvent.new(ticks[0].to_i, ticks[0].to_i),
-          Dungeon::Core::Events::QuitEvent.new
+          RGame::Core::Events::IntervalEvent.new(ticks[0].to_i, ticks[0].to_i),
+          RGame::Core::Events::QuitEvent.new
         ])
       end
 
@@ -90,8 +90,8 @@ describe Dungeon::Core::SDLContext do
 
         @subject.each_event(60) do |e|
           if events.size == 3
-            @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-            Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+            @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+            RGame::Core::SDL2.SDL_PushEvent @sdl_event
           end
           events << e
         end
@@ -103,285 +103,285 @@ describe Dungeon::Core::SDLContext do
       end
 
       it "should yield key up event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_KEYUP
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_KEYUP
         @sdl_event[:key][:keysym][:sym] = "a".bytes.first
         @sdl_event[:key][:keysym][:scancode] = 0
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::KeyupEvent.new("a", @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::KeyupEvent.new("a", @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield named key up event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_KEYUP
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_KEYUP
         @sdl_event[:key][:keysym][:sym] = "a".bytes.first
         @sdl_event[:key][:keysym][:scancode] = :SDL_SCANCODE_RETURN
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::KeyupEvent.new("return", @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::KeyupEvent.new("return", @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield unknown key up event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_KEYUP
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_KEYUP
         @sdl_event[:key][:keysym][:sym] = 312
         @sdl_event[:key][:keysym][:scancode] = 0
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::KeyupEvent.new(:SDL_SCANCODE_UNKNOWN, @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::KeyupEvent.new(:SDL_SCANCODE_UNKNOWN, @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield key repeat event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_KEYDOWN
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_KEYDOWN
         @sdl_event[:key][:keysym][:sym] = "a".bytes.first
         @sdl_event[:key][:keysym][:scancode] = 0
         @sdl_event[:key][:repeat] = 1
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::KeyrepeatEvent.new("a", @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::KeyrepeatEvent.new("a", @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
 
       it "should yield lctrl key down event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_KEYDOWN
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_KEYDOWN
         @sdl_event[:key][:keysym][:sym] = 0
         @sdl_event[:key][:keysym][:scancode] = :SDL_SCANCODE_LCTRL
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         @modifiers.left_ctrl = true
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::KeydownEvent.new("left_ctrl", @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::KeydownEvent.new("left_ctrl", @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield lshift key down event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_KEYDOWN
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_KEYDOWN
         @sdl_event[:key][:keysym][:sym] = 0
         @sdl_event[:key][:keysym][:scancode] = :SDL_SCANCODE_LSHIFT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         @modifiers.left_shift = true
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::KeydownEvent.new("left_shift", @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::KeydownEvent.new("left_shift", @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield lalt key down event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_KEYDOWN
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_KEYDOWN
         @sdl_event[:key][:keysym][:sym] = 0
         @sdl_event[:key][:keysym][:scancode] = :SDL_SCANCODE_LALT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         @modifiers.left_alt = true
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::KeydownEvent.new("left_alt", @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::KeydownEvent.new("left_alt", @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield lgui key down event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_KEYDOWN
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_KEYDOWN
         @sdl_event[:key][:keysym][:sym] = 0
         @sdl_event[:key][:keysym][:scancode] = :SDL_SCANCODE_LGUI
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         @modifiers.left_super = true
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::KeydownEvent.new("left_super", @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::KeydownEvent.new("left_super", @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield rctrl key down event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_KEYDOWN
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_KEYDOWN
         @sdl_event[:key][:keysym][:sym] = 0
         @sdl_event[:key][:keysym][:scancode] = :SDL_SCANCODE_RCTRL
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         @modifiers.right_ctrl = true
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::KeydownEvent.new("right_ctrl", @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::KeydownEvent.new("right_ctrl", @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield rshift key down event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_KEYDOWN
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_KEYDOWN
         @sdl_event[:key][:keysym][:sym] = 0
         @sdl_event[:key][:keysym][:scancode] = :SDL_SCANCODE_RSHIFT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         @modifiers.right_shift = true
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::KeydownEvent.new("right_shift", @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::KeydownEvent.new("right_shift", @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield ralt key down event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_KEYDOWN
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_KEYDOWN
         @sdl_event[:key][:keysym][:sym] = 0
         @sdl_event[:key][:keysym][:scancode] = :SDL_SCANCODE_RALT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         @modifiers.right_alt = true
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::KeydownEvent.new("right_alt", @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::KeydownEvent.new("right_alt", @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield rgui key down event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_KEYDOWN
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_KEYDOWN
         @sdl_event[:key][:keysym][:sym] = 0
         @sdl_event[:key][:keysym][:scancode] = :SDL_SCANCODE_RGUI
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         @modifiers.right_super = true
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::KeydownEvent.new("right_super", @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::KeydownEvent.new("right_super", @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield text input event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_TEXTINPUT
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_TEXTINPUT
         @sdl_event[:text][:text].to_ptr.put_string(0, "_str_")
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::TextInputEvent.new("_str_"),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::TextInputEvent.new("_str_"),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield mouse motion event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_MOUSEMOTION
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_MOUSEMOTION
         @sdl_event[:motion][:x] = 123
         @sdl_event[:motion][:y] = 456
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::MouseMoveEvent.new(123, 456, @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::MouseMoveEvent.new(123, 456, @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield mouse down event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_MOUSEBUTTONDOWN
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_MOUSEBUTTONDOWN
         @sdl_event[:button][:x] = 123
         @sdl_event[:button][:y] = 456
-        @sdl_event[:button][:button] = Dungeon::Core::SDL2::SDL_BUTTON_X1
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:button][:button] = RGame::Core::SDL2::SDL_BUTTON_X1
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::MouseButtondownEvent.new(123, 456, "x1", @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::MouseButtondownEvent.new(123, 456, "x1", @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield mouse up event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_MOUSEBUTTONUP
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_MOUSEBUTTONUP
         @sdl_event[:button][:x] = 123
         @sdl_event[:button][:y] = 456
-        @sdl_event[:button][:button] = Dungeon::Core::SDL2::SDL_BUTTON_X1
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:button][:button] = RGame::Core::SDL2::SDL_BUTTON_X1
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::MouseButtonupEvent.new(123, 456, "x1", @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::MouseButtonupEvent.new(123, 456, "x1", @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
 
       it "should yield unknown mouse down event" do
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_MOUSEBUTTONDOWN
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_MOUSEBUTTONDOWN
         @sdl_event[:button][:x] = 123
         @sdl_event[:button][:y] = 456
         @sdl_event[:button][:button] = 42
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
-        @sdl_event[:type] = Dungeon::Core::SDL2::SDL_QUIT
-        Dungeon::Core::SDL2.SDL_PushEvent @sdl_event
+        @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+        RGame::Core::SDL2.SDL_PushEvent @sdl_event
 
         expect(@subject.each_event.to_a).must_equal([
-          Dungeon::Core::Events::MouseButtondownEvent.new(123, 456, 42, @modifiers),
-          Dungeon::Core::Events::QuitEvent.new,
+          RGame::Core::Events::MouseButtondownEvent.new(123, 456, 42, @modifiers),
+          RGame::Core::Events::QuitEvent.new,
         ])
       end
     end
   end
 
-  describe Dungeon::Core::SDLContext::ModifierState do
+  describe RGame::Core::SDLContext::ModifierState do
     before do
-      @subject = Dungeon::Core::SDLContext::ModifierState.new
+      @subject = RGame::Core::SDLContext::ModifierState.new
     end
 
     describe "#ctrl" do

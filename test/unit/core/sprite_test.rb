@@ -1,11 +1,11 @@
-require "dungeon/core/sprite"
+require "rgame/core/sprite"
 
-describe Dungeon::Core::Sprite do
+describe RGame::Core::Sprite do
   describe ".load" do
     describe "with tags" do
       it "should load json" do
         path = File.join(File.dirname(__FILE__), "data/sprite_test")
-        sprite = Dungeon::Core::Sprite.load(path)
+        sprite = RGame::Core::Sprite.load(path)
 
         expect(sprite.name).must_equal "sprite_test"
         expect(sprite.path).must_equal "%s.json" % path
@@ -13,22 +13,22 @@ describe Dungeon::Core::Sprite do
         expect(sprite.width).must_equal 16
         expect(sprite.height).must_equal 16
         expect(sprite.frames).must_equal(18.times.map do |i|
-          Dungeon::Core::Sprite::FrameData.new(0 + (16 * i), 0, 16, 16)
+          RGame::Core::Sprite::FrameData.new(0 + (16 * i), 0, 16, 16)
         end)
         expect(sprite.tags).must_equal({
-          "fow" => Dungeon::Core::Sprite::FrameTag.new(
+          "fow" => RGame::Core::Sprite::FrameTag.new(
             [ 0, 1, 2, 3, 4, 5 ],
             ([ 100 ] * 6),
           ),
-          "back" => Dungeon::Core::Sprite::FrameTag.new(
+          "back" => RGame::Core::Sprite::FrameTag.new(
             [ 11, 10, 9, 8, 7, 6 ],
             ([ 100 ] * 6),
           ),
-          "pong" => Dungeon::Core::Sprite::FrameTag.new(
+          "pong" => RGame::Core::Sprite::FrameTag.new(
             [ 12, 13, 14, 15, 16, 17, 16, 15, 14, 13 ],
             ([ 100 ] * 10),
           ),
-          "blank" => Dungeon::Core::Sprite::FrameTag.new(
+          "blank" => RGame::Core::Sprite::FrameTag.new(
             18.times.map.to_a,
             ([ 100 ] * 18),
           ),
@@ -39,7 +39,7 @@ describe Dungeon::Core::Sprite do
     describe "without tags" do
       it "should load json" do
         path = File.join(File.dirname(__FILE__), "data/sprite_no_tag_test")
-        sprite = Dungeon::Core::Sprite.load(path)
+        sprite = RGame::Core::Sprite.load(path)
 
         expect(sprite.name).must_equal "sprite_no_tag_test"
         expect(sprite.path).must_equal "%s.json" % path
@@ -47,10 +47,10 @@ describe Dungeon::Core::Sprite do
         expect(sprite.width).must_equal 16
         expect(sprite.height).must_equal 16
         expect(sprite.frames).must_equal(18.times.map do |i|
-          Dungeon::Core::Sprite::FrameData.new(0 + (16 * i), 0, 16, 16)
+          RGame::Core::Sprite::FrameData.new(0 + (16 * i), 0, 16, 16)
         end)
         expect(sprite.tags).must_equal({
-          "" => Dungeon::Core::Sprite::FrameTag.new(
+          "" => RGame::Core::Sprite::FrameTag.new(
             18.times.map.to_a,
             ([ 100 ] * 18),
           ),
@@ -61,14 +61,14 @@ describe Dungeon::Core::Sprite do
 
   describe "#next_frame_key" do
     before do
-      @subject= Dungeon::Core::Sprite.new "test", [
-        Dungeon::Core::Sprite::FrameData.new(0, 0, 16, 16),
-        Dungeon::Core::Sprite::FrameData.new(16, 0, 16, 16),
-        Dungeon::Core::Sprite::FrameData.new(32, 0, 16, 16),
-        Dungeon::Core::Sprite::FrameData.new(48, 0, 16, 16),
-        Dungeon::Core::Sprite::FrameData.new(64, 0, 16, 16),
+      @subject= RGame::Core::Sprite.new "test", [
+        RGame::Core::Sprite::FrameData.new(0, 0, 16, 16),
+        RGame::Core::Sprite::FrameData.new(16, 0, 16, 16),
+        RGame::Core::Sprite::FrameData.new(32, 0, 16, 16),
+        RGame::Core::Sprite::FrameData.new(48, 0, 16, 16),
+        RGame::Core::Sprite::FrameData.new(64, 0, 16, 16),
       ], {
-        "foo" => Dungeon::Core::Sprite::FrameTag.new(
+        "foo" => RGame::Core::Sprite::FrameTag.new(
           [ 0, 1, 2, 3, 4 ],
           [ 10, 20, 30, 40, 50 ],
         ),
@@ -96,14 +96,14 @@ describe Dungeon::Core::Sprite do
 
   describe "#at" do
     before do
-      @subject= Dungeon::Core::Sprite.new "test", [
-        Dungeon::Core::Sprite::FrameData.new(0, 0, 16, 16),
-        Dungeon::Core::Sprite::FrameData.new(16, 0, 16, 16),
-        Dungeon::Core::Sprite::FrameData.new(32, 0, 16, 16),
-        Dungeon::Core::Sprite::FrameData.new(48, 0, 16, 16),
-        Dungeon::Core::Sprite::FrameData.new(64, 0, 16, 16),
+      @subject= RGame::Core::Sprite.new "test", [
+        RGame::Core::Sprite::FrameData.new(0, 0, 16, 16),
+        RGame::Core::Sprite::FrameData.new(16, 0, 16, 16),
+        RGame::Core::Sprite::FrameData.new(32, 0, 16, 16),
+        RGame::Core::Sprite::FrameData.new(48, 0, 16, 16),
+        RGame::Core::Sprite::FrameData.new(64, 0, 16, 16),
       ], {
-        "foo" => Dungeon::Core::Sprite::FrameTag.new(
+        "foo" => RGame::Core::Sprite::FrameTag.new(
           [ 0, 1, 2, 3, 4 ],
           [ 10, 20, 30, 40, 50 ],
         ),
@@ -123,22 +123,22 @@ describe Dungeon::Core::Sprite do
 
   describe "#default_tag" do
     before do
-      @subject= Dungeon::Core::Sprite.new "test", [
-        Dungeon::Core::Sprite::FrameData.new(0, 0, 16, 16),
-        Dungeon::Core::Sprite::FrameData.new(16, 0, 16, 16),
-        Dungeon::Core::Sprite::FrameData.new(32, 0, 16, 16),
-        Dungeon::Core::Sprite::FrameData.new(48, 0, 16, 16),
-        Dungeon::Core::Sprite::FrameData.new(64, 0, 16, 16),
+      @subject= RGame::Core::Sprite.new "test", [
+        RGame::Core::Sprite::FrameData.new(0, 0, 16, 16),
+        RGame::Core::Sprite::FrameData.new(16, 0, 16, 16),
+        RGame::Core::Sprite::FrameData.new(32, 0, 16, 16),
+        RGame::Core::Sprite::FrameData.new(48, 0, 16, 16),
+        RGame::Core::Sprite::FrameData.new(64, 0, 16, 16),
       ], {
-        "foo" => Dungeon::Core::Sprite::FrameTag.new(
+        "foo" => RGame::Core::Sprite::FrameTag.new(
           [ 1, 2 ],
           [ 10, 20 ],
         ),
-        "bar" => Dungeon::Core::Sprite::FrameTag.new(
+        "bar" => RGame::Core::Sprite::FrameTag.new(
           [ 0, 3 ],
           [ 10, 20 ],
         ),
-        "baz" => Dungeon::Core::Sprite::FrameTag.new(
+        "baz" => RGame::Core::Sprite::FrameTag.new(
           [ 4 ],
           [ 20 ],
         ),

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+RUBYLIB="$(cd "$(dirname "$0")/../lib"; pwd)"
+export RUBYLIB
+
+exec /usr/bin/env ruby "$(cd "$1"; pwd)/application.rb"

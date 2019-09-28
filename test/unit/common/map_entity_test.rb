@@ -1,4 +1,4 @@
-require "dungeon/common/map_entity"
+require "rgame/common/map_entity"
 
-describe Dungeon::Common::MapEntity do
+describe RGame::Common::MapEntity do
 end

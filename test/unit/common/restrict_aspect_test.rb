@@ -1,4 +1,4 @@
-require "dungeon/common/restrict_aspect"
+require "rgame/common/restrict_aspect"
 
-describe Dungeon::Common::RestrictAspect do
+describe RGame::Common::RestrictAspect do
 end

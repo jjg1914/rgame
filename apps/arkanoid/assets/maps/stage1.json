@@ -1,13 +1,13 @@
 {
   "meta": {
-    "schema": "dungeon"
+    "schema": "rgame"
   },
   "background": 2631720,
   "width": 272,
   "height": 288,
   "entities": [
     {
-      "type": "dungeon::common::imagelayer",
+      "type": "rgame::common::imagelayer",
       "image": "stage-bg"
     },
     {

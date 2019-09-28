@@ -1,4 +1,4 @@
-require "dungeon/core/aspect"
+require "rgame/core/aspect"
 
-describe Dungeon::Core::Aspect do
+describe RGame::Core::Aspect do
 end

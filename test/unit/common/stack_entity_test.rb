@@ -1,4 +1,4 @@
-require "dungeon/common/stack_entity"
+require "rgame/common/stack_entity"
 
-describe Dungeon::Common::StackEntity do
+describe RGame::Common::StackEntity do
 end

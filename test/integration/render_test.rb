@@ -1,10 +1,10 @@
-require "dungeon"
+require "rgame"
 require "fileutils"
 require "tmpdir"
 
 class RenderTest < MiniTest::Test
   def test_software_colors
-    klass = Class.new(Dungeon::Common::RootEntity)
+    klass = Class.new(RGame::Common::RootEntity)
     klass.window.size = [ 128, 128 ]
     klass.window.mode = "software"
     klass.on :draw do
@@ -28,9 +28,9 @@ class RenderTest < MiniTest::Test
   end
 
   def test_mmap_colors
-    Dungeon::Core::Env.mmap_file = "colors.bin"
+    RGame::Core::Env.mmap_file = "colors.bin"
 
-    klass = Class.new(Dungeon::Common::RootEntity)
+    klass = Class.new(RGame::Common::RootEntity)
     klass.window.size = [ 128, 128 ]
     klass.window.mode = "mmap"
     klass.on :draw do
@@ -39,12 +39,12 @@ class RenderTest < MiniTest::Test
     end
 
     klass.on :end do
-      fd = Dungeon::Core::Internal.shm_open "colors.bin", Fcntl::O_RDWR | Fcntl::O_CREAT, 0644
+      fd = RGame::Core::Internal.shm_open "colors.bin", Fcntl::O_RDWR | Fcntl::O_CREAT, 0644
       io = IO.new(fd)
-      mmap_prot = Dungeon::Core::Internal::PROT_READ |
-                  Dungeon::Core::Internal::PROT_WRITE
-      mmap_flags = Dungeon::Core::Internal::MAP_SHARED
-      data = Dungeon::Core::Internal.mmap(nil, io.stat.size,
+      mmap_prot = RGame::Core::Internal::PROT_READ |
+                  RGame::Core::Internal::PROT_WRITE
+      mmap_flags = RGame::Core::Internal::MAP_SHARED
+      data = RGame::Core::Internal.mmap(nil, io.stat.size,
                                           mmap_prot, mmap_flags,
                                           fd, 0)
       buffer = data.read_bytes(io.stat.size)
@@ -52,8 +52,8 @@ class RenderTest < MiniTest::Test
       File.write("colors.bin", buffer[0...length].bytes.each_slice(4).map do |e|
         e.tap { e[0], e[2] = [ e[2], e[0 ]] }
       end.flatten.map { |e| e.chr }.join)
-      Dungeon::Core::Internal.munmap(data, io.stat.size)
-      Dungeon::Core::Internal.shm_unlink "colors.bin"
+      RGame::Core::Internal.munmap(data, io.stat.size)
+      RGame::Core::Internal.shm_unlink "colors.bin"
     end
 
     Dir.mktmpdir do |dir|

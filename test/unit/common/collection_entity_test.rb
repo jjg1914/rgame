@@ -1,4 +1,4 @@
-require "dungeon/common/collection_entity"
+require "rgame/common/collection_entity"
 
-describe Dungeon::Common::CollectionEntity do
+describe RGame::Common::CollectionEntity do
 end

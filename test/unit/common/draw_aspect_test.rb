@@ -1,4 +1,4 @@
-require "dungeon/common/draw_aspect"
+require "rgame/common/draw_aspect"
 
-describe Dungeon::Common::DrawAspect do
+describe RGame::Common::DrawAspect do
 end

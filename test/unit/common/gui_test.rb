@@ -1,4 +1,4 @@
-require "dungeon/common/gui"
+require "rgame/common/gui"
 
-describe Dungeon::Common::Gui do
+describe RGame::Common::Gui do
 end

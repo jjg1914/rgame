@@ -1,4 +1,4 @@
-require "dungeon/common/queue_entity"
+require "rgame/common/queue_entity"
 
-describe Dungeon::Common::QueueEntity do
+describe RGame::Common::QueueEntity do
 end

@@ -1,6 +1,6 @@
-require "dungeon/core/collision"
+require "rgame/core/collision"
 
-describe Dungeon::Core::Collision do
+describe RGame::Core::Collision do
   describe "calculate_mtv" do
     describe "without change" do
       it "should return mtv" do
@@ -20,7 +20,7 @@ describe Dungeon::Core::Collision do
           def height; 4; end
         end
 
-        expect(Dungeon::Core::Collision.calculate_mtv(a, b)).must_equal([
+        expect(RGame::Core::Collision.calculate_mtv(a, b)).must_equal([
           -1, -3
         ])
       end
@@ -46,7 +46,7 @@ describe Dungeon::Core::Collision do
           def height; 3; end
         end
 
-        expect(Dungeon::Core::Collision.calculate_mtv(a, b)).must_equal([
+        expect(RGame::Core::Collision.calculate_mtv(a, b)).must_equal([
           -1, -2
         ])
       end
@@ -72,7 +72,7 @@ describe Dungeon::Core::Collision do
           def height; 4; end
         end
 
-        expect(Dungeon::Core::Collision.calculate_mtv(a, b)).must_equal([
+        expect(RGame::Core::Collision.calculate_mtv(a, b)).must_equal([
           1, 1
         ])
       end
@@ -98,7 +98,7 @@ describe Dungeon::Core::Collision do
           def height; 4; end
         end
 
-        expect(Dungeon::Core::Collision.calculate_mtv(a, b)).must_equal([
+        expect(RGame::Core::Collision.calculate_mtv(a, b)).must_equal([
           0, 0
         ])
       end
@@ -124,7 +124,7 @@ describe Dungeon::Core::Collision do
           def height; 3; end
         end
 
-        expect(Dungeon::Core::Collision.calculate_mtv(a, b)).must_equal([
+        expect(RGame::Core::Collision.calculate_mtv(a, b)).must_equal([
           0, 0
         ])
       end
@@ -150,7 +150,7 @@ describe Dungeon::Core::Collision do
           def height; 6; end
         end
 
-        expect(Dungeon::Core::Collision.check(a, b)).must_equal true
+        expect(RGame::Core::Collision.check(a, b)).must_equal true
       end
     end
   end
@@ -158,7 +158,7 @@ describe Dungeon::Core::Collision do
   describe ".check_bounds" do
     describe "left" do
       it "should be false" do
-        expect(Dungeon::Core::Collision.check_bounds({
+        expect(RGame::Core::Collision.check_bounds({
           "left" => -2,
           "top" => 2,
           "right" => 0,
@@ -172,7 +172,7 @@ describe Dungeon::Core::Collision do
       end
 
       it "should be true on border" do
-        expect(Dungeon::Core::Collision.check_bounds({
+        expect(RGame::Core::Collision.check_bounds({
           "left" => -1,
           "top" => 2,
           "right" => 1,
@@ -188,7 +188,7 @@ describe Dungeon::Core::Collision do
 
     describe "right" do
       it "should be false" do
-        expect(Dungeon::Core::Collision.check_bounds({
+        expect(RGame::Core::Collision.check_bounds({
           "left" => 4,
           "top" => 2,
           "right" => 7,
@@ -202,7 +202,7 @@ describe Dungeon::Core::Collision do
       end
 
       it "should be true on border" do
-        expect(Dungeon::Core::Collision.check_bounds({
+        expect(RGame::Core::Collision.check_bounds({
           "left" => 3,
           "top" => 2,
           "right" => 6,
@@ -218,7 +218,7 @@ describe Dungeon::Core::Collision do
 
     describe "top" do
       it "should be false" do
-        expect(Dungeon::Core::Collision.check_bounds({
+        expect(RGame::Core::Collision.check_bounds({
           "left" => 1,
           "top" => -1,
           "right" => 3,
@@ -232,7 +232,7 @@ describe Dungeon::Core::Collision do
       end
 
       it "should be true on border" do
-        expect(Dungeon::Core::Collision.check_bounds({
+        expect(RGame::Core::Collision.check_bounds({
           "left" => 1,
           "top" => -1,
           "right" => 3,
@@ -248,7 +248,7 @@ describe Dungeon::Core::Collision do
 
     describe "bottom" do
       it "should be false" do
-        expect(Dungeon::Core::Collision.check_bounds({
+        expect(RGame::Core::Collision.check_bounds({
           "left" => 1,
           "top" => 6,
           "right" => 3,
@@ -262,7 +262,7 @@ describe Dungeon::Core::Collision do
       end
 
       it "should be true on border" do
-        expect(Dungeon::Core::Collision.check_bounds({
+        expect(RGame::Core::Collision.check_bounds({
           "left" => 1,
           "top" => 5,
           "right" => 3,
@@ -278,7 +278,7 @@ describe Dungeon::Core::Collision do
 
     describe "inside" do
       it "should be true" do
-        expect(Dungeon::Core::Collision.check_bounds({
+        expect(RGame::Core::Collision.check_bounds({
           "left" => 1,
           "top" => 2,
           "right" => 3,
@@ -303,14 +303,14 @@ describe Dungeon::Core::Collision do
         def height; 4; end
       end
 
-      expect(Dungeon::Core::Collision.check_point([ 2, 4 ], o)).must_equal true
+      expect(RGame::Core::Collision.check_point([ 2, 4 ], o)).must_equal true
     end
   end
 
   describe ".check_point_bounds" do
     describe "left" do
       it "should be false" do
-        expect(Dungeon::Core::Collision.check_point_bounds([ 0, 4 ], {
+        expect(RGame::Core::Collision.check_point_bounds([ 0, 4 ], {
           "left" => 1,
           "top" => 2,
           "right" => 3,
@@ -319,7 +319,7 @@ describe Dungeon::Core::Collision do
       end
 
       it "should be true on border" do
-        expect(Dungeon::Core::Collision.check_point_bounds([ 1, 4 ], {
+        expect(RGame::Core::Collision.check_point_bounds([ 1, 4 ], {
           "left" => 1,
           "top" => 2,
           "right" => 3,
@@ -330,7 +330,7 @@ describe Dungeon::Core::Collision do
 
     describe "right" do
       it "should be false" do
-        expect(Dungeon::Core::Collision.check_point_bounds([ 4, 4 ], {
+        expect(RGame::Core::Collision.check_point_bounds([ 4, 4 ], {
           "left" => 1,
           "top" => 2,
           "right" => 3,
@@ -339,7 +339,7 @@ describe Dungeon::Core::Collision do
       end
 
       it "should be true on border" do
-        expect(Dungeon::Core::Collision.check_point_bounds([ 3, 4 ], {
+        expect(RGame::Core::Collision.check_point_bounds([ 3, 4 ], {
           "left" => 1,
           "top" => 2,
           "right" => 3,
@@ -350,7 +350,7 @@ describe Dungeon::Core::Collision do
 
     describe "top" do
       it "should be false" do
-        expect(Dungeon::Core::Collision.check_point_bounds([ 2, 1 ], {
+        expect(RGame::Core::Collision.check_point_bounds([ 2, 1 ], {
           "left" => 1,
           "top" => 2,
           "right" => 3,
@@ -359,7 +359,7 @@ describe Dungeon::Core::Collision do
       end
 
       it "should be true on border" do
-        expect(Dungeon::Core::Collision.check_point_bounds([ 2, 2 ], {
+        expect(RGame::Core::Collision.check_point_bounds([ 2, 2 ], {
           "left" => 1,
           "top" => 2,
           "right" => 3,
@@ -370,7 +370,7 @@ describe Dungeon::Core::Collision do
 
     describe "bottom" do
       it "should be false" do
-        expect(Dungeon::Core::Collision.check_point_bounds([ 2, 6 ], {
+        expect(RGame::Core::Collision.check_point_bounds([ 2, 6 ], {
           "left" => 1,
           "top" => 2,
           "right" => 3,
@@ -379,7 +379,7 @@ describe Dungeon::Core::Collision do
       end
 
       it "should be true on border" do
-        expect(Dungeon::Core::Collision.check_point_bounds([ 2, 5 ], {
+        expect(RGame::Core::Collision.check_point_bounds([ 2, 5 ], {
           "left" => 1,
           "top" => 2,
           "right" => 3,
@@ -390,7 +390,7 @@ describe Dungeon::Core::Collision do
 
     describe "inside" do
       it "should be true" do
-        expect(Dungeon::Core::Collision.check_point_bounds([ 2, 4 ], {
+        expect(RGame::Core::Collision.check_point_bounds([ 2, 4 ], {
           "left" => 1,
           "top" => 2,
           "right" => 3,
@@ -410,7 +410,7 @@ describe Dungeon::Core::Collision do
         def height; 4; end
       end
 
-      expect(Dungeon::Core::Collision.bounds_for(o)).must_equal({
+      expect(RGame::Core::Collision.bounds_for(o)).must_equal({
         "left" => 1,
         "top" => 2,
         "right" => 3,
@@ -449,7 +449,7 @@ describe Dungeon::Core::Collision do
         end
       end
 
-      @subject = Dungeon::Core::Collision.new 128, 256
+      @subject = RGame::Core::Collision.new 128, 256
     end
 
     it "should add entities" do
@@ -551,7 +551,7 @@ describe Dungeon::Core::Collision do
         end
       end
 
-      @subject = Dungeon::Core::Collision.new 128, 256
+      @subject = RGame::Core::Collision.new 128, 256
       @entities.each { |e| @subject.add e }
     end
 
@@ -621,7 +621,7 @@ describe Dungeon::Core::Collision do
         end
       end
 
-      @subject = Dungeon::Core::Collision.new 128, 256
+      @subject = RGame::Core::Collision.new 128, 256
       @entities.each { |e| @subject.add e }
     end
 

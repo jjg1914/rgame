@@ -1,4 +1,4 @@
-require "dungeon/common/timer_aspect"
+require "rgame/common/timer_aspect"
 
-describe Dungeon::Common::TimerAspect do
+describe RGame::Common::TimerAspect do
 end

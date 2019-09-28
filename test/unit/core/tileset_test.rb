@@ -1,4 +1,4 @@
-require "dungeon/core/tileset"
+require "rgame/core/tileset"
 
-describe Dungeon::Core::Tileset do
+describe RGame::Core::Tileset do
 end

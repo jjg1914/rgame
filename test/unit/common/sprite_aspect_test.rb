@@ -1,4 +1,4 @@
-require "dungeon/common/sprite_aspect"
+require "rgame/common/sprite_aspect"
 
-describe Dungeon::Common::SpriteAspect do
+describe RGame::Common::SpriteAspect do
 end

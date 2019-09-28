@@ -1,10 +1,10 @@
-require "dungeon/core/sdl"
+require "rgame/core/sdl"
 
-describe Dungeon::Core::SDL2 do
-  describe Dungeon::Core::SDL2::SDLColor do
+describe RGame::Core::SDL2 do
+  describe RGame::Core::SDL2::SDLColor do
     describe "#assign" do
       it "should assign all colors" do
-        subject = Dungeon::Core::SDL2::SDLColor.new
+        subject = RGame::Core::SDL2::SDLColor.new
         subject[:r] = 0
         subject[:g] = 0
         subject[:b] = 0

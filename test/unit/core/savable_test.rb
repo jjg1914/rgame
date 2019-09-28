@@ -1,4 +1,4 @@
-require "dungeon/core/savable"
+require "rgame/core/savable"
 
-describe Dungeon::Core::Savable do
+describe RGame::Core::Savable do
 end

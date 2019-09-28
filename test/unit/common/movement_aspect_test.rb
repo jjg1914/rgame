@@ -1,4 +1,4 @@
-require "dungeon/common/movement_aspect"
+require "rgame/common/movement_aspect"
 
-describe Dungeon::Common::MovementAspect do
+describe RGame::Common::MovementAspect do
 end

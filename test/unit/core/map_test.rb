@@ -1,11 +1,11 @@
-require "dungeon/core/map"
+require "rgame/core/map"
 
-describe Dungeon::Core::Map do
+describe RGame::Core::Map do
   describe ".load" do
     describe "with tiled" do
       it "should load json" do
         path = File.join(File.dirname(__FILE__), "data/map_test_tiled")
-        map = Dungeon::Core::Map.load(path)
+        map = RGame::Core::Map.load(path)
 
         expect(map.name).must_equal "map_test_tiled"
         expect(map.path).must_equal "%s.json" % path
@@ -14,11 +14,11 @@ describe Dungeon::Core::Map do
         expect(map.background).must_equal 0x202020
         expect(map.entities).must_equal [
           {
-            "type" => "dungeon::common::imagelayer",
+            "type" => "rgame::common::imagelayer",
             "image" => "stage-bg",
           },
           {
-            "type" => "dungeon::common::tilelayer",
+            "type" => "rgame::common::tilelayer",
             "tileset" => "tileset",
             "data" => [
               [ 18, 16, 16, 16, 16, 16, 16, 16, 16, 19 ],
@@ -63,19 +63,19 @@ describe Dungeon::Core::Map do
       end
     end
 
-    describe "with dungeon" do
+    describe "with rgame" do
       it "should load json" do
-        path = File.join(File.dirname(__FILE__), "data/map_test_dungeon")
-        map = Dungeon::Core::Map.load(path)
+        path = File.join(File.dirname(__FILE__), "data/map_test_rgame")
+        map = RGame::Core::Map.load(path)
 
-        expect(map.name).must_equal "map_test_dungeon"
+        expect(map.name).must_equal "map_test_rgame"
         expect(map.path).must_equal "%s.json" % path
         expect(map.width).must_equal 272
         expect(map.height).must_equal 288
         expect(map.background).must_equal 0x2800BA
         expect(map.entities).must_equal [
           {
-            "type" => "dungeon::common::imagelayer",
+            "type" => "rgame::common::imagelayer",
             "image" => "stage-bg",
           },
           {
@@ -92,7 +92,7 @@ describe Dungeon::Core::Map do
       it "should load json" do
         path = File.join(File.dirname(__FILE__), "data/map_test_invalid")
         expect(proc do
-          Dungeon::Core::Map.load(path)
+          RGame::Core::Map.load(path)
         end).must_raise
       end
     end
