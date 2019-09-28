@@ -216,8 +216,8 @@ module RGame
         private
 
         def _calculate_mtv_axis entity, target, other, min, max, change_method
-          change = entity.then do |o|
-            o.send(change_method) if o.respond_to? change_method
+          change = if entity.respond_to?(change_method)
+            entity.send(change_method)
           end
 
           if not change.nil?

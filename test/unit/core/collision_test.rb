@@ -566,7 +566,7 @@ describe RGame::Core::Collision do
         end
       end
       
-      @subject.query(entity).must_equal [ @entities[0] ]
+      expect(@subject.query(entity)).must_equal [ @entities[0] ]
     end
 
     it "should not return self" do
@@ -580,7 +580,7 @@ describe RGame::Core::Collision do
         end
       end
       
-      @subject.query(entity).must_equal []
+      expect(@subject.query(entity)).must_equal []
     end
   end
 

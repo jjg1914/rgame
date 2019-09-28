@@ -13,14 +13,22 @@ class RenderTest < MiniTest::Test
     end
 
     klass.on :end do
-      ctx.save_to_file "colors.bmp"
+      buffer = ctx.read_bytes
+      File.write("colors.bin", buffer.bytes.each_slice(4).map do |e|
+        e.tap do
+          e.push(e.shift)
+          e[0], e[2] = [ e[2], e[0] ]
+        end
+      end.flatten.map { |e| e.chr }.join)
     end
 
     Dir.mktmpdir do |dir|
       FileUtils.cd(dir) do
         klass.run!
         base = File.join(File.dirname(__FILE__), "bitmaps/colors.png")
-        diff = %x[compare -metric AE colors.bmp #{base} out.bmp 2>&1]
+        %x[convert -size 128x128 -depth 8 RGBA:colors.bin tmp.png]
+        assert($?.success?)
+        diff = %x[compare -metric AE tmp.png #{base} out.png 2>&1]
         assert($?.exitstatus < 2)
         assert_equal(0, diff.to_f)
       end
@@ -50,7 +58,10 @@ class RenderTest < MiniTest::Test
       buffer = data.read_bytes(io.stat.size)
       length = 128 * 128 * 4
       File.write("colors.bin", buffer[0...length].bytes.each_slice(4).map do |e|
-        e.tap { e[0], e[2] = [ e[2], e[0 ]] }
+        e.tap do
+          e.push(e.shift)
+          e[0], e[2] = [ e[2], e[0] ]
+        end
       end.flatten.map { |e| e.chr }.join)
       RGame::Core::Internal.munmap(data, io.stat.size)
       RGame::Core::Internal.shm_unlink "colors.bin"
@@ -62,7 +73,7 @@ class RenderTest < MiniTest::Test
         base = File.join(File.dirname(__FILE__), "bitmaps/colors.png")
         %x[convert -size 128x128 -depth 8 RGBA:colors.bin tmp.png]
         assert($?.success?)
-        diff = %x[compare -metric AE tmp.png #{base} out.bmp 2>&1]
+        diff = %x[compare -metric AE tmp.png #{base} out.png 2>&1]
         assert($?.exitstatus < 2)
         assert_equal(0, diff.to_f)
       end
@@ -71,6 +82,7 @@ class RenderTest < MiniTest::Test
 
   def self._draw_colors ctx
     ctx.color = 0x888888
+    ctx.alpha = 0xFF
     ctx.clear
 
     ctx.color = 0xFF0000

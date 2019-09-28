@@ -5,8 +5,9 @@ require "ffi"
 module RGame
   module Core
     module Internal
-      extend FFI::Library
-      ffi_lib FFI::Library::LIBC
+      unless (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM).nil?
+        raise "not supported"
+      end
 
       PROT_NONE = 0x0
       PROT_READ = 0x1
@@ -16,18 +17,72 @@ module RGame
       MAP_SHARED = 0x1
       MAP_PRIVATE = 0x2
 
-      attach_function :getpagesize, %i[], :int
-      attach_function :ftruncate, %i[int int64], :int
-      attach_function :shm_open, %i[string int uint32], :int
-      attach_function :shm_unlink, %i[string], :int
+      class << self
+        def getpagesize *args
+          Internal::LibC.getpagesize(*args)
+        end
 
-      attach_function :mmap, %i[pointer
-                                ulong
-                                int
-                                int
-                                int
-                                uint], :pointer
-      attach_function :munmap, %i[pointer ulong], :pointer
+        def ftruncate *args
+          Internal::LibC.ftruncate(*args)
+        end
+
+        def mmap *args
+          Internal::LibC.mmap(*args)
+        end
+
+        def munmap *args
+          Internal::LibC.munmap(*args)
+        end
+
+        if (/darwin/ =~ RUBY_PLATFORM).nil?
+          def shm_open *args
+            Internal::LibRT.shm_open(*args)
+          end
+
+          def shm_unlink *args
+            Internal::LibRT.shm_unlink(*args)
+          end
+        else
+          def shm_open *args
+            Internal::LibC.shm_open(*args)
+          end
+
+          def shm_unlink *args
+            Internal::LibC.shm_unlink(*args)
+          end
+        end
+      end
+
+      module LibC
+        extend FFI::Library
+        ffi_lib FFI::Library::LIBC
+
+        attach_function :getpagesize, %i[], :int
+        attach_function :ftruncate, %i[int int64], :int
+
+        unless (/darwin/ =~ RUBY_PLATFORM).nil?
+          attach_function :shm_open, %i[string int uint32], :int
+          attach_function :shm_unlink, %i[string], :int
+        end
+
+        attach_function :mmap, %i[pointer
+                                  ulong
+                                  int
+                                  int
+                                  int
+                                  uint], :pointer
+        attach_function :munmap, %i[pointer ulong], :pointer
+      end
+
+      if (/darwin/ =~ RUBY_PLATFORM).nil?
+        module LibRT
+          extend FFI::Library
+          ffi_lib "rt"
+
+          attach_function :shm_open, %i[string int uint32], :int
+          attach_function :shm_unlink, %i[string], :int
+        end
+      end
     end
 
     # rubocop:disable Metrics/ModuleLength

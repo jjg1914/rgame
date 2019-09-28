@@ -1,0 +1,39 @@
+name: Build
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        ruby: [ 2.6, 2.5, 2.4 ]
+        os: [ubuntu-latest, macOS-latest]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Ruby ${{ matrix.ruby }}
+      uses: actions/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+    - name: Install SDL (ubuntu)
+      if: "matrix.os == 'ubuntu-latest'"
+      run: |
+        sudo apt-get update
+        sudo apt install --fix-missing build-essential libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
+    - name: Install SDL (macOS)
+      if: "matrix.os == 'macOS-latest'"
+      run: |
+        echo | /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+        brew install sdl2 sdl2_image sdl2_ttf imagemagick
+    - name: Build and test with Rake
+      run: |
+        gem install --force bundler
+        bundle install --jobs 4 --retry 3
+        bundle exec rake check
+    #- name: Sonar Scanner
+    #  if: "matrix.os == 'ubuntu-latest' && matrix.ruby == 2.6"
+    #  uses: sonarsource/sonarcloud-github-action@master
+    #  env:
+    #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

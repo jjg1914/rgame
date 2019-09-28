@@ -496,9 +496,9 @@ module RGame
           @surface = surface
         end
 
-        def save_to_file filename
-          rw = SDL2.SDL_RWFromFile filename, "wb"
-          SDL2.SDL_SaveBMP_RW @surface, rw, 1
+        def read_bytes
+          size = @surface[:w] * @surface[:h] * 4
+          @surface[:pixels].read_bytes(size)
         end
 
         def close
@@ -513,10 +513,10 @@ module RGame
             data, io = self.create_mmap filename, width, height
             surface = SDL2.SDL_CreateRGBSurfaceFrom data, width, height,
                                                     32, 4 * width,
+                                                    0xFF000000,
                                                     0xFF0000,
                                                     0xFF00,
-                                                    0xFF,
-                                                    0xFF000000
+                                                    0xFF
             raise SDL2.SDL_GetError if surface.nil?
 
             renderer = SDL2.SDL_CreateSoftwareRenderer surface

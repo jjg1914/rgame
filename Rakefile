@@ -20,8 +20,6 @@ namespace :test do
   end
 end
 
-task :test => %i[test:unit test:integration]
-
 RuboCop::RakeTask.new(:lint) do |task|
   task.patterns = [ 'lib/**/*.rb' ]
   # only show the files with failures
@@ -30,8 +28,10 @@ RuboCop::RakeTask.new(:lint) do |task|
   #task.fail_on_error = false
 end
 
+task :test => %i[test:unit test:integration]
+
+task :check => [ :test, :lint ]
+
 YARD::Rake::YardocTask.new do |t|
  t.files = ['lib/**/*.rb']
 end
-
-task :check => [ :test, :lint ]

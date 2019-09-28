@@ -88,18 +88,41 @@ describe RGame::Core::SDLContext do
       it "should yield all interval events" do
         events = []
 
-        @subject.each_event(60) do |e|
-          if events.size == 3
-            @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
-            RGame::Core::SDL2.SDL_PushEvent @sdl_event
+        mock = MiniTest::Mock.new
+        mock.expect :getticks, 0, []
+        mock.expect :getticks, 5, []
+        mock.expect :delay, nil, [ 11 ]
+        mock.expect :getticks, 16, []
+        mock.expect :getticks, 19, []
+        mock.expect :delay, nil, [ 13 ]
+        mock.expect :getticks, 32, []
+        mock.expect :getticks, 36, []
+        mock.expect :delay, nil, [ 12 ]
+        mock.expect :getticks, 48, []
+        mock.expect :getticks, 49, []
+        mock.expect :delay, nil, [ 15 ]
+        mock.expect :getticks, 64, []
+
+        RGame::Core::SDL2.stub(:SDL_Delay, lambda { |x| mock.delay(x) }) do
+          RGame::Core::SDL2.stub(:SDL_GetTicks, lambda do
+            mock.getticks
+          end) do
+            @subject.each_event(60) do |e|
+              if events.size == 3
+                @sdl_event[:type] = RGame::Core::SDL2::SDL_QUIT
+                RGame::Core::SDL2.SDL_PushEvent @sdl_event
+              end
+              events << e
+            end
           end
-          events << e
         end
 
+
         expect(events.take(4).map(&:t).each_cons(2).all? do |a,b|
-          # TODO potentially flaky, can timing be fixed/faked?
-          ((a - b).abs - 16).abs <= 6
+          (a - b).abs == 16
         end).must_equal(true)
+
+        mock.verify
       end
 
       it "should yield key up event" do
