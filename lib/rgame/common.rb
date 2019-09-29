@@ -2,7 +2,7 @@
 
 require "rgame/common/collection_entity.rb"
 require "rgame/common/collision_aspect.rb"
-require "rgame/common/control_4way_aspect.rb"
+require "rgame/common/controls_aspect.rb"
 require "rgame/common/draw_aspect.rb"
 require "rgame/common/editor_aspect.rb"
 require "rgame/common/gui.rb"

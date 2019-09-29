@@ -206,16 +206,18 @@ end
 class PlayerEntity < RGame::Core::Entity
   include RGame::Common::CollisionAspect
   include RGame::Common::SpriteAspect
-  include RGame::Common::Control4WayAspect
+  include RGame::Common::ControlsAspect
   include RGame::Common::PositionAspect
   include RGame::Common::MovementAspect
   include RGame::Common::RestrictAspect
 
+  controls.left.speed = 64
+  controls.right.speed = 64
+  controls.wasd!
+  controls.arrows!
+
   on :new do
     self.sprite = "player"
-
-    self.controls["up"]["speed"] = 0
-    self.controls["down"]["speed"] = 0
   end
 end
 
