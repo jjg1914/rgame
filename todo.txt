@@ -7,7 +7,7 @@ Support Batch Rendering in SpriteAspect +render
 Stringify all event names +arch
 Support Arena Allocation for entities +arch
 
-Check sonar-scanner on push/pull +quality
-Check gem versions on push/pull/recurring +quality
+Add Codcov +quality
+Add Renovate +quality
 Code coverage badge +quality
 Code quality badge +quality
