@@ -1,0 +1,13 @@
+Add SDL_FontCache +render
+Draw Cached Text +render
+Swap SDL for SDL_gpu +render
+Add Batch Rendering to context +render
+Support Batch Rendering in SpriteAspect +render
+
+Stringify all event names +arch
+Support Arena Allocation for entities +arch
+
+Check sonar-scanner on push/pull +quality
+Check gem versions on push/pull/recurring +quality
+Code coverage badge +quality
+Code quality badge +quality
