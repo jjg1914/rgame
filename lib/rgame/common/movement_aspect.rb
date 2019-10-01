@@ -48,8 +48,13 @@ module RGame
 
       def angle= value
         tmp = self.speed
-        self.x_speed = tmp * Math.cos(value)
-        self.y_speed = tmp * Math.sin(value)
+        if tmp.zero?
+          self.x_speed = Math.cos(value)
+          self.y_speed = Math.sin(value)
+        else
+          self.x_speed = tmp * Math.cos(value)
+          self.y_speed = tmp * Math.sin(value)
+        end
       end
 
       def speed
@@ -58,8 +63,13 @@ module RGame
 
       def speed= value
         tmp = self.angle
-        self.x_speed = value * Math.cos(tmp)
-        self.y_speed = value * Math.sin(tmp)
+        if tmp.zero?
+          self.x_speed = value
+          self.y_speed = 0
+        else
+          self.x_speed = value * Math.cos(tmp)
+          self.y_speed = value * Math.sin(tmp)
+        end
       end
 
       def to_h

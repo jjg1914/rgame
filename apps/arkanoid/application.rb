@@ -224,11 +224,14 @@ end
 class BlockEntity < RGame::Core::Entity
   include RGame::Common::SpriteAspect
   include RGame::Common::PositionAspect
+  include RGame::Common::CollisionAspect
   include RGame::Common::DrawAspect
 
   include RGame::Core::Savable
 
   savable [ :x, :y, :sprite_tag ]
+
+  collision.check_collisions = false
 
   attr_accessor :score
 
@@ -293,6 +296,8 @@ class MovingBlockEntity < BlockEntity
 
   savable [ :x_speed, :y_speed ]
 
+  #movement.x_speed = 32
+
   on :new do
     self.sprite_tag = "red_moving"
     self.x_speed = 32
@@ -335,6 +340,8 @@ class BallEntity < RGame::Core::Entity
     (3.0 * Math::PI / 4.0),
   ]
 
+  collision(BlockEntity => "bump", PlayerEntity => "bump", "nil?" => "bump")
+
   on :new do |player|
     self.sprite = "ball"
   end
@@ -354,12 +361,11 @@ class BallEntity < RGame::Core::Entity
   end
 
   on :keydown do |key|
-    if not @started and key == "space"
-      @started = true
+    next if @started or key != "space"
 
-      self.x_speed = DEFAULT_SPEED * Math.cos(STARTING_ANGLE)
-      self.y_speed = DEFAULT_SPEED * Math.sin(STARTING_ANGLE)
-    end
+    @started = true
+    self.speed = DEFAULT_SPEED
+    self.angle = STARTING_ANGLE
   end
 
   on :bump do |e,mtv|
@@ -458,24 +464,23 @@ class PowerupEntity < RGame::Core::Entity
   on :new do
     self.sprite = "powerup"
     self.y_speed = 64
-    self.solid = false
+    #self.solid = false
     self.sprite_tag = "power_ball"
   end
 
-  on :collision do |e, mtv|
-    if e.is_a? PlayerEntity
-      case self.sprite_tag
-      when "1up"
-        self.broadcast(:livesup, 1)
-      when "extra_ball"
-        self.broadcast(:ballin)
-      when "wide_paddle"
-        self.broadcast(:widen_player)
-      when "slow_ball"
-        self.broadcast(:slow)
-      when "power_ball"
-        self.broadcast(:power_ball)
-      end
+  collision(PlayerEntity) do
+    case self.sprite_tag
+    when "1up"
+      self.broadcast(:livesup, 1)
+    when "extra_ball"
+      self.broadcast(:ballin)
+    when "wide_paddle"
+      self.broadcast(:widen_player)
+    when "slow_ball"
+      self.broadcast(:slow)
+    when "power_ball"
+      self.broadcast(:power_ball)
+    else
       self.remove
     end
   end

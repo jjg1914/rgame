@@ -51,6 +51,8 @@ module RGame
       end
 
       class Component
+        include Enumerable
+
         attr_reader :left
         attr_reader :right
         attr_reader :up
