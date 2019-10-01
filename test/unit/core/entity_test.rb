@@ -1,6 +1,14 @@
 require "rgame/core/entity"
 
 describe RGame::Core::Entity do
+  before do
+    RGame::Core::Entity.registry.clear
+  end
+
+  after do
+    RGame::Core::Entity.registry.clear
+  end
+
   describe RGame::Core::Entity::ClassMethods do
     before do
       @base_klass = Class.new(RGame::Core::Entity) do
@@ -66,10 +74,6 @@ describe RGame::Core::Entity do
       @derived_subject.instance_variable_set :@mock, @mock
     end
 
-    after do
-      RGame::Core::Entity.registry.clear
-    end
-
     it "should deliver in order" do
       @mock.expect :call, nil, [ "test_before_2", 1, 2 ]
       @mock.expect :call, nil, [ "test_before", 1, 2 ]
@@ -120,10 +124,6 @@ describe RGame::Core::Entity do
       end
     end
 
-    after do
-      RGame::Core::Entity.registry.clear
-    end
-
     it "should allocate new entity" do
       @mock.expect :call, nil, [ "new" ]
       old_id = RGame::Core::Entity.id_counter
@@ -154,10 +154,6 @@ describe RGame::Core::Entity do
           _mock.call "copy", self
         end
       end
-    end
-
-    after do
-      RGame::Core::Entity.registry.clear
     end
 
     it "should use new id" do
@@ -214,10 +210,6 @@ describe RGame::Core::Entity do
   end
 
   describe "#broadcast" do
-    after do
-      RGame::Core::Entity.registry.clear
-    end
-
     it "should emit message to root parent" do
       mock = Minitest::Mock.new
       mock.expect "nil?", false, []
@@ -263,10 +255,6 @@ describe RGame::Core::Entity do
   end
 
   describe "#make" do
-    after do
-      RGame::Core::Entity.registry.clear
-    end
-
     it "should return entity of class" do
       klass = Class.new(RGame::Core::Entity)
       klass2 = Class.new(RGame::Core::Entity)
@@ -296,10 +284,6 @@ describe RGame::Core::Entity do
   end
 
   describe "#remove" do
-    after do
-      RGame::Core::Entity.registry.clear
-    end
-
     it "should remove from parent" do
       klass = Class.new(RGame::Core::Entity)
       subject = klass.new
@@ -324,10 +308,6 @@ describe RGame::Core::Entity do
   describe "#on" do
     before do
       @klass = Class.new(RGame::Core::Entity)
-    end
-
-    after do
-      RGame::Core::Entity.registry.clear
     end
 
     it "should only dispatch to entity" do
@@ -364,10 +344,6 @@ describe RGame::Core::Entity do
       @klass = Class.new(RGame::Core::Entity)
     end
 
-    after do
-      RGame::Core::Entity.registry.clear
-    end
-
     it "should only dispatch to entity" do
       mock = Minitest::Mock.new
       mock.expect "call", nil, [ "test_before", 1, 2 ]
@@ -402,10 +378,6 @@ describe RGame::Core::Entity do
       @klass = Class.new(RGame::Core::Entity)
     end
 
-    after do
-      RGame::Core::Entity.registry.clear
-    end
-
     it "should only dispatch to entity" do
       mock = Minitest::Mock.new
       mock.expect "call", nil, [ "test_after", 1, 2 ]
@@ -438,10 +410,6 @@ describe RGame::Core::Entity do
   describe "#around" do
     before do
       @klass = Class.new(RGame::Core::Entity)
-    end
-
-    after do
-      RGame::Core::Entity.registry.clear
     end
 
     it "should only dispatch to entity" do
@@ -484,10 +452,6 @@ describe RGame::Core::Entity do
       @subject = klass.new
     end
 
-    after do
-      RGame::Core::Entity.registry.clear
-    end
-
     it "should activate" do
       @subject.active = false
       @subject.activate!
@@ -524,10 +488,6 @@ describe RGame::Core::Entity do
   end
 
   describe "#to_h" do
-    after do
-      RGame::Core::Entity.registry.clear
-    end
-
     it "should hasherize enitity" do
       klass = Class.new(RGame::Core::Entity) do
         def self.to_s
@@ -544,10 +504,6 @@ describe RGame::Core::Entity do
   end
 
   describe "#inspect" do
-    after do
-      RGame::Core::Entity.registry.clear
-    end
-
     it "should inspect enitity" do
       klass = Class.new(RGame::Core::Entity) do
         def self.to_s
