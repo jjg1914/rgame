@@ -20,6 +20,14 @@ namespace :test do
   end
 end
 
+# define combined seperatly for single coverage report
+Rake::TestTask.new(:test) do |t|
+  t.pattern = "test/**/*_test.rb"
+  t.libs = [ "lib", "test" ]
+  t.ruby_opts = [ "-rtest_helper" ]
+  t.verbose = true
+end
+
 RuboCop::RakeTask.new(:lint) do |task|
   task.patterns = [ 'lib/**/*.rb' ]
   # only show the files with failures
@@ -27,8 +35,6 @@ RuboCop::RakeTask.new(:lint) do |task|
   # don't abort rake on failure
   #task.fail_on_error = false
 end
-
-task :test => %i[test:unit test:integration]
 
 task :check => [ :test, :lint ]
 

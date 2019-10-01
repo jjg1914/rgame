@@ -16,4 +16,5 @@ group :development do
   gem "simplecov"
   gem "rubocop"
   gem "yard"
+  gem "codecov"
 end
