@@ -27,6 +27,8 @@ jobs:
         echo | /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
         brew install sdl2 sdl2_image sdl2_ttf imagemagick
     - name: Build and test with Rake
+      env:
+        CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
       run: |
         gem install --force bundler
         bundle install --jobs 4 --retry 3
@@ -34,4 +36,5 @@ jobs:
     - uses: codecov/codecov-action@v1.0.2
       if: "matrix.os == 'ubuntu-latest' && matrix.ruby == 2.6"
       with:
-        token: ${{secrets.CODECOV_TOKEN}} #required
+        token: ${{secrets.CODECOV_TOKEN}}
+        file: ./coverage/coverage.xml
