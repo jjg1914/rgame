@@ -14,6 +14,7 @@ group :development do
   gem "minitest"
   gem "minitest-reporters"
   gem "simplecov"
+  gem "simplecov-cobertura"
   gem "rubocop"
   gem "yard"
   gem "codecov"
