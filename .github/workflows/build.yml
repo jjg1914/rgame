@@ -31,9 +31,6 @@ jobs:
         gem install --force bundler
         bundle install --jobs 4 --retry 3
         bundle exec rake check
-    #- name: Sonar Scanner
-    #  if: "matrix.os == 'ubuntu-latest' && matrix.ruby == 2.6"
-    #  uses: sonarsource/sonarcloud-github-action@master
-    #  env:
-    #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    - uses: codecov/codecov-action@v1.0.2
+      with:
+        token: ${{secrets.CODECOV_TOKEN}} #required
