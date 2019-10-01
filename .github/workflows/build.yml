@@ -32,5 +32,6 @@ jobs:
         bundle install --jobs 4 --retry 3
         bundle exec rake check
     - uses: codecov/codecov-action@v1.0.2
+      if: "matrix.os == 'ubuntu-latest' && matrix.ruby == 2.6"
       with:
         token: ${{secrets.CODECOV_TOKEN}} #required
