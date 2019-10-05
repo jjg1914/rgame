@@ -362,25 +362,18 @@ class BallEntity < RGame::Core::Entity
     end
   end
 
-  on :bump do |e,mtv|
+  on :bump do |e,info|
     e&.emit :ball_collision 
 
-    if mtv[1] != 0 and (self.sprite_tag != "power_ball" or
-                        e.nil? or not e&.parent.nil?)
-      unless e.nil?
-        v_1 = Vector[(self.x + (self.width / 2)), (self.y + (self.height / 2))]
-        v_2 = Vector[(e.x + (e.width / 2)), (if mtv[1] < 0
-          e.y + (e.height / 2) + 32
-        else
-          e.y + (e.height / 2) - 32
-        end)]
+    unless self.sprite_tag == "power_ball" and
+           e.is_a?(BlockEntity) and
+           not e.parent.nil?
+      norm = Vector[*info.normal]
+      d = Vector[self.x_speed, self.y_speed]
+      r = d - (2 * d.dot(norm) * norm)
 
-        norm = (v_1 - v_2).tap { |o| o[0] = o[0] }.normalize
-        d = Vector[ self.x_speed, self.y_speed ]
-        r = d - (2 * d.dot(norm) * norm)
-
-        atan2 = Math.atan2(r[1], r[0])
-
+      self.angle = Math.atan2(r[1], r[0])
+=begin
         if self.y_speed > 0
           if atan2 < ANGLE_RESTRICT_UP.min
             self.angle = ANGLE_RESTRICT_UP.min
@@ -401,8 +394,9 @@ class BallEntity < RGame::Core::Entity
       else
         self.y_speed = -self.y_speed
       end
-    elsif mtv[0] != 0
+    elsif info.mtv[0] != 0
       self.x_speed = -self.x_speed
+=end
     end
   end
 
@@ -462,7 +456,7 @@ class PowerupEntity < RGame::Core::Entity
     self.sprite_tag = "power_ball"
   end
 
-  on :collision do |e, mtv|
+  on :collision do |e|
     if e.is_a? PlayerEntity
       case self.sprite_tag
       when "1up"

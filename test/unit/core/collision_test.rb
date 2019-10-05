@@ -1,132 +1,462 @@
+require "ostruct"
 require "rgame/core/collision"
 
 describe RGame::Core::Collision do
-  describe "calculate_mtv" do
-    describe "without change" do
+  describe RGame::Core::Collision::CollisionInfo do
+    before do
+      @target = OpenStruct.new
+      @target.x = 0
+      @target.y = 0
+      @target.width  = 3
+      @target.height = 3
+
+      @other = OpenStruct.new
+      @other.x = 0
+      @other.y = 0
+      @other.width  = 5
+      @other.height = 5
+
+      @subject = RGame::Core::Collision::CollisionInfo.new @target, @other
+    end
+
+    describe "#mtv" do
+      before do
+        @target.x = 1
+        @target.y = 2
+        @target.freeze
+        @other.freeze
+      end
+
       it "should return mtv" do
-        a = Object.new
-        class << a
-          def x; 1; end
-          def y; 2; end
-          def width; 3; end
-          def height; 4; end
-        end
-
-        b = Object.new
-        class << b
-          def x; 2; end
-          def y; 2; end
-          def width; 3; end
-          def height; 4; end
-        end
-
-        expect(RGame::Core::Collision.calculate_mtv(a, b)).must_equal([
-          -1, -3
-        ])
+        expect(@subject.mtv).must_equal([ -3, 2 ])
       end
     end
 
-    describe "with positive change" do
-      it "should return mtv" do
-        a = Object.new
-        class << a
-          def x; 1; end
-          def y; 2; end
-          def width; 3; end
-          def height; 3; end
-          def x_change; 1; end
-          def y_change; 2; end
+    describe "#normal" do
+      it "should return sweep normal" do
+        @subject.stub(:sweep, lambda { [ 1, [ 2, 3 ] ] }) do
+          expect(@subject.normal).must_equal([ 2, 3 ])
         end
-
-        b = Object.new
-        class << b
-          def x; 2; end
-          def y; 2; end
-          def width; 3; end
-          def height; 3; end
-        end
-
-        expect(RGame::Core::Collision.calculate_mtv(a, b)).must_equal([
-          -1, -2
-        ])
       end
     end
 
-    describe "with negative change" do
-      it "should return mtv" do
-        a = Object.new
-        class << a
-          def x; 3; end
-          def y; 4; end
-          def width; 3; end
-          def height; 4; end
-          def x_change; -1; end
-          def y_change; -1; end
+    describe "#time" do
+      it "should return sweep time" do
+        @subject.stub(:sweep, lambda { [ 1, [ 2, 3 ] ] }) do
+          expect(@subject.time).must_equal(1)
         end
-
-        b = Object.new
-        class << b
-          def x; 2; end
-          def y; 2; end
-          def width; 3; end
-          def height; 4; end
-        end
-
-        expect(RGame::Core::Collision.calculate_mtv(a, b)).must_equal([
-          1, 1
-        ])
       end
     end
 
-    describe "with zero change" do
-      it "should return mtv" do
-        a = Object.new
-        class << a
-          def x; 1; end
-          def y; 2; end
-          def width; 3; end
-          def height; 4; end
-          def x_change; 0; end
-          def y_change; 0; end
+    describe "#position" do
+      describe "with positive change" do
+        before do
+          @target.x_change = 4
+          @target.y_change = 4
+          @target.freeze
         end
 
-        b = Object.new
-        class << b
-          def x; 2; end
-          def y; 2; end
-          def width; 3; end
-          def height; 4; end
+        it "should return new position" do
+          @subject.stub(:time, lambda { 0.5 }) do
+            expect(@subject.position).must_equal( [ -2, -2 ])
+          end
+        end
+      end
+
+      describe "with negative change" do
+        before do
+          @target.x_change = -4
+          @target.y_change = -4
+          @target.freeze
         end
 
-        expect(RGame::Core::Collision.calculate_mtv(a, b)).must_equal([
-          0, 0
-        ])
+        it "should return new position" do
+          @subject.stub(:time, lambda { 0.75 }) do
+            expect(@subject.position).must_equal( [ 1, 1 ])
+          end
+        end
       end
     end
 
-    describe "with large change" do
+    describe "#sweep" do
+      describe "without change" do
+        before do
+          @target.x = 1
+          @target.y = 1
+          @target.freeze
+
+          @other.x = 2
+          @other.y = 2
+          @other.freeze
+        end
+
+        it "should return sweep" do
+          expect(@subject.sweep).must_equal([ 1, [ 0, 0 ] ])
+        end
+      end
+
+      describe "without collision change" do
+        before do
+          #    1 2 3 4 5 6 7 8 9 10
+          #  1 T T T
+          #  2 T T T
+          #  3 T T T
+          #  4
+          #  5
+          #  6       O O O O
+          #  7       O O O O
+          #  8       O O O O
+          #  9       O O O O
+          # 10
+
+          @target.x = 1
+          @target.y = 1
+          @target.x_change = 4
+          @target.y_change = 0
+          @target.freeze
+
+          @other.x = 4
+          @other.y = 6
+          @other.freeze
+        end
+
+        it "should return sweep" do
+          expect(@subject.sweep).must_equal([ 1, [ 0, 0 ] ])
+        end
+      end
+
+      describe "with positive change" do
+        before do
+          #    1 2 3 4 5 6 7 8 9 10
+          #  1
+          #  2
+          #  3
+          #  4
+          #  5     T T T
+          #  6     T T T O O
+          #  7     T T T O O
+          #  8       O O O O
+          #  9       O O O O
+          # 10
+
+          @target.x = 3
+          @target.y = 5
+          @target.x_change = 4
+          @target.y_change = 0
+          @target.freeze
+
+          @other.x = 4
+          @other.y = 6
+          @other.freeze
+        end
+
+        it "should return sweep" do
+          expect(@subject.sweep).must_equal([ 0.75, [ -1, 0 ] ])
+        end
+      end
+
+      describe "with negative change" do
+        before do
+          #    1 2 3 4 5 6 7 8 9 10
+          #  1
+          #  2
+          #  3
+          #  4
+          #  5     O O O O
+          #  6     O O O O
+          #  7     O O T T T
+          #  8     O O T T T
+          #  9         T T T
+          # 10
+
+          @target.x = 6
+          @target.y = 7
+          @target.x_change = -4
+          @target.y_change = -5
+          @target.freeze
+
+          @other.x = 3
+          @other.y = 5
+          @other.freeze
+        end
+
+        it "should return sweep" do
+          expect(@subject.sweep).must_equal([ 0.75, [ 1, 0 ] ])
+        end
+      end
+
+      describe "with zero change" do
+        before do
+          #    1 2 3 4 5 6 7 8 9 10
+          #  1
+          #  2
+          #  3
+          #  4
+          #  5     O O O O
+          #  6     O O O O
+          #  7     O O T T T
+          #  8     O O T T T
+          #  9         T T T
+          # 10
+
+          @target.x = 6
+          @target.y = 7
+          @target.x_change = 0
+          @target.y_change = 0
+          @target.freeze
+
+          @other.x = 3
+          @other.y = 5
+          @other.freeze
+        end
+
+        it "should return sweep" do
+          expect(@subject.sweep).must_equal([ 1, [ 0, 0 ] ])
+        end
+      end
+
+      describe "with large change" do
+        before do
+          #    1 2 3 4 5 6 7 8 9 10
+          #  1
+          #  2
+          #  3
+          #  4
+          #  5     O O O O
+          #  6     O O O O
+          #  7     O O T T T
+          #  8     O O T T T
+          #  9         T T T
+          # 10
+
+          @target.x = 6
+          @target.y = 7
+          @target.x_change = 8
+          @target.y_change = 8
+          @target.freeze
+
+          @other.x = 3
+          @other.y = 5
+          @other.freeze
+        end
+
+        it "should return sweep" do
+          expect(@subject.sweep).must_equal([ 0.5, [ 0, -1 ] ])
+        end
+      end
+    end
+  end
+
+  describe RGame::Core::Collision::ReverseCollisionInfo do
+    before do
+      @target = OpenStruct.new
+      @target.x = 0
+      @target.y = 0
+      @target.width  = 3
+      @target.height = 3
+
+      @other = {
+        "left" => 0,
+        "top" => 0,
+        "right" => 4,
+        "bottom" => 4,
+      }
+
+      @subject = RGame::Core::Collision::ReverseCollisionInfo.new @target,
+                                                                  @other
+    end
+
+    describe "#mtv" do
+      before do
+        @target.x = 1
+        @target.y = 2
+        @target.freeze
+        @other.freeze
+      end
+
       it "should return mtv" do
-        a = Object.new
-        class << a
-          def x; 2; end
-          def y; 3; end
-          def width; 3; end
-          def height; 3; end
-          def x_change; 1; end
-          def y_change; 2; end
+        expect(@subject.mtv).must_equal([ -1, 0 ])
+      end
+    end
+
+    describe "#sweep" do
+      describe "without change" do
+        before do
+          @target.x = 1
+          @target.y = 2
+          @target.freeze
+          @other.freeze
         end
 
-        b = Object.new
-        class << b
-          def x; 2; end
-          def y; 2; end
-          def width; 3; end
-          def height; 3; end
+        it "should return sweep" do
+          expect(@subject.sweep).must_equal([ 1, [ 0,  0 ] ])
+        end
+      end
+
+      describe "without collision change" do
+        before do
+          #    1 2 3 4 5 6 7 8 9 10
+          #  1 T T T
+          #  2 T T T
+          #  3 T T T
+          #  4
+          #  5
+          #  6       O O O O
+          #  7       O O O O
+          #  8       O O O O
+          #  9       O O O O
+          # 10
+
+          @target.x = 1
+          @target.y = 1
+          @target.freeze
+
+          @other["left"] = 4
+          @other["top"] = 6
+          @other["right"] = 7
+          @other["bottom"] = 9
+          @other.freeze
         end
 
-        expect(RGame::Core::Collision.calculate_mtv(a, b)).must_equal([
-          0, 0
-        ])
+        it "should return sweep" do
+          expect(@subject.sweep).must_equal([ 1, [ 0, 0 ] ])
+        end
+      end
+
+      describe "with negative change" do
+        before do
+          #    1 2 3 4 5 6 7 8 9 10
+          #  1
+          #  2
+          #  3
+          #  4
+          #  5     T T T
+          #  6     T T T O O O
+          #  7     T T T O O O
+          #  8       O O O O O
+          #  9       O O O O O
+          # 10       O O O O O
+
+          @target.x = 3
+          @target.y = 5
+          @target.x_change = -2
+          @target.y_change = -2
+          @target.freeze
+
+          @other["left"] = 4
+          @other["top"] = 6
+          @other["right"] = 8
+          @other["bottom"] = 10
+          @other.freeze
+        end
+
+        it "should return sweep" do
+          expect(@subject.sweep).must_equal([ 0.5, [ 0, 1 ] ])
+        end
+      end
+
+      describe "with positive change" do
+        before do
+          #    1 2 3 4 5 6 7 8 9 10
+          #  1
+          #  2
+          #  3
+          #  4
+          #  5          
+          #  6       O O O O O
+          #  7       O O O T T T
+          #  8       O O O T T T
+          #  9       O O O T T T
+          # 10       O O O O O
+
+          @target.x = 7
+          @target.y = 7
+          @target.x_change = 2
+          @target.y_change = 0
+          @target.freeze
+
+          @other["left"] = 4
+          @other["top"] = 6
+          @other["right"] = 8
+          @other["bottom"] = 10
+          @other.freeze
+        end
+
+        it "should return sweep" do
+          expect(@subject.sweep).must_equal([ 0.5, [ -1, 0 ] ])
+        end
+      end
+
+      describe "with zero change" do
+        before do
+          @target.x = 6
+          @target.y = 7
+          @target.x_change = 0
+          @target.y_change = 0
+          @target.freeze
+
+          @other["left"] = 5
+          @other["top"] = 6
+          @other["right"] = 9
+          @other["bottom"] = 10
+          @other.freeze
+        end
+
+        it "should return sweep" do
+          expect(@subject.sweep).must_equal([ 1, [ 0, 0 ] ])
+        end
+      end
+
+      describe "with large change" do
+        before do
+          #    1 2 3 4 5 6 7 8 9 10
+          #  1     T T T
+          #  2     T T T
+          #  3     T T T
+          #  4
+          #  5   O O O O O
+          #  6   O O O O O
+          #  7   O O O O O
+          #  8   O O O O O
+          #  9   O O O O O
+          # 10
+
+          @target.x = 3
+          @target.y = 1
+          @target.x_change = 0
+          @target.y_change = -5
+          @target.freeze
+
+          @other["left"] = 2
+          @other["top"] = 5
+          @other["right"] = 6
+          @other["bottom"] = 9
+          @other.freeze
+        end
+
+        it "should return sweep" do
+          expect(@subject.sweep).must_equal([ 0.2, [ 0, 1 ] ])
+        end
+      end
+
+      describe "with small change" do
+        before do
+          @target.x = 7
+          @target.y = 180
+          @target.x_change = -1
+          @target.y_change = 0
+          @target.freeze
+
+          @other["left"] = 8
+          @other["top"] = 8
+          @other["right"] = 208
+          @other["bottom"] = 208
+          @other.freeze
+        end
+
+        it "should return sweep" do
+          expect(@subject.sweep).must_equal([ 0, [ 1, 0 ] ])
+        end
       end
     end
   end

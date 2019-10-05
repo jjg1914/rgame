@@ -11,3 +11,5 @@ x Add Codcov +quality
 Add Renovate +quality
 x Code coverage badge +quality
 x Code quality badge +quality
+
+CollisionInfo/ReverseCollisionInfo should take bounds only +collision

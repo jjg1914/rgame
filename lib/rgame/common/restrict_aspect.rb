@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rgame/core/aspect"
+require "rgame/core/collision"
 
 module RGame
   module Common
@@ -53,14 +54,14 @@ module RGame
       attr_reader :y_restrict
 
       on :post_collision do
-        restrict_mtv = [
-          RestrictAspect.restrict_value(x, x + width - 1, x_restrict),
-          RestrictAspect.restrict_value(y, y + height - 1, y_restrict),
-        ]
+        info = RGame::Core::Collision::ReverseCollisionInfo.new self, {
+          "left" => @x_restrict&.first || -Float::INFINITY,
+          "right" => @x_restrict&.last || Float::INFINITY,
+          "top" => @y_restrict&.first || -Float::INFINITY,
+          "bottom" => @y_restrict&.last || Float::INFINITY,
+        }
 
-        if restrict_mtv.any? { |e| e != 0 }
-          self.emit(:collision, nil, restrict_mtv)
-        end
+        self.emit(:collision, nil, info) if info.time < 1
       end
 
       def x_restrict= value

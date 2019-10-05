@@ -9,43 +9,30 @@ module RGame
       include RGame::Core::Aspect
 
       around :post_collision do |p, collision|
-        @mtv = [ [ nil, 0 ], [ nil, 0 ] ]
+        @collisions = []
 
         p.call
 
         collision.query(self).each do |e|
-          mtv = RGame::Core::Collision.calculate_mtv(self, e)
-          self.emit(:collision, e, mtv)
+          info = RGame::Core::Collision::CollisionInfo.new(self, e)
+          self.emit(:collision, e, info)
         end
 
-        if @mtv[0][0].equal? @mtv[1][0]
-          unless @mtv[0][1].zero? and @mtv[1][1].zero?
-            self.emit(:bump, @mtv[0][0], [ @mtv[0][1], @mtv[1][1] ])
-          end
-        else
-          unless @mtv[0][1].zero?
-            self.emit(:bump, @mtv[0][0], [ @mtv[0][1], 0 ])
-          end
-
-          unless @mtv[1][1].zero?
-            self.emit(:bump, @mtv[1][0], [ 0, @mtv[1][1] ])
-          end
+        unless @collisions.empty?
+          bump = @collisions.min_by(&:time)
+          self.emit :bump, bump.other, bump
         end
       end
 
-      on :collision do |e, mtv|
+      on :collision do |e, info|
         if (self.respond_to?(:solid) and self.solid) and
            (e.respond_to?(:solid) and e.solid) or e.nil?
-          @mtv[0] = [ @mtv[0], [ e, mtv[0] ] ].max_by { |f| f[1].abs }
-          @mtv[1] = [ @mtv[1], [ e, mtv[1] ] ].max_by { |f| f[1].abs }
+          @collisions << info
         end
       end
 
-      on :bump do |e, mtv|
-        if self.solid and (e.nil? or e.solid)
-          self.x += mtv[0]
-          self.y += mtv[1]
-        end
+      on :bump do |_e, info|
+        self.x, self.y = info.position
       end
 
       def to_h

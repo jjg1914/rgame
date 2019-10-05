@@ -6,11 +6,255 @@ module RGame
       MAX_DEPTH = 8
       MAX_SIZE = 10
 
+      class CollisionInfo
+        attr_reader :target
+        attr_reader :other
+
+        def self.calculate_mtv target, other
+          self.calculate_mtv_bounds(target,
+                                    RGame::Core::Collision.bounds_for(other))
+        end
+
+        def self.calculate_mtv_bounds target, other_bounds
+          target_bounds = RGame::Core::Collision.bounds_for(target)
+
+          [
+            %w[left right],
+            %w[top bottom],
+          ].map do |args|
+            _calculate_mtv_axis(target_bounds, other_bounds, *args)
+          end
+        end
+
+        def self.calculate_sweep target, other
+          self.calculate_sweep_bounds(target,
+                                      RGame::Core::Collision.bounds_for(other))
+        end
+
+        def self.calculate_sweep_bounds target, other_bounds
+          target_bounds = RGame::Core::Collision.bounds_for(target)
+
+          x_change = _try_change(target, "x_change")
+          y_change = _try_change(target, "y_change")
+          x_entry, x_exit, x_sign = _calculate_entry_exit_axis(target_bounds,
+                                                               other_bounds,
+                                                               "left",
+                                                               "right",
+                                                               x_change)
+          y_entry, y_exit, y_sign = _calculate_entry_exit_axis(target_bounds,
+                                                               other_bounds,
+                                                               "top",
+                                                               "bottom",
+                                                               y_change)
+
+          entry_t = [ x_entry, y_entry ].max
+          exit_t = [ x_exit, y_exit ].min
+
+          if entry_t > exit_t or
+             (x_entry.negative? and y_entry.negative?) or
+             entry_t > 1
+            [ 1, [ 0, 0 ] ]
+          elsif x_entry > y_entry
+            [ entry_t, [ x_sign, 0 ] ]
+          else
+            [ entry_t, [ 0, y_sign ] ]
+          end
+        end
+
+        def initialize target, other
+          @target = target
+          @other = other
+        end
+
+        def mtv
+          @mtv ||= begin
+            CollisionInfo.calculate_mtv @target, @other
+          end
+        end
+
+        def sweep
+          @sweep ||= begin
+            CollisionInfo.calculate_sweep @target, @other
+          end
+        end
+
+        def normal
+          @normal ||= self.sweep[1]
+        end
+
+        def time
+          @time ||= self.sweep[0]
+        end
+
+        def position
+          @position = begin
+            [
+              if @target.x_change.positive?
+                (@target.x - (1 - self.time) * @target.x_change).floor
+              else
+                (@target.x - (1 - self.time) * @target.x_change).ceil
+              end,
+              if @target.y_change.positive?
+                (@target.y - (1 - self.time) * @target.y_change).floor
+              else
+                (@target.y - (1 - self.time) * @target.y_change).ceil
+              end,
+            ]
+          end
+        end
+
+        class << self
+          private
+
+          def _try_change target, method
+            if target.respond_to?(method)
+              target.send(method)
+            else
+              0
+            end
+          end
+
+          def _calculate_mtv_axis target, other, min, max
+            [
+              other[min] - target[max],
+              other[max] - target[min],
+            ].min_by(&:abs)
+          end
+
+          def _calculate_entry_exit_axis target, other, min, max, change
+            inv_entry, inv_exit = if change.positive?
+              [
+                other[min] - (target[max] - change),
+                other[max] - (target[min] - change),
+              ]
+            else
+              [
+                other[max] - (target[min] - change),
+                other[min] - (target[max] - change),
+              ]
+            end
+
+            entry_t, exit_t = if change.zero?
+              [ -Float::INFINITY, Float::INFINITY ]
+            else
+              [ inv_entry.to_f / change, inv_exit.to_f / change ]
+            end
+
+            [ entry_t, exit_t, -(change <=> 0) ]
+          end
+        end
+      end
+
+      class ReverseCollisionInfo < CollisionInfo
+        def self.calculate_mtv_bounds target, other_bounds
+          target_bounds = Collision.bounds_for(target)
+
+          [
+            %w[left right],
+            %w[top bottom],
+          ].map do |args|
+            _calculate_mtv_reverse_axis(target_bounds, other_bounds, *args)
+          end
+        end
+
+        def self.calculate_sweep_bounds target, other_bounds
+          target_bounds = Collision.bounds_for(target)
+
+          x_change = _try_change(target, "x_change")
+          y_change = _try_change(target, "y_change")
+          x_exit, x_sign = _calculate_exit_reverse_axis(target_bounds,
+                                                        other_bounds,
+                                                        "left",
+                                                        "right",
+                                                        x_change)
+          y_exit, y_sign = _calculate_exit_reverse_axis(target_bounds,
+                                                        other_bounds,
+                                                        "top",
+                                                        "bottom",
+                                                        y_change)
+
+          exit_t = [ x_exit, y_exit ].min
+
+          if exit_t.negative? or exit_t >= 1
+            [ 1, [ 0, 0 ] ]
+          elsif x_exit < y_exit
+            [ exit_t, [ x_sign, 0 ] ]
+          else
+            [ exit_t, [ 0, y_sign ] ]
+          end
+        end
+
+        def other
+          nil
+        end
+
+        def mtv
+          @mtv ||= begin
+            ReverseCollisionInfo.calculate_mtv_bounds @target, @other
+          end
+        end
+
+        def sweep
+          @sweep ||= begin
+            ReverseCollisionInfo.calculate_sweep_bounds @target, @other
+          end
+        end
+
+        class << self
+          private
+
+          def _calculate_mtv_reverse_axis target, other, min, max
+            [
+              other[min] - target[min],
+              other[max] - target[max],
+            ].min_by(&:abs)
+          end
+
+          def _calculate_exit_reverse_axis target, other, min, max, change
+            inv_exit = if change.positive?
+              other[max] - (target[max] - change)
+            else
+              other[min] - (target[min] - change)
+            end
+
+            exit_t = if change.zero?
+              Float::INFINITY
+            else
+              inv_exit / change.to_f
+            end
+
+            [ exit_t, -(change <=> 0) ]
+          end
+        end
+      end
+
       class Node
         attr_reader :depth
         attr_reader :bounds
         attr_reader :mode
         attr_reader :children
+
+        def self.divide_bounds bounds, x_axis, y_axis
+          x_step = (bounds["right"] - bounds["left"]).abs / 2
+          y_step = (bounds["bottom"] - bounds["top"]).abs / 2
+
+          y_axis.times.map do |j|
+            top = bounds["top"] + (y_step * j) + j
+            bottom = bounds["top"] + (y_step * (j + 1)) + j
+
+            x_axis.times.map do |i|
+              left = bounds["left"] + (x_step * i) + i
+              right = bounds["left"] + (x_step * (i + 1)) + i
+
+              {
+                "left" => left,
+                "right" => right,
+                "top" => top,
+                "bottom" => bottom,
+              }
+            end
+          end.flatten
+        end
 
         def initialize depth, bounds
           @depth = depth
@@ -26,7 +270,7 @@ module RGame
           @mode = "branch"
           @children.clear
 
-          RGame::Core::Collision.divide_bounds(@bounds, 2, 2).tap do |o|
+          RGame::Core::Collision::Node.divide_bounds(@bounds, 2, 2).tap do |o|
             @children.concat(o.map do |e|
               Node.new(@depth + 1, e)
             end)
@@ -109,74 +353,6 @@ module RGame
         end
       end
 
-      def self.calculate_mtv target, other
-        # left |-----| right      TARGET
-        #     left |-----| right  OTHER
-        #          |-|            MTV
-        #      |---------|        MTV'
-
-        target_bounds = self.bounds_for(target)
-        other_bounds = self.bounds_for(other)
-
-        [
-          [ "left", "right", :x_change ],
-          [ "top", "bottom", :y_change ],
-        ].map do |args|
-          _calculate_mtv_axis(target, target_bounds, other_bounds, *args)
-        end
-      end
-
-      def self.check target, other
-        check_bounds(bounds_for(target), bounds_for(other))
-      end
-
-      def self.check_bounds target, other
-        other["left"] <= target["right"] and
-          target["left"] <= other["right"] and
-          other["top"] <= target["bottom"] and
-          target["top"] <= other["bottom"]
-      end
-
-      def self.check_point point, other
-        check_point_bounds(point, bounds_for(other))
-      end
-
-      def self.check_point_bounds point, other
-        other["left"] <= point[0] and point[0] <= other["right"] and
-          other["top"] <= point[1] and point[1] <= other["bottom"]
-      end
-
-      def self.bounds_for entity
-        {
-          "left" => entity.x,
-          "top" => entity.y,
-          "right" => entity.x + entity.width - 1,
-          "bottom" => entity.y + entity.height - 1,
-        }
-      end
-
-      def self.divide_bounds bounds, x_axis, y_axis
-        x_step = (bounds["right"] - bounds["left"]).abs / 2
-        y_step = (bounds["bottom"] - bounds["top"]).abs / 2
-
-        y_axis.times.map do |j|
-          top = bounds["top"] + (y_step * j) + j
-          bottom = bounds["top"] + (y_step * (j + 1)) + j
-
-          x_axis.times.map do |i|
-            left = bounds["left"] + (x_step * i) + i
-            right = bounds["left"] + (x_step * (i + 1)) + i
-
-            {
-              "left" => left,
-              "right" => right,
-              "top" => top,
-              "bottom" => bottom,
-            }
-          end
-        end.flatten
-      end
-
       attr_reader :size
       attr_reader :root
 
@@ -213,35 +389,33 @@ module RGame
       end
 
       class << self
-        private
-
-        def _calculate_mtv_axis entity, target, other, min, max, change_method
-          change = if entity.respond_to?(change_method)
-            entity.send(change_method)
-          end
-
-          if not change.nil?
-            if change.positive?
-              _cutoff_mtv(other[min] - target[max], change)
-            elsif change.negative?
-              _cutoff_mtv(other[max] - target[min], change)
-            else
-              0
-            end
-          else
-            [
-              other[min] - target[max],
-              other[max] - target[min],
-            ].min_by(&:abs)
-          end
+        def check target, other
+          check_bounds(bounds_for(target), bounds_for(other))
         end
 
-        def _cutoff_mtv value, cutoff
-          if value.abs <= cutoff.abs
-            value
-          else
-            0
-          end
+        def check_bounds target, other
+          other["left"] <= target["right"] and
+            target["left"] <= other["right"] and
+            other["top"] <= target["bottom"] and
+            target["top"] <= other["bottom"]
+        end
+
+        def check_point point, other
+          check_point_bounds(point, bounds_for(other))
+        end
+
+        def check_point_bounds point, other
+          other["left"] <= point[0] and point[0] <= other["right"] and
+            other["top"] <= point[1] and point[1] <= other["bottom"]
+        end
+
+        def bounds_for entity
+          {
+            "left" => entity.x,
+            "top" => entity.y,
+            "right" => entity.x + entity.width - 1,
+            "bottom" => entity.y + entity.height - 1,
+          }
         end
       end
     end
