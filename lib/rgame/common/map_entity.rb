@@ -24,8 +24,9 @@ module RGame
       attr_reader :map
 
       after :interval do
-        self.emit :pre_collision, @collision
-        self.emit :post_collision, @collision
+        self.emit :collision_mark, @collision
+        self.emit :collision_sweep, @collision
+        self.emit :collision_resolve, @collision
         @collision.clear
       end
 

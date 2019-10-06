@@ -223,12 +223,15 @@ end
 
 class BlockEntity < RGame::Core::Entity
   include RGame::Common::SpriteAspect
+  include RGame::Common::CollisionAspect
   include RGame::Common::PositionAspect
   include RGame::Common::DrawAspect
 
   include RGame::Core::Savable
 
   savable [ :x, :y, :sprite_tag ]
+
+  collision.check_collisions = false
 
   attr_accessor :score
 
