@@ -12,14 +12,11 @@ module RGame
       attr_accessor :width
       attr_accessor :height
 
-      attr_accessor :solid
-
       on :new do
         self.x = 0
         self.y = 0
         self.width = 0
         self.height = 0
-        self.solid = true
       end
 
       def to_h

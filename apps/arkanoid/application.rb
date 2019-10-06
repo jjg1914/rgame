@@ -365,43 +365,45 @@ class BallEntity < RGame::Core::Entity
     end
   end
 
-  on :bump do |e,info|
-    e&.emit :ball_collision 
+  collision(PlayerEntity, BlockEntity, NilClass)
+    .respond("bump")
+    .callback do |e, info|
+      e&.emit :ball_collision 
 
-    unless self.sprite_tag == "power_ball" and
-           e.is_a?(BlockEntity) and
-           not e.parent.nil?
-      norm = Vector[*info.normal]
-      d = Vector[self.x_speed, self.y_speed]
-      r = d - (2 * d.dot(norm) * norm)
+      unless self.sprite_tag == "power_ball" and
+             e.is_a?(BlockEntity) and
+             not e.parent.nil?
+        norm = Vector[*info.normal]
+        d = Vector[self.x_speed, self.y_speed]
+        r = d - (2 * d.dot(norm) * norm)
 
-      self.angle = Math.atan2(r[1], r[0])
+        self.angle = Math.atan2(r[1], r[0])
 =begin
-        if self.y_speed > 0
-          if atan2 < ANGLE_RESTRICT_UP.min
-            self.angle = ANGLE_RESTRICT_UP.min
-          elsif atan2 > ANGLE_RESTRICT_UP.max
-            self.angle = ANGLE_RESTRICT_UP.max
+          if self.y_speed > 0
+            if atan2 < ANGLE_RESTRICT_UP.min
+              self.angle = ANGLE_RESTRICT_UP.min
+            elsif atan2 > ANGLE_RESTRICT_UP.max
+              self.angle = ANGLE_RESTRICT_UP.max
+            else
+              self.angle = atan2
+            end
           else
-            self.angle = atan2
+            if atan2 < ANGLE_RESTRICT_DOWN.min
+              self.angle = ANGLE_RESTRICT_DOWN.min
+            elsif atan2 > ANGLE_RESTRICT_DOWN.max
+              self.angle = ANGLE_RESTRICT_DOWN.max
+            else
+              self.angle = atan2
+            end
           end
         else
-          if atan2 < ANGLE_RESTRICT_DOWN.min
-            self.angle = ANGLE_RESTRICT_DOWN.min
-          elsif atan2 > ANGLE_RESTRICT_DOWN.max
-            self.angle = ANGLE_RESTRICT_DOWN.max
-          else
-            self.angle = atan2
-          end
+          self.y_speed = -self.y_speed
         end
-      else
-        self.y_speed = -self.y_speed
-      end
-    elsif info.mtv[0] != 0
-      self.x_speed = -self.x_speed
+      elsif info.mtv[0] != 0
+        self.x_speed = -self.x_speed
 =end
+      end
     end
-  end
 
   on :slow do
     clear_timer @slow_timer unless @slow_timer.nil?
@@ -454,26 +456,23 @@ class PowerupEntity < RGame::Core::Entity
 
   on :new do
     self.sprite = "powerup"
-    self.y_speed = 64
-    self.solid = false
+    self.y_speed = 48
     self.sprite_tag = "power_ball"
   end
 
-  on :collision do |e|
-    if e.is_a? PlayerEntity
-      case self.sprite_tag
-      when "1up"
-        self.broadcast(:livesup, 1)
-      when "extra_ball"
-        self.broadcast(:ballin)
-      when "wide_paddle"
-        self.broadcast(:widen_player)
-      when "slow_ball"
-        self.broadcast(:slow)
-      when "power_ball"
-        self.broadcast(:power_ball)
-      end
-      self.remove
+  collision(PlayerEntity) do
+    case self.sprite_tag
+    when "1up"
+      self.broadcast(:livesup, 1)
+    when "extra_ball"
+      self.broadcast(:ballin)
+    when "wide_paddle"
+      self.broadcast(:widen_player)
+    when "slow_ball"
+      self.broadcast(:slow)
+    when "power_ball"
+      self.broadcast(:power_ball)
     end
+    self.remove
   end
 end

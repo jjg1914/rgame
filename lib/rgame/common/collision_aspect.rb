@@ -10,18 +10,86 @@ module RGame
     module CollisionAspect
       include RGame::Core::Aspect
 
+      class BaseMatcher
+        attr_reader :response
+
+        def respond value
+          @response = value
+        end
+
+        def callback *args, &block
+          if block.nil?
+            target, *rest = *args
+            target.instance_exec(*rest, &@callback) unless @callback.nil?
+          else
+            @callback = if args.empty?
+              block
+            else
+              proc { |*extra| block.call(*(extra + args)) }
+            end
+          end
+        end
+
+        def call target, value, info
+          false
+        end
+      end
+
+      class ClassMatcher < BaseMatcher
+        def initialize klass
+          super()
+          @klass = klass
+        end
+
+        def call target, value, info
+          value.is_a? @klass
+        end
+      end
+
+      class MatcherWrapper
+        def initialize matchers
+          @matchers = matchers
+        end
+
+        def respond value
+          @matchers.each { |e| e.respond(value) }
+          self
+        end
+
+        def callback *args, &block
+          @matchers.each { |e| e.callback(*args, &block) }
+          self
+        end
+      end
+
       class ClassComponent
+        extend Forwardable
+        def_delegators :@matchers, :each
+
+        include Enumerable
+
         attr_accessor :check_collisions
         alias check_collisions? check_collisions
 
         def initialize
           @check_collisions = true
+          @matchers = []
+        end
+
+        def add_matcher arg
+          if arg.is_a?(Class)
+            ClassMatcher.new(arg)
+          else
+            raise ArgumentError.new(arg.inspect)
+          end.tap do |o|
+            @matchers.push(o)
+          end
         end
       end
 
       class Component
         extend Forwardable
-        def_delegators :@collisions, :each, :clear, :empty?, :each, :<<
+        def_delegators :@collisions, :each, :clear, :empty?, :<<
 
         include Enumerable
 
@@ -38,6 +106,14 @@ module RGame
           klass.instance_exec(self) do |parent|
             @collision = parent.collision.clone
           end
+        end
+
+        def collision *args, &block
+          return @collision if args.empty?
+
+          MatcherWrapper.new(args.map do |e|
+            @collision.add_matcher e
+          end).tap { |o| o.callback(&block) unless block.nil? }
         end
       end
 
@@ -75,24 +151,21 @@ module RGame
       end
 
       on :collision do |e, info|
-        if (self.respond_to?(:solid) and self.solid) and
-           (e.respond_to?(:solid) and e.solid) or e.nil?
-          self.collision << info
+        self.class.collision.select { |f| f.call(self, e, info) }.each do |f|
+          if f.response.nil?
+            f.callback self, e, info
+          else
+            self.collision << [ f, e, info ]
+          end
         end
       end
 
       on :collision_resolve do
         unless self.collision.empty?
-          bump = self.collision.min_by(&:time)
-          self.x, self.y = bump.position
-          self.emit :bump, bump.other, bump
+          bump = self.collision.min_by { |e| e[2].time }
+          self.x, self.y = bump[2].position
+          bump[0].callback self, bump[1], bump[2]
         end
-      end
-
-      def to_h
-        super.merge({
-          "solid" => self.solid,
-        })
       end
     end
   end
