@@ -13,6 +13,11 @@ module RGame
       class BaseMatcher
         attr_reader :response
 
+        def initialize
+          @when = []
+          @emit = []
+        end
+
         def respond value
           @response = value
         end
@@ -30,8 +35,25 @@ module RGame
           end
         end
 
+        def when &block
+          @when << block
+        end
+
+        def emit *args
+          @emit << args
+        end
+
+        def call_emit target, value
+          return if value.nil?
+          @emit.each do |e|
+            value.emit(e.first, target, *e.drop(1))
+          end
+        end
+
         def call target, value, info
-          false
+          @when.empty? or @when.all? do |e|
+            target.instance_exec(value, info, &e)
+          end
         end
       end
 
@@ -42,7 +64,7 @@ module RGame
         end
 
         def call target, value, info
-          value.is_a? @klass
+          super and value.is_a?(@klass)
         end
       end
 
@@ -58,6 +80,16 @@ module RGame
 
         def callback *args, &block
           @matchers.each { |e| e.callback(*args, &block) }
+          self
+        end
+
+        def emit *args
+          @matchers.each { |e| e.emit(*args) }
+          self
+        end
+
+        def when &block
+          @matchers.each { |e| e.when(&block) }
           self
         end
       end
@@ -93,8 +125,21 @@ module RGame
 
         include Enumerable
 
-        def initialize
+        def initialize target
+          @target = target
           @collisions = []
+        end
+
+        def deflect! info
+          @target.x, @target.y = info.position
+          @target.x_speed, @target.y_speed =
+            RGame::Core::Collision.deflect @target, info.normal
+        end
+
+        def slide! info
+          @target.x, @target.y = info.position
+          @target.x_speed, @target.y_speed =
+            RGame::Core::Collision.slide @target, info.normal
         end
       end
 
@@ -130,7 +175,7 @@ module RGame
       attr_reader :collision
 
       on :new do
-        @collision = RGame::Common::CollisionAspect::Component.new
+        @collision = RGame::Common::CollisionAspect::Component.new self
       end
 
       on :collision_mark do |data|
@@ -153,6 +198,7 @@ module RGame
       on :collision do |e, info|
         self.class.collision.select { |f| f.call(self, e, info) }.each do |f|
           if f.response.nil?
+            f.call_emit self, e
             f.callback self, e, info
           else
             self.collision << [ f, e, info ]
@@ -163,8 +209,19 @@ module RGame
       on :collision_resolve do
         unless self.collision.empty?
           bump = self.collision.min_by { |e| e[2].time }
-          self.x, self.y = bump[2].position
+
+          case bump[0].response
+          when "deflect"
+            self.collision.deflect! bump[2]
+          when "slide"
+            self.collision.slide! bump[2]
+          else
+            raise "unknown response %s" % bump[0].response
+          end
+
+          bump[0].call_emit self, bump[1]
           bump[0].callback self, bump[1], bump[2]
+          self.emit :collision_bump, bump[1], bump[2]
         end
       end
     end

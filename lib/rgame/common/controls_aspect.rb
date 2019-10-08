@@ -11,6 +11,7 @@ module RGame
         attr_accessor :x_speed
         attr_accessor :y_speed
         attr_accessor :keys
+        attr_accessor :tag
 
         def initialize speed_vec = [ 0, 0 ]
           self.speed_vec = speed_vec
@@ -50,7 +51,7 @@ module RGame
         end
       end
 
-      class Component
+      class ClassComponent
         include Enumerable
 
         attr_reader :left
@@ -111,6 +112,38 @@ module RGame
         end
       end
 
+      class Component
+        def initialize target
+          @target = target
+          @active = []
+        end
+
+        def activate_by_key key
+          @target.class.controls.select do |_k, v|
+            v.keys.include?(key) and not @active.include?(v)
+          end.each do |_k, v|
+            @active << v
+          end
+        end
+
+        def deactivate_by_key key
+          @target.class.controls.select do |_k, v|
+            v.keys.include?(key) and @active.include?(v)
+          end.each do |_k, v|
+            @active.delete(v)
+          end
+        end
+
+        def deactivate_by_normal normal
+          @target.class.controls.select do |_k, v|
+            dot = [ v.x_speed, v.y_speed ].zip(normal).map { |a,b| a * b }.sum
+            not dot.zero? and @active.include?(v)
+          end.each do |_k, v|
+            @active.delete(v)
+          end
+        end
+      end
+
       module ClassMethods
         attr_reader :controls
 
@@ -126,34 +159,43 @@ module RGame
         def included klass
           super
           klass.instance_eval do
-            @controls = Component.new
+            @controls = ClassComponent.new
             extend ClassMethods
           end
         end
       end
 
+      attr_reader :controls
+
+      on :new do
+        @controls = RGame::Common::ControlsAspect::Component.new self
+      end
+
       on :keydown do |key|
-        self.controls.select do |_k, v|
-          v.keys.include? key
-        end.each do |k, v|
+        self.controls.activate_by_key(key).each do |k,v|
           self.x_speed += v.x_speed
           self.y_speed += v.y_speed
-          self.emit "controls_start_%s" % k
+        end.map { |k,v| k }.uniq.each do |e|
+          self.emit "controls_start_%s" % e
         end
       end
 
       on :keyup do |key|
-        self.controls.select do |_k, v|
-          v.keys.include? key
-        end.each do |k, v|
+        self.controls.deactivate_by_key(key).each do |k,v|
           self.x_speed -= v.x_speed
           self.y_speed -= v.y_speed
-          self.emit "controls_stop_%s" % k
+        end.map { |k,v| k }.uniq.each do |e|
+          self.emit "controls_stop_%s" % e
         end
       end
 
-      def controls
-        self.class.controls
+      on :collision_bump do |_other, info|
+        self.controls.deactivate_by_normal(info.normal).each do |k,v|
+          self.x_speed -= v.x_speed if info.normal[0].zero?
+          self.y_speed -= v.y_speed if info.normal[1].zero?
+        end.map { |k,v| k }.uniq.each do |e|
+          self.emit "controls_stop_%s" % e
+        end
       end
     end
   end

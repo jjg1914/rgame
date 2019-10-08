@@ -216,6 +216,8 @@ class PlayerEntity < RGame::Core::Entity
   controls.wasd!
   controls.arrows!
 
+  collision(NilClass).respond("slide")
+
   on :new do
     self.sprite = "player"
   end
@@ -329,14 +331,8 @@ class BallEntity < RGame::Core::Entity
 
   DEFAULT_SPEED = 112
   STARTING_ANGLE = (3.0 * Math::PI / 4.0)
-  ANGLE_RESTRICT_UP = [
-    (-1.0 * Math::PI / 8.0),
-    (-7.0 * Math::PI / 8.0),
-  ]
-  ANGLE_RESTRICT_DOWN = [
-    (1.0 * Math::PI / 4.0),
-    (3.0 * Math::PI / 4.0),
-  ]
+  ANGLE_CLAMP = [ (-7.0 * Math::PI / 8.0), (-1.0 * Math::PI / 8.0) ]
+  ANGLE_RCLAMP = [ (-11.0 * Math::PI / 16.0), (-7.0 * Math::PI / 16.0) ]
 
   on :new do |player|
     self.sprite = "ball"
@@ -365,45 +361,29 @@ class BallEntity < RGame::Core::Entity
     end
   end
 
-  collision(PlayerEntity, BlockEntity, NilClass)
-    .respond("bump")
-    .callback do |e, info|
-      e&.emit :ball_collision 
+  collision(NilClass).respond("deflect")
 
-      unless self.sprite_tag == "power_ball" and
-             e.is_a?(BlockEntity) and
-             not e.parent.nil?
-        norm = Vector[*info.normal]
-        d = Vector[self.x_speed, self.y_speed]
-        r = d - (2 * d.dot(norm) * norm)
-
-        self.angle = Math.atan2(r[1], r[0])
-=begin
-          if self.y_speed > 0
-            if atan2 < ANGLE_RESTRICT_UP.min
-              self.angle = ANGLE_RESTRICT_UP.min
-            elsif atan2 > ANGLE_RESTRICT_UP.max
-              self.angle = ANGLE_RESTRICT_UP.max
-            else
-              self.angle = atan2
-            end
-          else
-            if atan2 < ANGLE_RESTRICT_DOWN.min
-              self.angle = ANGLE_RESTRICT_DOWN.min
-            elsif atan2 > ANGLE_RESTRICT_DOWN.max
-              self.angle = ANGLE_RESTRICT_DOWN.max
-            else
-              self.angle = atan2
-            end
-          end
-        else
-          self.y_speed = -self.y_speed
-        end
-      elsif info.mtv[0] != 0
-        self.x_speed = -self.x_speed
-=end
-      end
+  collision(PlayerEntity).callback do |e|
+    center_x = self.x + (self.width / 2)
+    other_center_x = e.x + (e.width / 2)
+    center_diff = (center_x - other_center_x) * (self.x_speed < 0 ? -1 : 1)
+    new_angle = (center_diff * (Math::PI / 3.0) / 8.0) - (Math::PI / 2.0)
+    self.angle = if new_angle.between?(*ANGLE_RCLAMP)
+      ANGLE_RCLAMP.min_by { |e| (new_angle - e).abs }
+    else
+      new_angle.clamp(*ANGLE_CLAMP)
     end
+  end
+
+  collision(BlockEntity)
+    .when { |_e| self.sprite_tag != "power_ball" }
+    .emit(:ball_collision)
+    .respond("deflect")
+
+  collision(BlockEntity)
+    .when { |_e| self.sprite_tag == "power_ball" }
+    .emit(:ball_collision)
+    .callback { |e, info| self.collision.deflect!(info) unless e.parent.nil? }
 
   on :slow do
     clear_timer @slow_timer unless @slow_timer.nil?
