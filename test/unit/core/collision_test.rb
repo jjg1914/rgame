@@ -268,14 +268,14 @@ describe RGame::Core::Collision do
 
     describe "#mtv" do
       before do
-        @target.x = 1
+        @target.x = -1
         @target.y = 2
         @target.freeze
         @other.freeze
       end
 
       it "should return mtv" do
-        expect(@subject.mtv).must_equal([ -1, 0 ])
+        expect(@subject.mtv).must_equal([ 1, 0 ])
       end
     end
 

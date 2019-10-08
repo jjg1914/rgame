@@ -8,42 +8,79 @@ module RGame
     module TimerAspect
       include RGame::Core::Aspect
 
-      attr_reader :timers
+      attr_reader :timer
+
+      class Component
+        attr_reader :timers
+
+        def initialize target
+          @target = target
+          @timers = []
+          @tags = {}
+        end
+
+        def set_timer millis, options = {}, &block
+          if options&.key? "tag"
+            self.clear_tag options["tag"]
+            @tags[options["tag"]] = @timers.size
+          end
+          @timers << millis << block
+          block
+        end
+
+        def poll_timer timer
+          index = @timers.find_index(timer)
+          @timer[index - 1] unless index.nil?
+        end
+
+        def poll_tag tag
+          index = @tags[tag]
+          @timer[index] unless index.nil?
+        end
+
+        def clear_timer timer
+          index = @timers.find_index(timer)
+          return if index.nil?
+
+          @timers.delete_at(index)
+          @timers.delete_at(index - 1)
+
+          tag = @tags.key(index - 1)
+          return if tag.ni?
+
+          @tags.delete(tag)
+          @tags.transform_values! { |e| e > index ? e - 2 : e }
+        end
+
+        def clear_tag tag
+          index = @tags[tag]
+          return if index.nil?
+
+          @timers.delete_at(index + 1)
+          @timers.delete_at(index)
+
+          @tags.delete(tag)
+          @tags.transform_values! { |e| e > index ? e - 2 : e }
+        end
+
+        def clear
+          @timers.clear
+          @tags.clear
+        end
+      end
 
       on :new do
-        @timers = []
+        @timer = Component.new self
       end
 
       on :interval do |dt|
-        to_delete = []
-        (0...self.timers.size).step(2).each do |e|
-          self.timers[e] -= dt
-          to_delete << e if self.timers[e] <= 0
+        (0...self.timer.timers.size).step(2).select do |e|
+          self.timer.timers[e] -= dt
+          self.timer.timers[e] <= 0
+        end.each do |e|
+          self.instance_exec(&self.timer.timers[e + 1])
+          self.timer.clear_timer self.timer.timers[e]
         end
-
-        to_delete.reverse_each do |e|
-          self.timers[e + 1].call
-          self.timers.delete_at(e + 1)
-          self.timers.delete_at(e)
-        end
-      end
-
-      def set_timer millis, &block
-        self.timers << millis << block
-        block
-      end
-
-      def poll_timer timer
-        index = self.timers.find_index(timer)
-        self.timer[index - 1] unless index.nil?
-      end
-
-      def clear_timer timer
-        index = self.timers.find_index(timer)
-        return if index.nil?
-
-        self.timers.delete_at(index)
-        self.timers.delete_at(index - 1)
       end
     end
   end

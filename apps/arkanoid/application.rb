@@ -71,53 +71,27 @@ class StageEntity < RGame::Common::MapEntity
 
   on :mapupdate do
     @state = State.new
-
-    @player = self.create(PlayerEntity) do |o|
-      o.x = ((self.width - 8 - o.width) / 2) + 8
-      o.y = self.height - 32
-
-      o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
-    end
-
-    self.create(BallEntity) do |o|
-      o.player = @player
-      o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
-      o.y_restrict = (playable_bounds["top"]..)
-    end
-
-    @blocks = self.children.count do |e|
-      e.is_a?(BlockEntity) and not e.is_a?(InvincibleBlockEntity)
-    end
+    @player = _create_player
+    _create_ball
   end
 
   on :ballin do
     @state.balls += 1
-
-    self.create(BallEntity) do |o|
-      o.player = @player
-      o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
-      o.y_restrict = (playable_bounds["top"]..)
-    end
+    _create_ball
   end
 
   on :ballout do
     @state.balls -= 1
     if @state.balls == 0
-      set_timer(1000) do
+      self.timer.set_timer(1000) do
         if @state.lives <= 0
           self.broadcast(:gameover)
           self.remove
         else
-          clear_timer @wide_timer unless @wide_timer.nil?
-          @player.sprite = "player"
-
+          self.timer.clear
+          @player.clear_powerups
           @state.lives -= 1
-
-          self.create(BallEntity) do |o|
-            o.player = @player
-            o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
-            o.y_restrict = (playable_bounds["top"]..)
-          end
+          _create_ball
         end
       end
     end
@@ -129,21 +103,8 @@ class StageEntity < RGame::Common::MapEntity
 
   on :score do |value|
     @state.score += value
-    @blocks -= 1
 
-    set_timer(1000) { self.parent.dequeue } if @blocks.zero?
-  end
-
-  on :widen_player do
-    clear_timer @wide_timer unless @wide_timer.nil?
-    @wide_timer = (set_timer(10000) do
-      @player.sprite = "player"
-      @wide_timer = nil
-    end)
-    @player.sprite = "player_wide"
-    if @player.x + @player.width > playable_bounds["right"]
-      @player.x = self.width - playable_bounds["right"]
-    end
+    self.timer.set_timer(1000) { self.parent.dequeue } if _block_count.zero?
   end
 
   after :draw do |ctx|
@@ -193,6 +154,31 @@ class StageEntity < RGame::Common::MapEntity
       "bottom" => self.height - 1,
     }
   end
+
+  private
+
+  def _create_player
+    self.create(PlayerEntity) do |o|
+      o.x = ((self.width - 8 - o.width) / 2) + 8
+      o.y = self.height - 32
+
+      o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
+    end
+  end
+
+  def _create_ball
+    self.create(BallEntity) do |o|
+      o.player = @player
+      o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
+      o.y_restrict = (playable_bounds["top"]..)
+    end
+  end
+
+  def _block_count
+    self.children.count do |e|
+      e.is_a?(BlockEntity) and not e.is_a?(InvincibleBlockEntity)
+    end
+  end
 end
 
 class PlayerEntity < RGame::Core::Entity
@@ -202,6 +188,7 @@ class PlayerEntity < RGame::Core::Entity
   include RGame::Common::PositionAspect
   include RGame::Common::MovementAspect
   include RGame::Common::RestrictAspect
+  include RGame::Common::TimerAspect
 
   controls.left.speed = 64
   controls.right.speed = 64
@@ -211,6 +198,18 @@ class PlayerEntity < RGame::Core::Entity
   collision(NilClass).respond("slide")
 
   on :new do
+    self.sprite = "player"
+  end
+
+  on :widen_player do
+    self.timer.set_timer(10000, { "tag" => "powerup_wide" }) do
+      self.sprite = "player"
+    end
+    self.sprite = "player_wide"
+  end
+
+  def clear_powerups
+    self.timer.clear
     self.sprite = "player"
   end
 end
@@ -263,7 +262,7 @@ class HardBlockEntity < BlockEntity
 
     if self.hits <= 0
       p.call
-    else
+    elsif self.hits.finite?
       self.sprite_tag = "hard_broken"
     end
   end
@@ -275,13 +274,10 @@ class HardBlockEntity < BlockEntity
   end
 end
 
-class InvincibleBlockEntity < BlockEntity
+class InvincibleBlockEntity < HardBlockEntity
   on :new do
     self.sprite_tag = "invincible"
-  end
-
-  before :ball_collision do |p|
-    stop!
+    self.hits = Float::INFINITY
   end
 end
 
@@ -378,19 +374,15 @@ class BallEntity < RGame::Core::Entity
     .callback { |e, info| self.collision.deflect!(info) unless e.parent.nil? }
 
   on :slow do
-    clear_timer @slow_timer unless @slow_timer.nil?
-    @slow_timer = set_timer(5000) do
+    self.timer.set_timer(5000, { "tag" => "powerup_slow" }) do
       self.speed = DEFAULT_SPEED
-      @slow_timer = nil
     end
     self.speed = 0.5 * DEFAULT_SPEED
   end
 
   on :power_ball do
-    clear_timer @power_timer unless @power_timer.nil?
-    @power_timer = set_timer(5000) do
+    self.timer.set_timer(5000, { "tag" => "powerup_powerball" }) do
       self.sprite_tag = "default"
-      @power_timer = nil
     end
     self.sprite_tag = "power_ball"
   end

@@ -61,7 +61,12 @@ module RGame
           "bottom" => @y_restrict&.last || Float::INFINITY,
         }
 
-        self.emit(:collision, nil, info) if info.time < 1
+        if info.time < 1
+          self.emit(:collision, nil, info) if info.time < 1
+        elsif info.mtv.any? { |e| not e.zero? and e.finite? }
+          self.x += info.mtv[0] if info.mtv[0].finite?
+          self.y += info.mtv[1] if info.mtv[1].finite?
+        end
       end
 
       def x_restrict= value

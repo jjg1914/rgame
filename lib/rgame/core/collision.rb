@@ -204,10 +204,13 @@ module RGame
           private
 
           def _calculate_mtv_reverse_axis target, other, min, max
-            [
-              other[min] - target[min],
-              other[max] - target[max],
-            ].min_by(&:abs)
+            if target[min] < other[min]
+              other[min] - target[min]
+            elsif target[max] > other[max]
+              other[max] - target[max]
+            else
+              0
+            end
           end
 
           def _calculate_exit_reverse_axis target, other, min, max, change
