@@ -136,7 +136,7 @@ module RGame
 
         def deactivate_by_normal normal
           @target.class.controls.select do |_k, v|
-            dot = [ v.x_speed, v.y_speed ].zip(normal).map { |a,b| a * b }.sum
+            dot = [ v.x_speed, v.y_speed ].zip(normal).map { |a, b| a * b }.sum
             not dot.zero? and @active.include?(v)
           end.each do |_k, v|
             @active.delete(v)
@@ -172,28 +172,28 @@ module RGame
       end
 
       on :keydown do |key|
-        self.controls.activate_by_key(key).each do |k,v|
+        self.controls.activate_by_key(key).each do |_k, v|
           self.x_speed += v.x_speed
           self.y_speed += v.y_speed
-        end.map { |k,v| k }.uniq.each do |e|
+        end.map { |k, _v| k }.uniq.each do |e|
           self.emit "controls_start_%s" % e
         end
       end
 
       on :keyup do |key|
-        self.controls.deactivate_by_key(key).each do |k,v|
+        self.controls.deactivate_by_key(key).each do |_k, v|
           self.x_speed -= v.x_speed
           self.y_speed -= v.y_speed
-        end.map { |k,v| k }.uniq.each do |e|
+        end.map { |k, _v| k }.uniq.each do |e|
           self.emit "controls_stop_%s" % e
         end
       end
 
       on :collision_bump do |_other, info|
-        self.controls.deactivate_by_normal(info.normal).each do |k,v|
+        self.controls.deactivate_by_normal(info.normal).each do |_k, v|
           self.x_speed -= v.x_speed if info.normal[0].zero?
           self.y_speed -= v.y_speed if info.normal[1].zero?
-        end.map { |k,v| k }.uniq.each do |e|
+        end.map { |k, _v| k }.uniq.each do |e|
           self.emit "controls_stop_%s" % e
         end
       end

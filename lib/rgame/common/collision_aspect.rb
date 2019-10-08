@@ -45,6 +45,7 @@ module RGame
 
         def call_emit target, value
           return if value.nil?
+
           @emit.each do |e|
             value.emit(e.first, target, *e.drop(1))
           end
@@ -109,11 +110,9 @@ module RGame
         end
 
         def add_matcher arg
-          if arg.is_a?(Class)
-            ClassMatcher.new(arg)
-          else
-            raise ArgumentError.new(arg.inspect)
-          end.tap do |o|
+          raise ArgumentError unless arg.is_a?(Class)
+
+          ClassMatcher.new(arg).tap do |o|
             @matchers.push(o)
           end
         end
@@ -144,8 +143,6 @@ module RGame
       end
 
       module ClassMethods
-        attr_reader :collision
-
         def inherited klass
           super
           klass.instance_exec(self) do |parent|

@@ -420,14 +420,14 @@ module RGame
 
         def deflect target, normal
           d = [ target.x_speed, target.y_speed ]
-          dot = d.zip(normal).map { |a,b| a * b }.sum
-          d.zip(normal).map { |a,b| a - (2 * dot * b) }
+          dot = d.zip(normal).map { |a, b| a * b }.sum
+          d.zip(normal).map { |a, b| a - (2 * dot * b) }
         end
 
         def slide target, normal
           normal = normal.reverse
           d = [ target.x_speed, target.y_speed ]
-          dot = d.zip(normal).map { |a,b| a * b }.sum
+          dot = d.zip(normal).map { |a, b| a * b }.sum
           normal.map { |e| e * dot }
         end
       end
