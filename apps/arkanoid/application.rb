@@ -181,12 +181,8 @@ class StageEntity < RGame::Common::MapEntity
   end
 end
 
-class PlayerEntity < RGame::Core::Entity
-  include RGame::Common::CollisionAspect
-  include RGame::Common::SpriteAspect
+class PlayerEntity < RGame::Common::SimpleEntity
   include RGame::Common::ControlsAspect
-  include RGame::Common::PositionAspect
-  include RGame::Common::MovementAspect
   include RGame::Common::RestrictAspect
   include RGame::Common::TimerAspect
 
@@ -214,12 +210,7 @@ class PlayerEntity < RGame::Core::Entity
   end
 end
 
-class BlockEntity < RGame::Core::Entity
-  include RGame::Common::SpriteAspect
-  include RGame::Common::CollisionAspect
-  include RGame::Common::PositionAspect
-  include RGame::Common::DrawAspect
-
+class BlockEntity < RGame::Common::SimpleEntity
   include RGame::Core::Savable
 
   savable [ :x, :y, :sprite_tag ]
@@ -282,8 +273,6 @@ class InvincibleBlockEntity < HardBlockEntity
 end
 
 class MovingBlockEntity < BlockEntity
-  include RGame::Common::MovementAspect
-
   savable [ :x_speed, :y_speed ]
 
   on :new do
@@ -307,11 +296,7 @@ class MovingBlockEntity < BlockEntity
   end
 end
 
-class BallEntity < RGame::Core::Entity
-  include RGame::Common::SpriteAspect
-  include RGame::Common::PositionAspect
-  include RGame::Common::MovementAspect
-  include RGame::Common::CollisionAspect
+class BallEntity < RGame::Common::SimpleEntity
   include RGame::Common::RestrictAspect
   include RGame::Common::TimerAspect
 
@@ -388,7 +373,7 @@ class BallEntity < RGame::Core::Entity
   end
 end
 
-class PowerupEntity < RGame::Core::Entity
+class PowerupEntity < RGame::Common::SimpleEntity
   FREQUENCIES = [
     [ "power_ball", 1 ],
     [ "1up", 1 ],
@@ -412,11 +397,6 @@ class PowerupEntity < RGame::Core::Entity
       self.new(context).tap { |o| o.sprite_tag = table[index].first }
     end
   end
-
-  include RGame::Common::CollisionAspect
-  include RGame::Common::SpriteAspect
-  include RGame::Common::PositionAspect
-  include RGame::Common::MovementAspect
 
   on :new do
     self.sprite = "powerup"
