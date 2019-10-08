@@ -76,6 +76,10 @@ module RGame
         @children.each(&block)
       end
 
+      def size
+        @children.size
+      end
+
       def inspect
         tmp = self.each.map(&:inspect).join("\n")
         ([ super ] + tmp.each_line.map { |e| "  " + e.chomp }).join("\n")

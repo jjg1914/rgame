@@ -39,37 +39,29 @@ class RGame::Common::RootEntity
   context.scale_quality = "nearest"
 
   on :start do
-    self.create(TitleEntity)
+    self.create(RGame::Common::CollectionEntity) do |o|
+      o.create(RGame::Common::ImagelayerEntity) { |u| u.image = "stage-bg"}
+      o.create(RGame::Common::ImagelayerEntity) { |u| u.image = "title"}
+    end
+  end
+
+  on :keydown do |key, _|
+    next if self.size > 1
+
+    case key
+    when "enter", "return"
+      self.create(RGame::Common::QueueEntity) do |o|
+        %w[stage1 stage2].each do |e|
+          o.create(StageEntity) { |u| u.map = e }
+        end
+
+        o.on(:empty) { self.parent.pop }
+      end
+    end
   end
 
   on :gameover do
     self.pop
-  end
-end
-
-class TitleEntity < RGame::Common::CollectionEntity
-  on :new do
-    self.create(RGame::Common::ImagelayerEntity) { |o| o.image = "stage-bg"}
-    self.create(RGame::Common::ImagelayerEntity) { |o| o.image = "title"}
-  end
-
-  on :keydown do |key, _|
-    case key
-    when "enter", "return"
-      self.parent.create(StageQueueEntity)
-    end
-  end
-end
-
-class StageQueueEntity < RGame::Common::QueueEntity
-  on :push do
-    %w[stage1 stage2].each do |e|
-      self.create(StageEntity) { |o| o.map = e }
-    end
-  end
-
-  on :empty do
-    self.parent.pop
   end
 end
 
