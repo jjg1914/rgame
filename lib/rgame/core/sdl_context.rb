@@ -350,8 +350,7 @@ module RGame
       end
 
       class << self
-        def init_sdl
-          sdl_flags = SDL2::SDL_INIT_VIDEO | SDL2::SDL_INIT_AUDIO
+        def init_sdl sdl_flags
           unless SDL2.SDL_Init(sdl_flags).zero?
             raise SDL2.SDL_GetError
           end
@@ -371,17 +370,17 @@ module RGame
         end
 
         def open_window title, width, height
-          self.init_sdl
+          self.init_sdl SDL2::SDL_INIT_VIDEO | SDL2::SDL_INIT_AUDIO
           SDLWindowContext.open title, width, height
         end
 
         def open_software width, height
-          self.init_sdl
+          self.init_sdl SDL2::SDL_INIT_AUDIO
           SDLSoftwareContext.open width, height
         end
 
         def open_mmap filename, width, height
-          self.init_sdl
+          self.init_sdl SDL2::SDL_INIT_AUDIO
           SDLMmapContext.open filename, width, height
         end
       end
