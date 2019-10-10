@@ -18,5 +18,4 @@ group :development do
   gem "simplecov-cobertura"
   gem "rubocop"
   gem "yard"
-  gem "codecov"
 end
