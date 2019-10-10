@@ -1,14 +1,16 @@
+# frozen_string_literal: true
+
 module RGame
   module Common
     module RandomHelpers
-      extend self
+      module_function
 
-      def random_yield p
-        (rand <= p).tap { |o| yield if o and block_given? }
+      def random_yield probability
+        (rand <= probability).tap { |o| yield if o and block_given? }
       end
 
-      def random_inverse_yield p
-        random_yield(1 - p) { yield if block_given? }
+      def random_inverse_yield probability
+        random_yield(1 - probability) { yield if block_given? }
       end
 
       def random_list_yield list
@@ -19,8 +21,8 @@ module RGame
         total_weight = weights.map { |e| e[1] }.sum
 
         table = weights.map do |e|
-          [ e[0], e[1].to_f / total_weight.to_f]
-        end.reduce([]) do |m,v|
+          [ e[0], e[1] / total_weight.to_f ]
+        end.reduce([]) do |m, v|
           m + [ [ v[0], (m.last&.last).to_f + v[1] ] ]
         end
 

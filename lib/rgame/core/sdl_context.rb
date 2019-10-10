@@ -351,23 +351,20 @@ module RGame
 
       class << self
         def init_sdl sdl_flags
-          unless SDL2.SDL_Init(sdl_flags).zero?
-            raise SDL2.SDL_GetError
-          end
+          raise SDL2.SDL_GetError unless SDL2.SDL_Init(sdl_flags).zero?
 
           if SDL2Image.IMG_Init(SDL2Image::IMG_INIT_PNG).zero?
             raise SDL2.SDL_GetError
           end
 
           if not (sdl_flags & SDL2::SDL_INIT_AUDIO).zero? and
-             SDL2Mixer.Mix_OpenAudio(44100,
+             SDL2Mixer.Mix_OpenAudio(44_100,
                                      SDL2Mixer::MIX_DEFAULT_FORMAT,
                                      1, 2048).negative?
             raise SDL2.SDL_GetError
           end
 
           raise SDL2.SDL_GetError unless SDL2TTF.TTF_Init.zero?
-
         end
 
         def open_window title, width, height
@@ -411,7 +408,7 @@ module RGame
         super()
 
         @renderer = renderer
-        @mixer = Mixer.new 
+        @mixer = Mixer.new
 
         @mem_ints = 8.times.map { FFI::MemoryPointer.new(:int, 1) }
         @sdl_rects = 2.times.map { SDL2::SDLRect.new }
@@ -683,9 +680,9 @@ module RGame
 
         private
 
-        def _channel_finished i
-          @channels[i]&.invalidate!
-          @channels.delete(i)
+        def _channel_finished channel
+          @channels[channel]&.invalidate!
+          @channels.delete channel
         end
       end
 
@@ -725,7 +722,7 @@ module RGame
         def pause
           throw "invalid" unless self.valid?
 
-          SDL2Mixer.Mix_Pause  @channel
+          SDL2Mixer.Mix_Pause @channel
         end
 
         def resume
