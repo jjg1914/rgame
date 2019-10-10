@@ -8,6 +8,7 @@ gem "ffi"
 
 group :development do
   gem "rake"
+  gem "rake-compiler"
   gem "dotenv"
   gem "pry"
   gem "ruby-prof"

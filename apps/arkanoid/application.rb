@@ -109,41 +109,22 @@ class StageEntity < RGame::Common::MapEntity
 
   after :draw do |ctx|
     sprite = RGame::Core::Sprite.load "ball"
+    self.ctx.font = "PressStart2P-Regular:8"
+    self.ctx.color = 0xFFFFFF
+
     if @state.lives > 5
-      if @cache_lives != @state.lives
-        @lives_image.free unless @lives_image.nil?
-        @cache_lives = @state.lives
-
-        self.ctx.font = "PressStart2P-Regular:8"
-        self.ctx.color = 0xFFFFFF
-
-        @lives_image = self.ctx.create_text @cache_lives.to_s.rjust(2, " ") + "x"
-      end
-
-      self.ctx.source = @lives_image
-      self.ctx.draw_image self.width - @lives_image.width - 20, 12
+      self.ctx.draw_text @state.lives.to_s.rjust(2, " "), 12, 12
 
       self.ctx.source = sprite.image
       self.ctx.draw_image self.width - 20, 11, 0, 0, 8, 8
     else
-      @lives_image.free unless @lives_image.nil?
       self.ctx.source = sprite.image
       @state.lives.to_i.times do |i|
         self.ctx.draw_image self.width - (8 + ((i + 1) * 12)), 11, 0, 0, 8, 8
       end
     end
 
-    if @cache_score != @state.score
-      @score_image.free unless @score_image.nil?
-      @cache_score = @state.score
-
-      self.ctx.font = "PressStart2P-Regular:8"
-      self.ctx.color = 0xFFFFFF
-      @score_image = self.ctx.create_text @cache_score.to_s.rjust(6, "0")
-    end
-
-    self.ctx.source = @score_image
-    self.ctx.draw_image 12, 12
+    self.ctx.draw_text @state.score.to_s.rjust(6, "0"), 12, 12
   end
 
   def playable_bounds

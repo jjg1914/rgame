@@ -4,6 +4,8 @@ require "ffi"
 
 module RGame
   module Core
+    EXT_PATH = File.expand_path("../../../ext", File.dirname(__FILE__))
+
     module Internal
       unless (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM).nil?
         raise "not supported"
@@ -422,6 +424,12 @@ module RGame
       extend FFI::Library
       ffi_lib "SDL2_ttf"
 
+      TTF_STYLE_NORMAL = 0x0
+      TTF_STYLE_BOLD = 0x1
+      TTF_STYLE_ITALIC = 0x2
+      TTF_STYLE_UNDERLINE = 0x4
+      TTF_STYLE_STRIKETHROUGH = 0x8
+
       attach_function :TTF_Init, [], :int
       attach_function :TTF_Quit, [], :void
       attach_function :TTF_OpenFont, %i[string int], :pointer
@@ -436,6 +444,31 @@ module RGame
         pointer
         pointer
       ], :int
+    end
+
+    module SDLFontCache
+      extend FFI::Library
+
+      if not (/darwin/ =~ RUBY_PLATFORM).nil?
+        ffi_lib File.expand_path("SDL_FontCache.bundle", EXT_PATH)
+      else
+        ffi_lib File.expand_path("SDL_FontCache.so", EXT_PATH)
+      end
+
+      attach_function :FC_CreateFont, [], :pointer
+      attach_function :FC_LoadFont, [
+        :pointer,
+        :pointer,
+        :string,
+        :uint32,
+        SDL2::SDLColor.by_value,
+        :int,
+      ], :uint8
+      attach_function :FC_Draw, %i[pointer
+                                   pointer
+                                   float
+                                   float
+                                   string], SDL2::SDLRect.by_value
     end
     # rubocop:enable Metrics/ModuleLength
   end

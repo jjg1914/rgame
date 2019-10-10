@@ -46,7 +46,7 @@ module RGame
           @timers.delete_at(index - 1)
 
           tag = @tags.key(index - 1)
-          return if tag.ni?
+          return if tag.nil?
 
           @tags.delete(tag)
           @tags.transform_values! { |e| e > index ? e - 2 : e }

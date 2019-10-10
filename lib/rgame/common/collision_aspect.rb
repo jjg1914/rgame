@@ -18,6 +18,11 @@ module RGame
           @emit = []
         end
 
+        def initialize_clone source
+          @when = source.instance_variable_get(:@when).dup
+          @emit = source.instance_variable_get(:@emit).dup
+        end
+
         def respond value
           @response = value
         end
@@ -107,6 +112,10 @@ module RGame
         def initialize
           @check_collisions = true
           @matchers = []
+        end
+
+        def initialize_clone source
+          @matchers = source.instance_variable_get(:@matchers).map(&:clone)
         end
 
         def add_matcher arg

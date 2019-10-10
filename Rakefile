@@ -1,8 +1,20 @@
 require "rake/testtask"
-require 'rubocop/rake_task'
-require 'yard'
+require "rake/extensiontask"
+require "rubocop/rake_task"
+require "yard"
 
 $:.unshift File.expand_path "lib", File.dirname(__FILE__)
+
+namespace :compile do
+  task :SDL_FontCache do
+    Dir.chdir("ext") do
+      sh "ruby extconf.rb"
+      sh "make"
+    end
+  end
+end
+
+task :compile => [ :"compile:SDL_FontCache" ]
 
 namespace :test do
   Rake::TestTask.new(:unit) do |t|

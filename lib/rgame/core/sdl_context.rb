@@ -330,6 +330,12 @@ module RGame
                               @sdl_rects[1],
                               @sdl_rects[0])
         end
+
+        def draw_text text, x, y
+          return if @state.fc_font_pointer.nil?
+
+          SDLFontCache.FC_Draw @state.fc_font_pointer, @renderer, x, y, text
+        end
       end
 
       class << self
@@ -654,8 +660,69 @@ module RGame
         end
       end
 
+      module FontState
+        attr_reader :font
+
+        def font_pointer
+          self.font_cache[@font] unless @font.nil?
+        end
+
+        def fc_font_pointer
+          self.fc_font_cache[[ @font, @color, @alpha ]] unless @font.nil?
+        end
+
+        def font_cache
+          @font_cache ||= Hash.new { |h, k| h[k] = _load_font(k) }
+        end
+
+        def fc_font_cache
+          @fc_font_cache ||= Hash.new { |h, k| h[k] = _load_fc_font(*k) }
+        end
+
+        def font= value
+          @font = value
+        end
+
+        private
+
+        def _load_font value
+          name, size = value.to_s.split(":", 2).map(&:strip)
+
+          path = Env.font_path.split(":").map do |e|
+            File.expand_path("%s.ttf" % name, e.strip)
+          end.find do |e|
+            File.exist?(e)
+          end
+          raise "font not found %s" % value.inspect if path.nil?
+
+          SDL2TTF.TTF_OpenFont path, size.to_i
+        end
+
+        def _load_fc_font value, color, alpha
+          name, size = value.to_s.split(":", 2).map(&:strip)
+
+          path = Env.font_path.split(":").map do |e|
+            File.expand_path("%s.ttf" % name, e.strip)
+          end.find do |e|
+            File.exist?(e)
+          end
+          raise "font not found %s" % value.inspect if path.nil?
+
+          red, green, blue = _to_rgb(color)
+          color_struct = SDL2::SDLColor.new
+          color_struct.assign red, green, blue, alpha
+
+          SDLFontCache.FC_CreateFont.tap do |o|
+            SDLFontCache.FC_LoadFont(o, @renderer, path,
+                                     size.to_i, color_struct,
+                                     SDL2TTF::TTF_STYLE_NORMAL)
+          end
+        end
+      end
+
       class StateHolder
         include TextInputState
+        include FontState
 
         attr_reader :target
         attr_reader :source
@@ -663,10 +730,8 @@ module RGame
         attr_reader :alpha
         attr_reader :scale
         attr_reader :scale_quality
-        attr_reader :font
         attr_reader :clip_bounds
 
-        attr_reader :font_pointer
         attr_reader :color_struct
         attr_reader :source_image
 
@@ -678,11 +743,10 @@ module RGame
           @alpha = 0xFF
           @scale = 1
           @scale_quality = SDL2.SDL_GetHint(SDL2::SDL_HINT_RENDER_SCALE_QUALITY)
+          @font = nil
 
           @color_struct = SDL2::SDLColor.new
           @sdl_rect = SDL2::SDLRect.new
-          @font_cache = {}
-          @font_cache = Hash.new { |h, k| h[k] = _load_font(k) }
           @image_cache = Hash.new { |h, k| h[k] = _load_image(k) }
 
           mem_int = FFI::MemoryPointer.new(:uint8, 4)
@@ -703,7 +767,7 @@ module RGame
 
           red, green, blue = _to_rgb(value)
           SDL2.SDL_SetRenderDrawColor @renderer, red, green, blue, alpha
-          @color_struct.assign red, green, blue, value
+          @color_struct.assign red, green, blue, alpha
           @color = value
         end
 
@@ -713,6 +777,7 @@ module RGame
           red, green, blue = _to_rgb(color)
           SDL2.SDL_SetRenderDrawColor @renderer, red, green, blue, value
           @color_struct.assign red, green, blue, value
+
           @alpha = value
         end
 
@@ -757,13 +822,6 @@ module RGame
           @source = value
         end
 
-        def font= value
-          return if @font == value
-
-          @font_pointer = (@font_cache[value] unless value.nil?)
-          @font = value
-        end
-
         def clip_bounds= value
           return if @clip_bounds == value
 
@@ -782,19 +840,6 @@ module RGame
         end
 
         private
-
-        def _load_font value
-          name, size = value.to_s.split(":", 2).map(&:strip)
-
-          path = Env.font_path.split(":").map do |e|
-            File.expand_path("%s.ttf" % name, e.strip)
-          end.find do |e|
-            File.exist?(e)
-          end
-          raise "font not found %s" % value.inspect if path.nil?
-
-          SDL2TTF.TTF_OpenFont path, size.to_i
-        end
 
         def _load_image value
           path = Env.image_path.split(":").map do |e|
