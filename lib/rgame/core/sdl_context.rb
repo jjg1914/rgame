@@ -359,7 +359,8 @@ module RGame
             raise SDL2.SDL_GetError
           end
 
-          if SDL2Mixer.Mix_OpenAudio(44100,
+          if not (sdl_flags & SDL2::SDL_INIT_AUDIO).zero? and
+             SDL2Mixer.Mix_OpenAudio(44100,
                                      SDL2Mixer::MIX_DEFAULT_FORMAT,
                                      1, 2048).negative?
             raise SDL2.SDL_GetError
@@ -375,12 +376,12 @@ module RGame
         end
 
         def open_software width, height
-          self.init_sdl SDL2::SDL_INIT_AUDIO
+          self.init_sdl 0
           SDLSoftwareContext.open width, height
         end
 
         def open_mmap filename, width, height
-          self.init_sdl SDL2::SDL_INIT_AUDIO
+          self.init_sdl 0
           SDLMmapContext.open filename, width, height
         end
       end
