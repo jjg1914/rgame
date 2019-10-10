@@ -17,7 +17,7 @@ class State
   attr_accessor :score
 
   def initialize
-    @balls = 1
+    @balls = 0
     @lives = 5
     @score = 0
   end
@@ -76,7 +76,6 @@ class StageEntity < RGame::Common::MapEntity
   end
 
   on :ballin do
-    @state.balls += 1
     _create_ball
   end
 
@@ -88,7 +87,6 @@ class StageEntity < RGame::Common::MapEntity
           self.broadcast(:gameover)
           self.remove
         else
-          self.timer.clear
           @player.clear_powerups
           @state.lives -= 1
           _create_ball
@@ -108,17 +106,16 @@ class StageEntity < RGame::Common::MapEntity
   end
 
   after :draw do |ctx|
-    sprite = RGame::Core::Sprite.load "ball"
     self.ctx.font = "PressStart2P-Regular:8"
     self.ctx.color = 0xFFFFFF
 
     if @state.lives > 5
       self.ctx.draw_text @state.lives.to_s.rjust(2, " "), 12, 12
 
-      self.ctx.source = sprite.image
+      self.ctx.source = "ball"
       self.ctx.draw_image self.width - 20, 11, 0, 0, 8, 8
     else
-      self.ctx.source = sprite.image
+      self.ctx.source = "ball"
       @state.lives.to_i.times do |i|
         self.ctx.draw_image self.width - (8 + ((i + 1) * 12)), 11, 0, 0, 8, 8
       end
@@ -152,6 +149,7 @@ class StageEntity < RGame::Common::MapEntity
       o.player = @player
       o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
       o.y_restrict = (playable_bounds["top"]..)
+      @state.balls += 1
     end
   end
 
@@ -193,6 +191,7 @@ end
 
 class BlockEntity < RGame::Common::SimpleEntity
   include RGame::Core::Savable
+  include RGame::Common::RandomHelpers
 
   savable [ :x, :y, :sprite_tag ]
 
@@ -207,11 +206,10 @@ class BlockEntity < RGame::Common::SimpleEntity
 
   on :ball_collision do
     self.broadcast :score, self.score
-    PowerupEntity.generate(self.ctx).tap do |o|
-      unless o.nil?
+    random_yield(0.20) do
+      self.parent.create(PowerupEntity) do |o|
         o.x = self.x
         o.y = self.y
-        self.parent.add(o)
       end
     end
     self.remove
@@ -315,9 +313,13 @@ class BallEntity < RGame::Common::SimpleEntity
     end
   end
 
-  collision(NilClass).respond("deflect")
+  collision(NilClass)
+    .respond("deflect")
+    .callback { |_e| self.ctx.play_sound("ball_hit") }
 
   collision(PlayerEntity).callback do |e|
+    self.ctx.play_sound("ball_player_hit")
+
     center_x = self.x + (self.width / 2)
     other_center_x = e.x + (e.width / 2)
     center_diff = (center_x - other_center_x) * (self.x_speed < 0 ? -1 : 1)
@@ -333,11 +335,15 @@ class BallEntity < RGame::Common::SimpleEntity
     .when { |_e| self.sprite_tag != "power_ball" }
     .emit(:ball_collision)
     .respond("deflect")
+    .callback { |_e| self.ctx.play_sound("ball_block_hit") }
 
   collision(BlockEntity)
     .when { |_e| self.sprite_tag == "power_ball" }
     .emit(:ball_collision)
-    .callback { |e, info| self.collision.deflect!(info) unless e.parent.nil? }
+    .callback do |e, info|
+      self.collision.deflect!(info) unless e.parent.nil?
+      self.ctx.play_sound("ball_block_hit")
+    end
 
   on :slow do
     self.timer.set_timer(5000, { "tag" => "powerup_slow" }) do
@@ -355,34 +361,20 @@ class BallEntity < RGame::Common::SimpleEntity
 end
 
 class PowerupEntity < RGame::Common::SimpleEntity
+  include RGame::Common::RandomHelpers
+
   FREQUENCIES = [
     [ "power_ball", 1 ],
     [ "1up", 1 ],
-    [ "extra_ball", 1 ],
-    [ "wide_paddle", 1 ],
-    [ "slow_ball", 1 ],
-    [ nil, 30 ],
+    [ "extra_ball", 2 ],
+    [ "wide_paddle", 2 ],
+    [ "slow_ball", 2 ],
   ]
-
-  def self.generate context
-    weight = FREQUENCIES.map { |e| e[1] }.sum
-    table = FREQUENCIES.map do |e|
-      [ e[0], e[1].to_f / weight.to_f]
-    end.reduce([]) do |m,v|
-      m + [ [ v[0], m.last&.last.to_f + v[1] ] ]
-    end
-
-    value = rand
-    index = table.find_index { |e| e[1] >= value }.to_i
-    unless table[index].first.nil?
-      self.new(context).tap { |o| o.sprite_tag = table[index].first }
-    end
-  end
 
   on :new do
     self.sprite = "powerup"
     self.y_speed = 48
-    self.sprite_tag = "power_ball"
+    self.sprite_tag = random_weights_yield(FREQUENCIES)
   end
 
   collision(PlayerEntity) do

@@ -24,43 +24,41 @@ module RGame
             self.clear_tag options["tag"]
             @tags[options["tag"]] = @timers.size
           end
-          @timers << millis << block
+          @timers << [ millis, block ]
           block
         end
 
         def poll_timer timer
-          index = @timers.find_index(timer)
-          @timer[index - 1] unless index.nil?
+          index = @timers.find_index { |o| o.last == timer }
+          @timers[index].first unless index.nil?
         end
 
         def poll_tag tag
           index = @tags[tag]
-          @timer[index] unless index.nil?
+          @timers[index].first unless index.nil?
         end
 
         def clear_timer timer
-          index = @timers.find_index(timer)
+          index = @timers.find_index { |o| o.last == timer }
           return if index.nil?
 
           @timers.delete_at(index)
-          @timers.delete_at(index - 1)
 
           tag = @tags.key(index - 1)
           return if tag.nil?
 
           @tags.delete(tag)
-          @tags.transform_values! { |e| e > index ? e - 2 : e }
+          @tags.transform_values! { |e| e > index ? e - 1 : e }
         end
 
         def clear_tag tag
           index = @tags[tag]
           return if index.nil?
 
-          @timers.delete_at(index + 1)
           @timers.delete_at(index)
 
           @tags.delete(tag)
-          @tags.transform_values! { |e| e > index ? e - 2 : e }
+          @tags.transform_values! { |e| e > index ? e - 1 : e }
         end
 
         def clear
@@ -75,11 +73,12 @@ module RGame
 
       on :interval do |dt|
         (0...self.timer.timers.size).step(2).select do |e|
-          self.timer.timers[e] -= dt
-          self.timer.timers[e] <= 0
+          self.timer.timers[e][0] -= dt
+          self.timer.timers[e][0] <= 0
         end.each do |e|
-          self.instance_exec(&self.timer.timers[e + 1])
-          self.timer.clear_timer self.timer.timers[e]
+          p = self.timer.timers[e][1]
+          self.instance_exec(&p)
+          self.timer.clear_timer p
         end
       end
     end

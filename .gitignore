@@ -5,10 +5,11 @@ tmp/
 vendor/
 coverage/
 doc/
-assets/manifest.yaml
-assets/sprites/*.json
-assets/sprites/*.png
-assets/tilesets/*.png
+**/assets/manifest.yaml
+**/assets/sprites/*.json
+**/assets/sprites/*.png
+**/assets/tilesets/*.png
+**/assets/sounds/*.wav
 .consolehst
 .yardoc
 .scannerwork/

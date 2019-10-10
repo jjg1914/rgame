@@ -153,7 +153,8 @@ module RGame
         :SDL_NUM_SCANCODES, 512,
       ]
 
-      SDL_INIT_VIDEO = 0x10
+      SDL_INIT_AUDIO = 0x10
+      SDL_INIT_VIDEO = 0x20
       SDL_WINDOW_SHOWN = 0x4
       SDL_WINDOW_OPENGL = 0x2
       SDL_RENDERER_ACCELERATED = 0x2
@@ -418,6 +419,37 @@ module RGame
       attach_function :IMG_Quit, [], :void
 
       IMG_INIT_PNG = 0x2
+    end
+
+    module SDL2Mixer
+      extend FFI::Library
+      ffi_lib "SDL2_mixer"
+
+      AUDIO_S16LSB = 0x8010
+      AUDIO_S16MSB = 0x9010
+
+      # NOTE Little endian only!
+      MIX_DEFAULT_FORMAT = AUDIO_S16LSB
+
+      callback :channel_finished, %i[int], :void
+
+      attach_function :Mix_Init, %i[int], :int
+      attach_function :Mix_Quit, %i[], :void
+      attach_function :Mix_OpenAudio, %i[int uint16 int int], :int
+      attach_function :Mix_CloseAudio, %i[], :void
+
+      attach_function :Mix_LoadWAV_RW, %i[pointer int], :pointer
+      attach_function :Mix_FreeChunk, %i[pointer], :void
+
+      attach_function :Mix_AllocateChannels, %i[int], :int
+
+      attach_function :Mix_PlayChannelTimed, %i[int pointer int int], :int
+      attach_function :Mix_Volume, %i[int int], :int
+      attach_function :Mix_Pause, %i[int], :void
+      attach_function :Mix_Resume, %i[int], :void
+      attach_function :Mix_HaltChannel, %i[int], :int
+      attach_function :Mix_Paused, %i[int], :int
+      attach_function :Mix_ChannelFinished, %i[channel_finished], :void
     end
 
     module SDL2TTF

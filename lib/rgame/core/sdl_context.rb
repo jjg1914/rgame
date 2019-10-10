@@ -338,9 +338,21 @@ module RGame
         end
       end
 
+      module AudioMethods
+        def play_sound sound, loops = 0
+          return unless @state.max_channels.positive?
+
+          chunk = @state.chunk_cache[sound]
+          channel = @state.channel
+
+          @mixer.play_sound channel, chunk, loops
+        end
+      end
+
       class << self
         def init_sdl
-          unless SDL2.SDL_Init(SDL2::SDL_INIT_VIDEO).zero?
+          sdl_flags = SDL2::SDL_INIT_VIDEO | SDL2::SDL_INIT_AUDIO
+          unless SDL2.SDL_Init(sdl_flags).zero?
             raise SDL2.SDL_GetError
           end
 
@@ -348,7 +360,14 @@ module RGame
             raise SDL2.SDL_GetError
           end
 
+          if SDL2Mixer.Mix_OpenAudio(44100,
+                                     SDL2Mixer::MIX_DEFAULT_FORMAT,
+                                     1, 2048).negative?
+            raise SDL2.SDL_GetError
+          end
+
           raise SDL2.SDL_GetError unless SDL2TTF.TTF_Init.zero?
+
         end
 
         def open_window title, width, height
@@ -371,6 +390,7 @@ module RGame
       include MonitorMixin
       include EventSource
       include DrawMethods
+      include AudioMethods
 
       extend Forwardable
       def_delegators :@stack, :save, :restore
@@ -382,6 +402,8 @@ module RGame
                      :scale, :scale=,
                      :scale_quality, :scale_quality=,
                      :font, :font=,
+                     :channel, :channel=,
+                     :max_channels, :max_channels=,
                      :text_input_mode, :text_input_mode=,
                      :clip_bounds, :clip_bounds=
 
@@ -389,6 +411,7 @@ module RGame
         super()
 
         @renderer = renderer
+        @mixer = Mixer.new 
 
         @mem_ints = 8.times.map { FFI::MemoryPointer.new(:int, 1) }
         @sdl_rects = 2.times.map { SDL2::SDLRect.new }
@@ -404,11 +427,14 @@ module RGame
           font
           text_input_mode
           clip_bounds
+          channel
+          max_channels
         ])
       end
 
       def close
         SDL2.SDL_DestroyRenderer @renderer unless @renderer.nil?
+        SDL2Mixer.Mix_CloseAudio
         SDL2TTF.TTF_Quit
         SDL2Image.IMG_Quit
         SDL2.SDL_Quit
@@ -590,8 +616,6 @@ module RGame
           SDL2.SDL_QueryTexture(texture, nil, nil, mem_ints[0], mem_ints[1])
           @width = mem_ints[0].get(:int, 0)
           @height = mem_ints[1].get(:int, 0)
-
-          ObjectSpace.define_finalizer(self, &self.method(:free))
         ensure
           mem_ints&.each { |e| e&.free }
         end
@@ -639,6 +663,81 @@ module RGame
           end
 
           SDL2.SDL_SetTextureBlendMode(@target, mode)
+        end
+      end
+
+      class Mixer
+        def initialize
+          @channels = {}
+          # this will get GC'd if we dont save it to an instance variable
+          @_channel_finished = self.method :_channel_finished
+          SDL2Mixer.Mix_ChannelFinished(@_channel_finished)
+        end
+
+        def play_sound channel, chunk, loops
+          channel = SDL2Mixer.Mix_PlayChannelTimed(channel, chunk, loops, -1)
+          Sound.new(channel).tap do |o|
+            @channels[channel] = o
+          end
+        end
+
+        private
+
+        def _channel_finished i
+          @channels[i]&.invalidate!
+          @channels.delete(i)
+        end
+      end
+
+      class Sound
+        def initialize channel
+          @channel = channel
+          @valid = true
+          self.volume = 64
+        end
+
+        def valid?
+          @valid
+        end
+
+        def invalidate!
+          @valid = false
+        end
+
+        def volume= value
+          throw "invalid" unless self.valid?
+
+          SDL2Mixer.Mix_Volume @channel, value
+        end
+
+        def volume
+          throw "invalid" unless self.valid?
+
+          SDL2Mixer.Mix_Volume @channel, -1
+        end
+
+        def halt
+          throw "invalid" unless self.valid?
+
+          SDL2Mixer.Mix_HaltChannel @channel
+        end
+
+        def pause
+          throw "invalid" unless self.valid?
+
+          SDL2Mixer.Mix_Pause  @channel
+        end
+
+        def resume
+          throw "invalid" unless self.valid?
+
+          SDL2Mixer.Mix_Resume @channel
+        end
+
+        def paused?
+          throw "invalid" unless self.valid?
+
+          SDL2Mixer.Mix_Paused(@channel) > 1
         end
       end
 
@@ -720,9 +819,30 @@ module RGame
         end
       end
 
+      module MixerState
+        def channel
+          @channel ||= -1
+        end
+
+        def channel= value
+          @channel = value.to_i
+        end
+
+        def max_channels
+          @max_channels ||= SDL2Mixer.Mix_AllocateChannels(-1)
+        end
+
+        def max_channels= value
+          return if value == @max_channels
+
+          SDL2Mixer.Mix_AllocateChannels value.to_i
+        end
+      end
+
       class StateHolder
         include TextInputState
         include FontState
+        include MixerState
 
         attr_reader :target
         attr_reader :source
@@ -734,6 +854,8 @@ module RGame
 
         attr_reader :color_struct
         attr_reader :source_image
+
+        attr_reader :chunk_cache
 
         def initialize renderer
           @renderer = renderer
@@ -748,6 +870,7 @@ module RGame
           @color_struct = SDL2::SDLColor.new
           @sdl_rect = SDL2::SDLRect.new
           @image_cache = Hash.new { |h, k| h[k] = _load_image(k) }
+          @chunk_cache = Hash.new { |h, k| h[k] = _load_chunk(k) }
 
           mem_int = FFI::MemoryPointer.new(:uint8, 4)
           SDL2.SDL_GetRenderDrawColor @renderer, mem_int, mem_int + 1,
@@ -857,6 +980,17 @@ module RGame
             o.name = File.basename(value)
             o.path = path
           end
+        end
+
+        def _load_chunk value
+          path = Env.sound_path.split(":").map do |e|
+            File.expand_path("%s.wav" % value, e.strip)
+          end.find do |e|
+            File.exist?(e)
+          end
+          raise "sound not found %s" % value.inspect if path.nil?
+
+          SDL2Mixer.Mix_LoadWAV_RW(SDL2.SDL_RWFromFile(path, "rb"), 1)
         end
 
         def _to_rgb rgb

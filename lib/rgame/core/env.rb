@@ -43,6 +43,14 @@ module RGame
         ENV.store("FONT_PATH", value)
       end
 
+      def sound_path
+        ENV.fetch("SOUNT_PATH", begin
+          [
+            File.join(assets_path, "sounds"),
+          ].join(File::PATH_SEPARATOR)
+        end)
+      end
+
       def image_path
         ENV.fetch("IMAGE_PATH", begin
           [

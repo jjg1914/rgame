@@ -60,10 +60,12 @@ module RGame
       class ContextConfig
         attr_accessor :scale
         attr_reader :scale_quality
+        attr_accessor :max_channels
 
         def initialize
           @scale = 1
           @scale_quality = 1
+          @max_channels = 64
         end
 
         def scale_quality= value
@@ -103,6 +105,7 @@ module RGame
       on :new do
         self.context.scale = self.class.context.scale
         self.context.scale_quality = self.class.context.scale_quality
+        self.context.max_channels = self.class.context.max_channels
       end
 
       after :interval do

@@ -1,14 +1,14 @@
-Add SDL_FontCache +render
-Draw Cached Text +render
+x Add SDL_FontCache +render
+x Draw Cached Text +render
 Swap SDL for SDL_gpu +render
 Add Batch Rendering to context +render
 Support Batch Rendering in SpriteAspect +render
 
 Stringify all event names +arch
 Support Arena Allocation for entities +arch
+Add finalizers/free memory +arch
 
 x Add Codcov +quality
-Add Renovate +quality
 x Code coverage badge +quality
 x Code quality badge +quality
 
@@ -16,3 +16,7 @@ CollisionInfo/ReverseCollisionInfo should take bounds only +collision
 
 Timer DSL +timer
 Entity Tagging DSL +common
+
+Key event DSL +input
+Follow Entity DSL +movement
+Wraparound +render
