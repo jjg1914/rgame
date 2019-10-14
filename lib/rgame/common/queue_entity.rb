@@ -14,7 +14,7 @@ module RGame
         @children.push target
 
         target.parent = self
-        target.emit(:enqueue)
+        target.emit "enqueue"
       end
 
       def create klass
@@ -25,12 +25,12 @@ module RGame
       end
 
       def dequeue
-        self.peek&.emit(:dequeue)
+        self.peek&.emit "dequeue"
         self.peek&.parent = nil
 
         @children.shift
 
-        self.emit(:empty) if self.empty?
+        self.emit "empty" if self.empty?
       end
 
       def peek

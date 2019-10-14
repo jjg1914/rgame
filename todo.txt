@@ -4,7 +4,7 @@ Swap SDL for SDL_gpu +render
 Add Batch Rendering to context +render
 Support Batch Rendering in SpriteAspect +render
 
-Stringify all event names +arch
+x Stringify all event names +arch
 Support Arena Allocation for entities +arch
 Add finalizers/free memory +arch
 

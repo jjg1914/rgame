@@ -167,11 +167,11 @@ module RGame
 
       attr_reader :controls
 
-      on :new do
+      on "new" do
         @controls = RGame::Common::ControlsAspect::Component.new self
       end
 
-      on :keydown do |key|
+      on "keydown" do |key|
         self.controls.activate_by_key(key).each do |_k, v|
           self.x_speed += v.x_speed
           self.y_speed += v.y_speed
@@ -180,7 +180,7 @@ module RGame
         end
       end
 
-      on :keyup do |key|
+      on "keyup" do |key|
         self.controls.deactivate_by_key(key).each do |_k, v|
           self.x_speed -= v.x_speed
           self.y_speed -= v.y_speed
@@ -189,7 +189,7 @@ module RGame
         end
       end
 
-      on :collision_bump do |_other, info|
+      on "collision_bump" do |_other, info|
         self.controls.deactivate_by_normal(info.normal).each do |_k, v|
           self.x_speed -= v.x_speed if info.normal[0].zero?
           self.y_speed -= v.y_speed if info.normal[1].zero?

@@ -67,11 +67,11 @@ module RGame
         end
       end
 
-      on :new do
+      on "new" do
         @timer = Component.new self
       end
 
-      on :interval do |dt|
+      on "interval" do |dt|
         (0...self.timer.timers.size).step(2).select do |e|
           self.timer.timers[e][0] -= dt
           self.timer.timers[e][0] <= 0

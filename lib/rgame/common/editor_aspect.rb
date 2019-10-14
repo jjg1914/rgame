@@ -17,7 +17,7 @@ module RGame
       module NewEntityModeAspect
         include RGame::Core::Aspect
 
-        on :commit do |value|
+        on "commit" do |value|
           next unless self.edit_mode == :new_entity
 
           entity = self.parent.create(value) do |o|
@@ -44,7 +44,7 @@ module RGame
       module EditEntityModeAspect
         include RGame::Core::Aspect
 
-        on :commit do |value|
+        on "commit" do |value|
           next unless self.edit_mode == :edit_entity
 
           if self.selected.empty?
@@ -82,7 +82,7 @@ module RGame
 
         attr_accessor :selected
 
-        before :keydown do |key, mod|
+        before "keydown" do |key, mod|
           next unless self.edit_mode == :default
 
           case key
@@ -103,7 +103,7 @@ module RGame
           end
         end
 
-        on :keyrepeat do |key, mod|
+        on "keyrepeat" do |key, mod|
           next unless self.edit_mode == :default
 
           case key
@@ -114,7 +114,7 @@ module RGame
           end
         end
 
-        on :keyup do |key, mod|
+        on "keyup" do |key, mod|
           next unless self.edit_mode == :default
 
           case key
@@ -126,7 +126,7 @@ module RGame
           end
         end
 
-        on :mouseup do |x, y, button, mod|
+        on "mouseup" do |x, y, button, mod|
           next unless self.edit_mode == :default
 
           if button == "left"
@@ -260,7 +260,7 @@ module RGame
         attr_accessor :cursor
         attr_accessor :cursor_inflate
 
-        before :keydown do |key, mod|
+        before "keydown" do |key, mod|
           next unless self.edit_mode == :default
 
           case key
@@ -273,7 +273,7 @@ module RGame
           end
         end
 
-        before :keyrepeat do |key, mod|
+        before "keyrepeat" do |key, mod|
           next unless self.edit_mode == :default
 
           case key
@@ -286,7 +286,7 @@ module RGame
           end
         end
 
-        on :mouseup do |x, y, button, mod|
+        on "mouseup" do |x, y, button, mod|
           next unless self.edit_mode == :default
 
           self.put_cursor x, y if button == "left" and not mod.ctrl
@@ -331,7 +331,7 @@ module RGame
       module FileSaveOpenAspect
         include RGame::Core::Aspect
 
-        on :commit do |value|
+        on "commit" do |value|
           case self.edit_mode
           when :save
             File.write(value, JSON.pretty_generate({
@@ -351,7 +351,7 @@ module RGame
           end
         end
 
-        before :keydown do |key, mod|
+        before "keydown" do |key, mod|
           next unless self.edit_mode == :default
 
           case key
@@ -401,11 +401,11 @@ module RGame
         include CursorAspect
         include FileSaveOpenAspect
 
-        on :commit do |_|
+        on "commit" do |_|
           self.enable_edit_mode
         end
 
-        before :keydown do |key, mod|
+        before "keydown" do |key, mod|
           if self.edit_mode == :default
             case key
             when "enter", "return"
@@ -428,13 +428,13 @@ module RGame
           end
         end
 
-        before :mouseup do |_x, _y, button, _|
+        before "mouseup" do |_x, _y, button, _|
           next unless self.edit_mode == :default
 
           self.enable_edit_mode if button == "left"
         end
 
-        on :draw do
+        on "draw" do
           next unless self.edit_mode
 
           self.ctx.renderer.color = 0xD602DD
@@ -495,21 +495,21 @@ module RGame
         end
       end
 
-      on :new do
+      on "new" do
         @editor_state = self.make(EditorState) do |o|
           o.collection = self.children
           o.parent = self
         end
       end
 
-      on :keydown do |key, _|
+      on "keydown" do |key, _|
         if key == "f1"
           @editor_state.toggle_edit_mode
           stop!
         end
       end
 
-      before :interval do
+      before "interval" do
         stop! if @editor_state.edit_mode
       end
 

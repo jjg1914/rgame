@@ -180,15 +180,15 @@ module RGame
 
       attr_reader :collision
 
-      on :new do
+      on "new" do
         @collision = RGame::Common::CollisionAspect::Component.new self
       end
 
-      on :collision_mark do |data|
+      on "collision_mark" do |data|
         data.add(self)
       end
 
-      around :collision_sweep do |p, data|
+      around "collision_sweep" do |p, data|
         next p.call unless self.class.collision.check_collisions?
 
         self.collision.clear
@@ -197,11 +197,11 @@ module RGame
 
         data.query(self).each do |e|
           info = RGame::Core::Collision::CollisionInfo.new(self, e)
-          self.emit(:collision, e, info)
+          self.emit "collision", e, info
         end
       end
 
-      on :collision do |e, info|
+      on "collision" do |e, info|
         self.class.collision.select { |f| f.call(self, e, info) }.each do |f|
           if f.response.nil?
             f.call_emit self, e
@@ -212,7 +212,7 @@ module RGame
         end
       end
 
-      on :collision_resolve do
+      on "collision_resolve" do
         unless self.collision.empty?
           bump = self.collision.min_by { |e| e[2].time }
 
@@ -227,7 +227,7 @@ module RGame
 
           bump[0].call_emit self, bump[1]
           bump[0].callback self, bump[1], bump[2]
-          self.emit :collision_bump, bump[1], bump[2]
+          self.emit "collision_bump", bump[1], bump[2]
         end
       end
     end

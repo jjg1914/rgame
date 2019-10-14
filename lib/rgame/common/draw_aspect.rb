@@ -66,7 +66,7 @@ module RGame
         @stroke_color = DrawAspect.parse_color(value)
       end
 
-      on :draw do
+      on "draw" do
         unless self.fill_color.nil?
           self.ctx.color = self.fill_color
           self.ctx.fill_rect x.to_i, y.to_i, width.to_i, height.to_i

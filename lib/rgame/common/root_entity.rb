@@ -150,23 +150,23 @@ module RGame
       # rubocop:enable Metrics/CyclomaticComplexity
 
       def event_loop_keyup event
-        self.emit :keyup, event.key, event.modifiers
+        self.emit "keyup", event.key, event.modifiers
       end
 
       def event_loop_keydown event
-        self.emit :keydown, event.key, event.modifiers
+        self.emit "keydown", event.key, event.modifiers
       end
 
       def event_loop_keyrepeat event
-        self.emit :keyrepeat, event.key, event.modifiers
+        self.emit "keyrepeat", event.key, event.modifiers
       end
 
       def event_loop_textinput event
-        self.emit :textinput, event.text
+        self.emit "textinput", event.text
       end
 
       def event_loop_interval event
-        self.emit :interval, event.dt
+        self.emit "interval", event.dt
       end
 
       def event_loop_mousemove event
@@ -177,7 +177,7 @@ module RGame
       end
 
       def event_loop_mouseup event
-        self.emit :mouseup,
+        self.emit "mouseup",
                   (event.x / self.context.scale[0]).to_i,
                   (event.y / self.context.scale[1]).to_i,
                   event.button, event.modifiers

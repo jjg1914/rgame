@@ -17,7 +17,7 @@ module RGame
         attr_accessor :background
         attr_accessor :highlight
 
-        on :new do
+        on "new" do
           self.x = 0
           self.y = 0
           self.padding = 4
@@ -26,7 +26,7 @@ module RGame
           self.highlight = 0x224df9
         end
 
-        on :remove do
+        on "remove" do
           self.blur
         end
 
@@ -46,31 +46,31 @@ module RGame
       class Container < CollectionEntity
         attr_reader :focused
 
-        on :keydown do |key, mod|
+        on "keydown" do |key, mod|
           unless self.focused.nil?
-            self.focused.emit(:keydown, key, mod)
+            self.focused.emit "keydown", key, mod
             stop!
           end
         end
 
-        on :keyrepeat do |key, mod|
+        on "keyrepeat" do |key, mod|
           unless self.focused.nil?
-            self.focused.emit(:keyrepeat, key, mod)
+            self.focused.emit "keyrepeat", key, mod
             stop!
           end
         end
 
-        on :keyup do |key, mod|
+        on "keyup" do |key, mod|
           next if self.focused.nil?
 
-          self.focused.emit(:keyup, key, mod)
+          self.focused.emit "keyup", key, mod
           stop!
         end
 
         def focused= value
-          self.focused&.emit :blur
+          self.focused&.emit "blur"
           @focused = value
-          self.focused&.emit :focus
+          self.focused&.emit "focus"
         end
       end
 
@@ -80,7 +80,7 @@ module RGame
 
           attr_accessor :cursor
 
-          on :keydown do |key, mod|
+          on "keydown" do |key, mod|
             case key
             when "left", "right"
               if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.alt) or
@@ -107,7 +107,7 @@ module RGame
             end
           end
 
-          on :keyrepeat do |key, mod|
+          on "keyrepeat" do |key, mod|
             case key
             when "left", "right"
               if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.alt) or
@@ -213,7 +213,7 @@ module RGame
 
           attr_accessor :selection
 
-          on :keydown do |key, mod|
+          on "keydown" do |key, mod|
             case key
             when "a"
               if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.super) or
@@ -233,7 +233,7 @@ module RGame
         module CopyPasteAspect
           include RGame::Core::Aspect
 
-          on :keydown do |key, mod|
+          on "keydown" do |key, mod|
             case key
             when "x"
               if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.super) or
@@ -283,12 +283,12 @@ module RGame
         module UndoRedoAspect
           include RGame::Core::Aspect
 
-          on :new do
+          on "new" do
             @undo_stack = []
             @undo_pointer = 0
           end
 
-          on :keydown do |key, mod|
+          on "keydown" do |key, mod|
             case key
             when "z"
               if !(/darwin/ =~ RUBY_PLATFORM).nil? and mod.super
@@ -412,7 +412,7 @@ module RGame
         module EraseAspect
           include RGame::Core::Aspect
 
-          on :keydown do |key, mod|
+          on "keydown" do |key, mod|
             case key
             when "backspace"
               if not self.selection.nil?
@@ -435,7 +435,7 @@ module RGame
             end
           end
 
-          on :keyrepeat do |key, mod|
+          on "keyrepeat" do |key, mod|
             case key
             when "backspace"
               if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.alt) or
@@ -523,7 +523,7 @@ module RGame
             self.ctx.events.text_input_mode = false
           end
 
-          on :textinput do |text|
+          on "textinput" do |text|
             self.textinput text
           end
 
@@ -600,22 +600,22 @@ module RGame
         attr_reader :text
         attr_accessor :mode
 
-        on :new do
+        on "new" do
           self.text = String.new # literals are frozen
           self.cursor = 0
           self.mode = :insert
         end
 
-        on :keydown do |key, _|
+        on "keydown" do |key, _|
           case key
           when "enter", "return"
-            self.broadcast :commit, self.text
+            self.broadcast "commit", self.text
           when "insert"
             self.toggle_mode
           end
         end
 
-        on :draw do
+        on "draw" do
           self.paint self.ctx
         end
 
@@ -772,7 +772,7 @@ module RGame
 
           attr_accessor :cursor
 
-          on :keydown do |key, _|
+          on "keydown" do |key, _|
             case key
             when "up", "down"
               self.cursor_move key
@@ -781,7 +781,7 @@ module RGame
             end
           end
 
-          on :keyrepeat do |key, _|
+          on "keyrepeat" do |key, _|
             case key
             when "up", "down"
               self.cursor_move key
@@ -882,7 +882,7 @@ module RGame
         attr_accessor :view_size
         attr_accessor :view_position
 
-        on :new do
+        on "new" do
           self.x = 0
           self.y = 0
           self.items = []
@@ -891,14 +891,14 @@ module RGame
           self.view_position = 0
         end
 
-        on :keydown do |key, _|
+        on "keydown" do |key, _|
           case key
           when "enter", "return"
-            self.broadcast :commit, self.items[self.cursor]
+            self.broadcast "commit", self.items[self.cursor]
           end
         end
 
-        on :draw do
+        on "draw" do
           self.paint self.ctx
         end
 

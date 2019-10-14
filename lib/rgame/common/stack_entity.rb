@@ -14,7 +14,7 @@ module RGame
         @children.push target
 
         target.parent = self
-        target.emit(:push)
+        target.emit "push"
       end
 
       def create klass
@@ -25,12 +25,12 @@ module RGame
       end
 
       def pop
-        self.peek&.emit(:pop)
+        self.peek&.emit "pop"
         self.peek&.parent = nil
 
         @children.pop
 
-        self.emit(:empty) if self.empty?
+        self.emit "empty" if self.empty?
       end
 
       def swap target

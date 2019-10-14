@@ -25,7 +25,7 @@ module RGame
         @children.unshift target
 
         target.parent = self
-        target.emit(:add)
+        target.emit "add"
       end
 
       def add_back target
@@ -35,7 +35,7 @@ module RGame
         @children.push target
 
         target.parent = self
-        target.emit(:add)
+        target.emit "add"
       end
 
       alias add add_back
@@ -56,7 +56,7 @@ module RGame
           super()
         else
           index = @index.fetch target.id
-          @children[index].emit(:remove)
+          @children[index].emit "remove"
           @children[index].parent = nil
 
           @children.delete_at(index)

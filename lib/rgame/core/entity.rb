@@ -20,23 +20,23 @@ module RGame
         end
 
         def push message, callable
-          own[message.to_sym].push(callable)
+          own[message.to_s].push(callable)
           rebuild_handler_cache
 
           proc do
-            own[message.to_sym].delete(callable)
+            own[message.to_s].delete(callable)
             rebuild_handler_cache
           end
         end
 
         def unshift message, callable
-          own[message.to_sym].unshift(callable)
-          push_index[message.to_sym] += 1
+          own[message.to_s].unshift(callable)
+          push_index[message.to_s] += 1
           rebuild_handler_cache
 
           proc do
-            own[message.to_sym].delete(callable)
-            push_index[message.to_sym] -= 1
+            own[message.to_s].delete(callable)
+            push_index[message.to_s] -= 1
             rebuild_handler_cache
           end
         end
@@ -63,7 +63,7 @@ module RGame
         attr_reader :handlers
 
         def on message, &block
-          @handlers.push(message.to_sym, proc do |p, rcv, *args|
+          @handlers.push(message.to_s, proc do |p, rcv, *args|
             rcv.instance_exec(*args, &block)
             p.call
           end)
@@ -84,7 +84,7 @@ module RGame
         end
 
         def around message, &block
-          @handlers.unshift(message.to_sym, proc do |p, rcv, *args|
+          @handlers.unshift(message.to_s, proc do |p, rcv, *args|
             rcv.instance_exec(p, *args, &block)
           end)
         end
@@ -92,7 +92,7 @@ module RGame
         def deliver reciever, message, *args
           return unless reciever.active?
 
-          message = message.to_sym
+          message = message.to_s
           catch(:stop!) do
             target = 0
             index = 0

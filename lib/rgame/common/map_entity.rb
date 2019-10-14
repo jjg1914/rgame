@@ -23,10 +23,10 @@ module RGame
 
       attr_reader :map
 
-      after :interval do
-        self.emit :collision_mark, @collision
-        self.emit :collision_sweep, @collision
-        self.emit :collision_resolve, @collision
+      after "interval" do
+        self.emit "collision_mark", @collision
+        self.emit "collision_sweep", @collision
+        self.emit "collision_resolve", @collision
         @collision.clear
       end
 
@@ -51,7 +51,7 @@ module RGame
           self.add_front RGame::Core::Savable.load(e, self.ctx)
         end
 
-        self.emit :mapupdate
+        self.emit "mapupdate"
       end
     end
   end

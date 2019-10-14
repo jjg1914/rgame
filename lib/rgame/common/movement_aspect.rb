@@ -14,7 +14,7 @@ module RGame
       attr_accessor :x_change
       attr_accessor :y_change
 
-      on :new do
+      on "new" do
         self.x_subpixel = 0
         self.y_subpixel = 0
         self.x_speed = 0
@@ -23,7 +23,7 @@ module RGame
         self.y_change = 0
       end
 
-      on :interval do |dt|
+      on "interval" do |dt|
         self.x_subpixel += x_speed * dt
         self.y_subpixel += y_speed * dt
 

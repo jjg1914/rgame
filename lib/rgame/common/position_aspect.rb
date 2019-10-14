@@ -12,7 +12,7 @@ module RGame
       attr_accessor :width
       attr_accessor :height
 
-      on :new do
+      on "new" do
         self.x = 0
         self.y = 0
         self.width = 0

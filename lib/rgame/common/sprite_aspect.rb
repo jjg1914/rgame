@@ -78,13 +78,13 @@ module RGame
         self.height = self.sprite.height
       end
 
-      on :new do
+      on "new" do
         self.sprite_frame = 0
         self.sprite_key = 0
         self.sprite_translate = 0
       end
 
-      on :interval do |dt|
+      on "interval" do |dt|
         unless self.sprite.nil?
           key = self.sprite_key + dt
 

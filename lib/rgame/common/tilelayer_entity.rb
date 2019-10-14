@@ -16,11 +16,11 @@ module RGame
 
       savable %i[tileset data]
 
-      on :new do
+      on "new" do
         @data = []
       end
 
-      on :draw do
+      on "draw" do
         self.ctx.draw_texture(@texture, 0, 0)
       end
 
