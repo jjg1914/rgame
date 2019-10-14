@@ -11,26 +11,6 @@ WINDOW_HEIGHT = STAGE_HEIGHT * SCALE_FACTOR
 VIEW_WIDTH = WINDOW_WIDTH / SCALE_FACTOR
 VIEW_HEIGHT = WINDOW_HEIGHT / SCALE_FACTOR
 
-class State
-  attr_reader :lives
-  attr_reader :balls
-  attr_accessor :score
-
-  def initialize
-    @balls = 0
-    @lives = 5
-    @score = 0
-  end
-
-  def lives= value
-    @lives = [ [ value.to_i, 0 ].max, 99 ].min
-  end
-
-  def balls= value
-    @balls = [ [ value.to_i, 0 ].max, 4 ].min
-  end
-end
-
 class RGame::Common::RootEntity
   window.title = "Arkanoid"
   window.size = [ WINDOW_WIDTH, WINDOW_HEIGHT ]
@@ -50,13 +30,7 @@ class RGame::Common::RootEntity
 
     case key
     when "enter", "return"
-      self.create(RGame::Common::QueueEntity) do |o|
-        %w[stage1 stage2].each do |e|
-          o.create(StageEntity) { |u| u.map = e }
-        end
-
-        o.on(:empty) { self.parent.pop }
-      end
+      self.create(StageEntity)
     end
   end
 
@@ -66,11 +40,20 @@ class RGame::Common::RootEntity
 end
 
 class StageEntity < RGame::Common::MapEntity
+  STAGE_LIST = %w[stage1 stage2] 
+
   include RGame::Common::EditorAspect
   include RGame::Common::TimerAspect
 
+  on :new do
+    @stage_index = 0
+    @lives = 0
+    @score = 0
+
+    self.map = STAGE_LIST[@stage_index]
+  end
+
   on :mapupdate do
-    @state = State.new
     @player = _create_player
     _create_ball
   end
@@ -80,29 +63,37 @@ class StageEntity < RGame::Common::MapEntity
   end
 
   on :ballout do
-    @state.balls -= 1
-    if @state.balls == 0
-      self.timer.set_timer(1000) do
-        if @state.lives <= 0
-          self.broadcast(:gameover)
-          self.remove
-        else
-          @player.clear_powerups
-          @state.lives -= 1
-          _create_ball
-        end
+    next unless _ball_count.zero?
+
+    self.timer.set_timer(1000) do
+      if @lives <= 0
+        self.broadcast(:gameover)
+        self.remove
+      else
+        @player.clear_powerups
+        @lives -= 1
+        _create_ball
       end
     end
   end
 
   on :livesup do |count|
-    @state.lives + count
+    @lives += count
   end
 
   on :score do |value|
-    @state.score += value
+    @score += value
 
-    self.timer.set_timer(1000) { self.parent.dequeue } if _block_count.zero?
+    next unless _block_count.zero?
+    self.timer.set_timer(1000) do
+      @stage_index += 1
+
+      if @stage_index >= STAGE_LIST.size
+        self.parent.pop
+      else
+        self.map = STAGE_LIST[@stage_index]
+      end
+    end
   end
 
   after "draw" do
@@ -150,7 +141,6 @@ class StageEntity < RGame::Common::MapEntity
       o.player = @player
       o.x_restrict = (playable_bounds["left"]..playable_bounds["right"])
       o.y_restrict = (playable_bounds["top"]..)
-      @state.balls += 1
     end
   end
 
@@ -158,6 +148,10 @@ class StageEntity < RGame::Common::MapEntity
     self.children.count do |e|
       e.is_a?(BlockEntity) and not e.is_a?(InvincibleBlockEntity)
     end
+  end
+
+  def _ball_count
+    self.children.count { |e| e.is_a?(BallEntity) }
   end
 end
 
@@ -299,8 +293,8 @@ class BallEntity < RGame::Common::SimpleEntity
       end
     else
       if self.y > STAGE_HEIGHT
-        self.broadcast(:ballout)
         self.remove
+        self.broadcast(:ballout)
       end
     end
   end
