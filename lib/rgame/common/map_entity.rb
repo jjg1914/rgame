@@ -30,9 +30,9 @@ module RGame
         @collision.clear
       end
 
-      on :draw do
-        self.ctx.color = @map.background
-        self.ctx.clear
+      on "draw" do
+        self.ctx.renderer.color = @map.background
+        self.ctx.renderer.clear
       end
 
       def map= value

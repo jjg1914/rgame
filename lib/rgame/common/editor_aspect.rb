@@ -437,19 +437,19 @@ module RGame
         on :draw do
           next unless self.edit_mode
 
-          self.ctx.color = 0xD602DD
+          self.ctx.renderer.color = 0xD602DD
 
           @collection.each_with_index do |e, i|
             if e.is_a? RGame::Common::PositionAspect
               if self.selected.include? i
                 self.ctx.save do
-                  self.ctx.color = 0x00E08E
-                  self.ctx.stroke_rect e.x.to_i, e.y.to_i,
-                                       e.width.to_i, e.height.to_i
+                  self.ctx.renderer.color = 0x00E08E
+                  self.ctx.renderer.stroke_rect e.x.to_i, e.y.to_i,
+                                                e.width.to_i, e.height.to_i
                 end
               else
-                self.ctx.stroke_rect e.x.to_i, e.y.to_i,
-                                     e.width.to_i, e.height.to_i
+                self.ctx.renderer.stroke_rect e.x.to_i, e.y.to_i,
+                                              e.width.to_i, e.height.to_i
               end
             end
           end
@@ -460,8 +460,8 @@ module RGame
             w = 8 + self.cursor_inflate[0].abs
             h = 8 + self.cursor_inflate[1].abs
 
-            self.ctx.color = 0xFFFFFF
-            self.ctx.stroke_rect x, y, w, h
+            self.ctx.renderer.color = 0xFFFFFF
+            self.ctx.renderer.stroke_rect x, y, w, h
           end
         end
 

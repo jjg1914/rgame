@@ -95,11 +95,13 @@ module RGame
         end
       end
 
-      on :draw do
-        self.ctx.source = self.sprite.image
-        self.ctx.draw_image(x.to_i + self.sprite_translate[0],
-                            y.to_i + self.sprite_translate[1],
-                            *self.sprite.at(self.sprite_tag, self.sprite_frame))
+      on "draw" do
+        at = self.sprite.at(self.sprite_tag, self.sprite_frame)
+
+        self.ctx.renderer.source = self.sprite.image
+        self.ctx.renderer.draw_image(x.to_i + self.sprite_translate[0],
+                                     y.to_i + self.sprite_translate[1],
+                                     *at)
       end
 
       def to_h

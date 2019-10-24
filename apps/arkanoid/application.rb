@@ -105,23 +105,24 @@ class StageEntity < RGame::Common::MapEntity
     self.timer.set_timer(1000) { self.parent.dequeue } if _block_count.zero?
   end
 
-  after :draw do |ctx|
-    self.ctx.font = "PressStart2P-Regular:8"
-    self.ctx.color = 0xFFFFFF
+  after "draw" do
+    self.ctx.renderer.font = "PressStart2P-Regular:8"
+    self.ctx.renderer.color = 0xFFFFFF
 
-    if @state.lives > 5
-      self.ctx.draw_text @state.lives.to_s.rjust(2, " "), 12, 12
+    if @lives > 5
+      self.ctx.renderer.draw_text @lives.to_s.rjust(2, " "), 12, 12
 
-      self.ctx.source = "ball"
-      self.ctx.draw_image self.width - 20, 11, 0, 0, 8, 8
+      self.ctx.renderer.source = "ball"
+      self.ctx.renderer.draw_image self.width - 20, 11, 0, 0, 8, 8
     else
-      self.ctx.source = "ball"
-      @state.lives.to_i.times do |i|
-        self.ctx.draw_image self.width - (8 + ((i + 1) * 12)), 11, 0, 0, 8, 8
+      self.ctx.renderer.source = "ball"
+      @lives.to_i.times do |i|
+        self.ctx.renderer.draw_image self.width - (8 + ((i + 1) * 12)), 11,
+                                     0, 0, 8, 8
       end
     end
 
-    self.ctx.draw_text @state.score.to_s.rjust(6, "0"), 12, 12
+    self.ctx.renderer.draw_text @score.to_s.rjust(6, "0"), 12, 12
   end
 
   def playable_bounds
@@ -261,7 +262,7 @@ class MovingBlockEntity < BlockEntity
 
   around :draw do |p|
     self.ctx.save do
-      self.ctx.clip_bounds = self.parent.playable_bounds
+      self.renderer.ctx.clip_bounds = self.parent.playable_bounds
       p.call
     end
   end
@@ -315,10 +316,10 @@ class BallEntity < RGame::Common::SimpleEntity
 
   collision(NilClass)
     .respond("deflect")
-    .callback { |_e| self.ctx.play_sound("ball_hit") }
+    .callback { |_e| self.ctx.mixer.play_effect("ball_hit") }
 
   collision(PlayerEntity).callback do |e|
-    self.ctx.play_sound("ball_player_hit")
+    self.ctx.mixer.play_effect("ball_player_hit")
 
     center_x = self.x + (self.width / 2)
     other_center_x = e.x + (e.width / 2)
@@ -335,14 +336,14 @@ class BallEntity < RGame::Common::SimpleEntity
     .when { |_e| self.sprite_tag != "power_ball" }
     .emit(:ball_collision)
     .respond("deflect")
-    .callback { |_e| self.ctx.play_sound("ball_block_hit") }
+    .callback { |_e| self.ctx.mixer.play_effect("ball_block_hit") }
 
   collision(BlockEntity)
     .when { |_e| self.sprite_tag == "power_ball" }
     .emit(:ball_collision)
     .callback do |e, info|
       self.collision.deflect!(info) unless e.parent.nil?
-      self.ctx.play_sound("ball_block_hit")
+      self.ctx.mixer.play_effect("ball_block_hit")
     end
 
   on :slow do

@@ -44,16 +44,16 @@ module RGame
         end
 
         def open_window!
-          RGame::Core::SDLContext.open_window(self.title, *self.size)
+          RGame::Core::SDLContext::SDLWindowContext.new(self.title, *self.size)
         end
 
         def open_software!
-          RGame::Core::SDLContext.open_software(*self.size)
+          RGame::Core::SDLContext::SDLSoftwareContext.new(*self.size)
         end
 
         def open_mmap!
-          RGame::Core::SDLContext.open_mmap(RGame::Core::Env.mmap_file,
-                                            *self.size)
+          path = RGame::Core::Env.mmap_file
+          RGame::Core::SDLContext::SDLMmapContext.new(path, *self.size)
         end
       end
 
@@ -102,23 +102,24 @@ module RGame
       @window = WindowConfig.new
       @context = ContextConfig.new
 
-      on :new do
-        self.context.scale = self.class.context.scale
-        self.context.scale_quality = self.class.context.scale_quality
-        self.context.max_channels = self.class.context.max_channels
+      on "new" do
+        self.context.renderer.scale = self.class.context.scale
+        self.context.renderer.scale_quality = self.class.context.scale_quality
+        self.context.mixer.max_channels = self.class.context.max_channels
       end
 
-      after :interval do
-        self.emit :draw
-        self.ctx.present
+      after "interval" do
+        self.emit "draw"
+        self.ctx.renderer.present
       end
 
       def self.run!
         self.new(self.window.open!).tap do |o|
           o.instance_eval do
-            emit :start
-            context.each(60) { |e| event_loop_step(e) }
-            emit :end
+            self.emit "start"
+            context.events.each(60) { |e| event_loop_step(e) }
+            self.emit "end"
+            context.close
           end
         end
       end
@@ -169,9 +170,9 @@ module RGame
       end
 
       def event_loop_mousemove event
-        self.emit :mousemove,
-                  (event.x / self.context.scale[0]).to_i,
-                  (event.y / self.context.scale[1]).to_i,
+        self.emit "mousemove",
+                  (event.x / self.context.renderer.scale[0]).to_i,
+                  (event.y / self.context.renderer.scale[1]).to_i,
                   event.modifiers
       end
 
@@ -183,9 +184,9 @@ module RGame
       end
 
       def event_loop_mousedown event
-        self.emit :mousedown,
-                  (event.x / self.context.scale[0]).to_i,
-                  (event.y / self.context.scale[1]).to_i,
+        self.emit "mousedown",
+                  (event.x / self.context.renderer.scale[0]).to_i,
+                  (event.y / self.context.renderer.scale[1]).to_i,
                   event.button, event.modifiers
       end
     end

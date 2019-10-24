@@ -12,9 +12,9 @@ module RGame
 
       savable :image
 
-      on :draw do
-        self.ctx.source = self.image
-        self.ctx.draw_image(0, 0)
+      on "draw" do
+        self.ctx.renderer.source = self.image
+        self.ctx.renderer.draw_image(0, 0)
       end
 
       def to_h

@@ -515,12 +515,12 @@ module RGame
         module TextInputAspect
           include RGame::Core::Aspect
 
-          on :focus do
-            self.ctx.text_input_mode = true
+          on "focus" do
+            self.ctx.events.text_input_mode = true
           end
 
-          on :blur do
-            self.ctx.text_input_mode = false
+          on "blur" do
+            self.ctx.events.text_input_mode = false
           end
 
           on :textinput do |text|
@@ -554,7 +554,7 @@ module RGame
 
             while left < right
               mid = (((right - left) / 2.0) + left).floor
-              fit_sizing = ctx.size_of_text(text.slice(mid..cursor))
+              fit_sizing = ctx.renderer.size_of_text(text.slice(mid..cursor))
               if fit_sizing[0] < sizing[0]
                 right = mid
               else
@@ -576,7 +576,7 @@ module RGame
 
             while left < right
               mid = (((right - left) / 2.0) + left).floor
-              fit_sizing = ctx.size_of_text(text.slice(init..mid))
+              fit_sizing = ctx.renderer.size_of_text(text.slice(init..mid))
               if fit_sizing[0] < sizing[0]
                 left = mid + 1
               else
@@ -632,27 +632,27 @@ module RGame
 
         def paint ctx
           ctx.save do
-            ctx.font = "Arial:10"
+            ctx.renderer.font = "Arial:10"
 
             sizings = _calculate_sizing ctx, self.text
             draw_width = sizings[0] + (self.padding * 2)
             draw_height = sizings[1] + (self.padding * 2)
 
-            ctx.color = self.background
-            ctx.fill_rect self.x, self.y, draw_width, draw_height
+            ctx.renderer.color = self.background
+            ctx.renderer.fill_rect self.x, self.y, draw_width, draw_height
 
-            ctx.color = self.color
+            ctx.renderer.color = self.color
             image = _text_image ctx, text, sizings
 
             _paint_selection ctx
 
-            ctx.color = self.color
-            ctx.source = image
-            ctx.draw_image self.x + self.padding, self.y + self.padding
+            ctx.renderer.color = self.color
+            ctx.renderer.source = image
+            ctx.renderer.draw_image self.x + self.padding, self.y + self.padding
 
             _paint_cursor ctx, sizings
 
-            ctx.stroke_rect self.x, self.y, draw_width, draw_height
+            ctx.renderer.stroke_rect self.x, self.y, draw_width, draw_height
           end
         end
 
@@ -703,35 +703,35 @@ module RGame
           return if self.selection.nil?
 
           visible = _visible_selection
-          sizing = ctx.size_of_text((self.text + " ").slice(visible))
+          sizing = ctx.renderer.size_of_text((self.text + " ").slice(visible))
 
           offset_x = if visible.first > self.fit.first
             slice_range = self.fit.first...visible.first
             text_slice = (self.text + " ").slice slice_range
-            ctx.size_of_text(text_slice).first
+            ctx.renderer.size_of_text(text_slice).first
           else
             0
           end
 
-          ctx.color = self.highlight
-          ctx.fill_rect self.x + self.padding + offset_x,
-                        self.y + self.padding,
-                        *sizing
+          ctx.renderer.color = self.highlight
+          ctx.renderer.fill_rect self.x + self.padding + offset_x,
+                                 self.y + self.padding,
+                                 *sizing
         end
 
         def _paint_cursor ctx, sizings
           text_slice = self.text.slice(self.fit.first...self.cursor)
-          cursor_x = ctx.size_of_text(text_slice).first
+          cursor_x = ctx.renderer.size_of_text(text_slice).first
 
           if self.mode == :replace
-            size = ctx.size_of_text((self.text + " ")[self.cursor])
-            ctx.stroke_rect self.x + cursor_x + self.padding,
-                            self.y + size[1] + self.padding,
-                            size[0], 1
+            size = ctx.renderer.size_of_text((self.text + " ")[self.cursor])
+            ctx.renderer.stroke_rect self.x + cursor_x + self.padding,
+                                     self.y + size[1] + self.padding,
+                                     size[0], 1
           elsif self.mode == :insert
-            ctx.stroke_rect self.x + cursor_x + self.padding,
-                            self.y + self.padding,
-                            1, sizings[1]
+            ctx.renderer.stroke_rect self.x + cursor_x + self.padding,
+                                     self.y + self.padding,
+                                     1, sizings[1]
           end
         end
 
@@ -744,7 +744,7 @@ module RGame
         end
 
         def _calculate_sizing ctx, text
-          ctx.size_of_text(text + " ").tap do |o|
+          ctx.renderer.size_of_text(text + " ").tap do |o|
             o[0] = 192
           end
         end
@@ -757,7 +757,7 @@ module RGame
             else
               fit_text_left ctx, text + " ", sizing, self.cursor, self.fit
             end
-            @text_image = ctx.create_text((text + " ").slice(self.fit))
+            @text_image = ctx.renderer.create_text((text + " ").slice(self.fit))
             @text_invalid = false
           end
           @text_image
@@ -916,7 +916,7 @@ module RGame
               self.items
             end
 
-            ctx.font = "Arial:10"
+            ctx.renderer.font = "Arial:10"
 
             _render_text ctx, content
 
@@ -924,20 +924,20 @@ module RGame
             draw_width = _calculate_width sizings
             draw_height = _calculate_height sizings
 
-            ctx.color = self.background
-            ctx.fill_rect x, y, draw_width, draw_height
+            ctx.renderer.color = self.background
+            ctx.renderer.fill_rect x, y, draw_width, draw_height
 
-            ctx.color = self.color
+            ctx.renderer.color = self.color
 
-            _paint_items sizings
+            _paint_items content, sizings, draw_width
 
-            ctx.stroke_rect x, y, draw_width, draw_height
+            ctx.renderer.stroke_rect x, y, draw_width, draw_height
           end
         end
 
         private
 
-        def _paint_items sizings
+        def _paint_items content, sizings, draw_width
           content
             .zip(sizings)
             .slice(view_position, view_size)
@@ -953,33 +953,34 @@ module RGame
                 ],
               ]
             end.each_with_index do |e, i|
-              _paint_item e[1].drop(1), @text_images[i + view_position]
+              _paint_item e[1], i, draw_width
             end
         end
 
-        def _paint_item item, sizing, index
+        def _paint_item sizing, index, draw_width
           if not @items.empty? and @cursor == (index + view_position)
             ctx.save do
-              ctx.color = self.highlight
-              ctx.fill_rect x, y + padding + sizing[0], draw_width, sizing[1]
+              ctx.renderer.color = self.highlight
+              ctx.renderer.fill_rect x, y + padding + sizing[1],
+                                     draw_width, sizing[2]
             end
           end
 
-          ctx.source = item
-          ctx.draw_image x + padding, y + e[1][1] + padding
+          ctx.renderer.source = @text_images[index + view_position]
+          ctx.renderer.draw_image x + padding, y + sizing[1] + padding
         end
 
         def _render_text ctx, items
           return unless @text_images.nil?
 
           @text_images = items.map do |e|
-            ctx.create_text(e.to_s)
+            ctx.renderer.create_text(e.to_s)
           end
         end
 
         def _calculate_sizings ctx, items
           items.map do |e|
-            ctx.size_of_text e.to_s
+            ctx.renderer.size_of_text e.to_s
           end
         end
 

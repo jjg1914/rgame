@@ -291,6 +291,32 @@ module RGame
           self[:b] = blue
           self[:a] = alpha
         end
+
+        def assign_rgb_a rgb, alpha
+          red, green, blue = _to_rgb(rgb)
+          self.assign red, green, blue, alpha
+        end
+
+        private
+
+        def _to_rgb rgb
+          [ _red_value(rgb), _green_value(rgb), _blue_value(rgb) ]
+        end
+
+        def _red_value rgba
+          # TODO ENDIAN
+          (rgba & 0x00FF0000) >> 16
+        end
+
+        def _green_value rgba
+          # TODO ENDIAN
+          (rgba & 0x0000FF00) >> 8
+        end
+
+        def _blue_value rgba
+          # TODO ENDIAN
+          (rgba & 0x000000FF)
+        end
       end
 
       class SDLSurface < FFI::Struct
@@ -332,6 +358,7 @@ module RGame
         pointer
       ], :int
       attach_function :SDL_RenderSetScale, %i[pointer float float], :int
+      attach_function :SDL_RenderGetScale, %i[pointer pointer pointer], :void
       attach_function :SDL_SetRenderTarget, %i[pointer pointer], :int
       attach_function :SDL_GetRenderTarget, %i[pointer], :pointer
       attach_function :SDL_GetHint, %i[string], :string

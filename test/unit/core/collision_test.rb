@@ -267,15 +267,30 @@ describe RGame::Core::Collision do
     end
 
     describe "#mtv" do
-      before do
-        @target.x = -1
-        @target.y = 2
-        @target.freeze
-        @other.freeze
+      describe "positive translation" do
+        before do
+          @target.x = -1
+          @target.y = 2
+          @target.freeze
+          @other.freeze
+        end
+
+        it "should return mtv" do
+          expect(@subject.mtv).must_equal([ 1, 0 ])
+        end
       end
 
-      it "should return mtv" do
-        expect(@subject.mtv).must_equal([ 1, 0 ])
+      describe "negative translation" do
+        before do
+          @target.x = 1
+          @target.y = 3
+          @target.freeze
+          @other.freeze
+        end
+
+        it "should return mtv" do
+          expect(@subject.mtv).must_equal([ 0, -1 ])
+        end
       end
     end
 
@@ -746,6 +761,32 @@ describe RGame::Core::Collision do
         "right" => 3,
         "bottom" => 5,
       })
+    end
+  end
+
+  describe ".deflect" do
+    it "should deflect" do
+      o = Object.new
+      class << o
+        def x_speed; 1; end
+        def y_speed; 2; end
+      end
+
+      expect(RGame::Core::Collision.deflect(o, [ 0, -1 ]))
+        .must_equal([ 1, -2 ])
+    end
+  end
+
+  describe ".slide" do
+    it "should slide" do
+      o = Object.new
+      class << o
+        def x_speed; 1; end
+        def y_speed; 2; end
+      end
+
+      expect(RGame::Core::Collision.slide(o, [ 0, -1 ]))
+        .must_equal([ 1, 0 ])
     end
   end
 
