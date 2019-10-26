@@ -20,10 +20,10 @@ describe RGame::Core::Aspect do
 
       klass = Class.new
       eklass = (class << klass; self; end)
-      eklass.define_method("on") { |a,&b| mock.on(a, b) }
-      eklass.define_method("before") { |a,&b| mock.before(a, b) }
-      eklass.define_method("after") { |a,&b| mock.after(a, b) }
-      eklass.define_method("around") { |a,&b| mock.around(a, b) }
+      eklass.send("define_method", "on") { |a,&b| mock.on(a, b) }
+      eklass.send("define_method", "before") { |a,&b| mock.before(a, b) }
+      eklass.send("define_method", "after") { |a,&b| mock.after(a, b) }
+      eklass.send("define_method", "around") { |a,&b| mock.around(a, b) }
 
       klass.instance_eval { include _aspect }
 

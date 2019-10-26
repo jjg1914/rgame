@@ -110,6 +110,21 @@ module RGame
           self.up.keys = (self.up.keys + %w[up]).uniq
           self.down.keys = (self.down.keys + %w[down]).uniq
         end
+
+        def speed= value
+          self.h_speed = value
+          self.v_speed = value
+        end
+
+        def h_speed= value
+          self.left.speed = value
+          self.right.speed = value
+        end
+
+        def v_speed= value
+          self.up.speed = value
+          self.down.speed = value
+        end
       end
 
       class Component
