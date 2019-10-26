@@ -178,8 +178,8 @@ module RGame
 
       def event_loop_mouseup event
         self.emit "mouseup",
-                  (event.x / self.context.scale[0]).to_i,
-                  (event.y / self.context.scale[1]).to_i,
+                  (event.x / self.context.renderer.scale[0]).to_i,
+                  (event.y / self.context.renderer.scale[1]).to_i,
                   event.button, event.modifiers
       end
 
