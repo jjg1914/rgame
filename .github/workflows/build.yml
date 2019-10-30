@@ -52,8 +52,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONARCLOUD_URL: https://sonarcloud.io
-      run:
-        wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip
+      run: |
+        wget "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip"
         unzip sonar-scanner-cli-4.2.0.1873-linux.zip
         sonar-scanner-4.2.0.1873-linux
         sonar-scanner-4.2.0.1873-linux/bin/sonar-scanner -Dsonar.host.url=${SONARCLOUD_URL}
