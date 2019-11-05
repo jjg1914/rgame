@@ -53,6 +53,11 @@ module RGame
       attr_reader :x_restrict
       attr_reader :y_restrict
 
+      on "add" do
+        self.x_restrict = self.parent.width
+        self.y_restrict = self.parent.height
+      end
+
       on :collision_sweep do
         info = RGame::Core::Collision::ReverseCollisionInfo.new self, {
           "left" => @x_restrict&.first || -Float::INFINITY,

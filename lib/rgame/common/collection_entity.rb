@@ -46,8 +46,8 @@ module RGame
 
       def create klass
         self.make(klass) do |o|
-          yield o if block_given?
           self.add(o)
+          yield o if block_given?
         end
       end
 
