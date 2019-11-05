@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "forwardable"
-
 require "rgame/core/map"
 require "rgame/core/collision"
 require "rgame/core/savable"
@@ -12,16 +10,18 @@ require "rgame/common/imagelayer_entity"
 module RGame
   module Common
     class MapEntity < CollectionEntity
-      extend Forwardable
-      def_delegators :@map,
-                     :width,
-                     :width=,
-                     :height,
-                     :height=,
-                     :background,
-                     :background=
 
+      attr_reader :width
+      attr_reader :height
+      attr_accessor :background
       attr_reader :map
+
+      on "new" do
+        resize(*self.ctx.dimensions.zip(self.ctx.renderer.scale).map do |a,b|
+          a / b
+        end)
+        @background = 0x0
+      end
 
       after "interval" do
         self.emit "collision_mark", @collision
@@ -31,8 +31,23 @@ module RGame
       end
 
       on "draw" do
-        self.ctx.renderer.color = @map.background
+        self.ctx.renderer.color = @background
         self.ctx.renderer.clear
+      end
+
+      def width= value
+        resize value, @height
+      end
+
+      def height= value
+        resize value, @height
+      end
+
+      def resize width, height
+        @width = width
+        @height = height
+        @collision = RGame::Core::Collision.new(@width.to_i,
+                                                @height.to_i)
       end
 
       def map= value
@@ -44,8 +59,8 @@ module RGame
           RGame::Core::Map.load value.to_s
         end
 
-        @collision = RGame::Core::Collision.new(@map.width.to_i,
-                                                @map.height.to_i)
+        resize @map.width, @map.height
+        @background = @map.background
 
         @map.entities.flatten.reverse.each do |e|
           self.add_front RGame::Core::Savable.load(e, self.ctx)
