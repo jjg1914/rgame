@@ -343,6 +343,7 @@ module RGame
                                             int int int int
                                             uint32], :pointer
       attach_function :SDL_DestroyWindow, %i[pointer], :void
+      attach_function :SDL_GetWindowSize, %i[pointer pointer pointer], :void
       attach_function :SDL_CreateRenderer, %i[pointer int uint32], :pointer
       attach_function :SDL_CreateSoftwareRenderer, %i[pointer], :pointer
       attach_function :SDL_DestroyRenderer, %i[pointer], :void

@@ -96,6 +96,14 @@ module RGame
           end
         end
 
+        def dimensions
+          mem = FFI::MemoryPointer.new(:int, 2)
+          SDL2.SDL_GetWindowSize @window, mem, mem + 4
+          [ mem.get(:int, 0), mem.get(:int, 4) ]
+        ensure
+          mem.free
+        end
+
         def close
           SDL2.SDL_DestroyWindow @window unless @window.nil?
           super
@@ -115,6 +123,10 @@ module RGame
             @sdl_renderer = SDL2.SDL_CreateSoftwareRenderer @surface
             raise SDL2.SDL_GetError if @sdl_renderer.nil?
           end
+        end
+
+        def dimensions
+          [ @surface[:w], @surface[:h] ]
         end
 
         def read_bytes
@@ -143,6 +155,10 @@ module RGame
             @sdl_renderer = SDL2.SDL_CreateSoftwareRenderer @surface
             raise SDL2.SDL_GetError if @sdl_renderer.nil?
           end
+        end
+
+        def dimensions
+          [ @surface[:w], @surface[:h] ]
         end
 
         def close
