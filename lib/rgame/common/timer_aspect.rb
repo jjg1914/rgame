@@ -72,13 +72,14 @@ module RGame
       end
 
       on "interval" do |dt|
-        (0...self.timer.timers.size).step(2).select do |e|
+        (0...self.timer.timers.size).select do |e|
           self.timer.timers[e][0] -= dt
           self.timer.timers[e][0] <= 0
-        end.each do |e|
-          p = self.timer.timers[e][1]
-          self.instance_exec(&p)
-          self.timer.clear_timer p
+        end.map do |e|
+          self.timer.timers[e][1]
+        end.map do |e|
+          self.instance_exec(&e)
+          self.timer.clear_timer e
         end
       end
     end
