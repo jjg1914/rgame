@@ -111,6 +111,20 @@ describe RGame::Core::Entity do
       expect(RGame::Core::Entity.registry).
         must_equal([ @base_klass, @derived_klass ])
     end
+
+    it "should deliver parent handlers" do
+      mock = Minitest::Mock.new
+      mock.expect "call", nil, [ "bar" ]
+
+      base = Class.new(RGame::Core::Entity) do
+        on("bar") { @mock.call "bar" }
+      end
+      derived = Class.new(base)
+      subject = derived.new
+      subject.instance_variable_set :@mock, mock
+      expect(subject.emit "bar").must_be :nil?
+      mock.verify
+    end
   end
 
   describe ".new" do

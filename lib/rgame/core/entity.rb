@@ -17,6 +17,7 @@ module RGame
           @parent = parent
           @children = []
           parent.children << self unless parent.nil?
+          rebuild_handler_cache
         end
 
         def push message, callable
