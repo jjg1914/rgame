@@ -10,14 +10,13 @@ require "rgame/common/imagelayer_entity"
 module RGame
   module Common
     class MapEntity < CollectionEntity
-
       attr_reader :width
       attr_reader :height
       attr_accessor :background
       attr_reader :map
 
       on "new" do
-        resize(*self.ctx.dimensions.zip(self.ctx.renderer.scale).map do |a,b|
+        resize(*self.ctx.dimensions.zip(self.ctx.renderer.scale).map do |a, b|
           a / b
         end)
         @background = 0x0

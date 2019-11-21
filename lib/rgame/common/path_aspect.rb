@@ -7,8 +7,6 @@ module RGame
     module PathAspect
       include RGame::Core::Aspect
 
-      attr_reader :path
-
       class Component
         attr_accessor :speed
 
@@ -23,13 +21,11 @@ module RGame
           if args.size == 2
             self.goto_position(*args)
           elsif args.size == 1
-            if args[0].is_a? Hash
-              self.goto_bounds(*args)
-            else
-              raise ArgumentError.new "%s" % args[0].inspect
-            end
+            raise ArgumentError, args[0].inspect unless args[0].is_a? Hash
+
+            self.goto_bounds(*args)
           else
-            raise ArgumentError.new "number of arguments: %i" % args.size
+            raise ArgumentError, "number of arguments: %i" % args.size
           end
         end
 
@@ -38,7 +34,16 @@ module RGame
         end
 
         def goto_bounds bounds
-          x = if bounds.key?("left")
+          x = _bounds_h bounds
+          y = _bounds_v bounds
+
+          self.goto_position x, y
+        end
+
+        private
+
+        def _bounds_h bounds
+          if bounds.key?("left")
             bounds["left"]
           elsif bounds.key?("right")
             @target.parent.width - @target.width - bounds["right"]
@@ -47,8 +52,10 @@ module RGame
           else
             @target.x
           end
+        end
 
-          y = if bounds.key?("top")
+        def _bounds_v bounds
+          if bounds.key?("top")
             bounds["top"]
           elsif bounds.key?("bottom")
             @target.parent.height - @target.height - bounds["bottom"]
@@ -57,24 +64,21 @@ module RGame
           else
             @target.y
           end
-
-          self.goto_position x, y
         end
 
-        private
-
         def _step dt
-          if _distance_to <= _step_size(dt)
-            @target.x, @target.y = @nodes[@index].take(2) unless @index < 0
-            @index += 1
+          return unless _distance_to <= _step_size(dt)
 
-            if @index == @nodes.size
-              @target.send("path_end")
-            else
-              theta = _direction_to
-              @target.x_speed = Math.cos(theta) * @nodes[@index][2]
-              @target.y_speed = Math.sin(theta) * @nodes[@index][2]
-            end
+          @target.x, @target.y = @nodes[@index].take(2) unless @index.negative?
+
+          @index += 1
+
+          if @index == @nodes.size
+            @target.send("path_end")
+          else
+            theta = _direction_to
+            @target.x_speed = Math.cos(theta) * @nodes[@index][2]
+            @target.y_speed = Math.sin(theta) * @nodes[@index][2]
           end
         end
 
@@ -96,7 +100,7 @@ module RGame
 
         def _step_size dt
           speed = @target.speed
-          if @target.speed == 0
+          if @target.speed.zero?
             Float::INFINITY
           else
             [ speed * (dt / 1000.0), 1 ].max

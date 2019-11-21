@@ -8,12 +8,12 @@ module RGame
     class TimelineEntity < RGame::Core::Entity
       include RGame::Common::TimerAspect
 
-      @timeline = Hash.new { |h,k| h[k] = [] }
+      @timeline = Hash.new { |h, k| h[k] = [] }
 
       on "new" do
-        self.class.timeline.reject do |k,_v|
+        self.class.timeline.reject do |k, _v|
           k.is_a? String
-        end.each do |k,v|
+        end.each do |k, v|
           self.timer.set_timer(k) do
             v.each { |e| self.instance_eval(&e) }
           end
@@ -29,7 +29,6 @@ module RGame
           self.class.timeline.keys.reject do |e|
             e.is_a? String
           end.max.tap do |o|
-            STDERR.puts o.inspect
             self.timer.set_timer(o) do
               self.class.timeline["end"].each { |e| self.instance_eval(&e) }
             end
