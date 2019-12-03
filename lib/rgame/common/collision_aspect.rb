@@ -44,6 +44,12 @@ module RGame
           @when << block
         end
 
+        def when_not &block
+          self.when do |value, info|
+            not self.instance_exec(value, info, &block)
+          end
+        end
+
         def emit *args
           @emit << args
         end
@@ -96,6 +102,11 @@ module RGame
 
         def when &block
           @matchers.each { |e| e.when(&block) }
+          self
+        end
+
+        def when_not &block
+          @matchers.each { |e| e.when_not(&block) }
           self
         end
       end

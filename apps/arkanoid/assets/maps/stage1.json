@@ -14,577 +14,577 @@
       "type": "block",
       "x": 24,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 72,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 88,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 104,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 120,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 136,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 152,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 168,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 8,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 200,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 216,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 232,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 248,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 8,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 24,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 40,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 56,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 72,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 88,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 104,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 120,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 136,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 152,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 168,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 184,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 200,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 216,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 232,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 248,
       "y": 80,
-      "sprite_tag": "orange"
+      "sprite": { "tag": "orange" }
     },
     {
       "type": "block",
       "x": 8,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 24,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 40,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 56,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 72,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 88,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 104,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 120,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 136,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 152,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 168,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 184,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 200,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 216,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 232,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 248,
       "y": 72,
-      "sprite_tag": "yellow"
+      "sprite": { "tag": "yellow" }
     },
     {
       "type": "block",
       "x": 8,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 24,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 40,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 56,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 72,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 88,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 104,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 120,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 136,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 152,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 168,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 184,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 200,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 216,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 232,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 248,
       "y": 64,
-      "sprite_tag": "green"
+      "sprite": { "tag": "green" }
     },
     {
       "type": "block",
       "x": 8,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 24,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 40,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 56,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 72,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 88,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 104,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 120,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 136,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 152,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 168,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 184,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 200,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 216,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 232,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 248,
       "y": 56,
-      "sprite_tag": "blue"
+      "sprite": { "tag": "blue" }
     },
     {
       "type": "block",
       "x": 8,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 24,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 40,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 56,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 72,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 88,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 104,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 120,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 136,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 152,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 168,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 184,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 200,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 216,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 232,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 248,
       "y": 48,
-      "sprite_tag": "purple"
+      "sprite": { "tag": "purple" }
     },
     {
       "type": "block",
       "x": 40,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 56,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     },
     {
       "type": "block",
       "x": 184,
       "y": 88,
-      "sprite_tag": "red"
+      "sprite": { "tag": "red" }
     }
   ]
 }

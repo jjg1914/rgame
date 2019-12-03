@@ -14,25 +14,22 @@ VIEW_WIDTH = WINDOW_WIDTH / SCALE_FACTOR
 VIEW_HEIGHT = WINDOW_HEIGHT / SCALE_FACTOR
 
 class RGame::Common::RootEntity
+  include RGame::Common::InputAspect
+
   window.title = "Arkanoid"
   window.size = [ WINDOW_WIDTH, WINDOW_HEIGHT ]
 
   context.scale = SCALE_FACTOR
   context.scale_quality = "nearest"
 
+  input.keydown(%w[enter return])
+    .when { self.size == 1 }
+    .callback { |_| self.create(StageEntity) }
+
   on "start" do
     self.create(RGame::Common::CollectionEntity) do |o|
       o.create(RGame::Common::ImagelayerEntity) { |u| u.image = "stage-bg"}
       o.create(RGame::Common::ImagelayerEntity) { |u| u.image = "title"}
-    end
-  end
-
-  on "keydown" do |key, _|
-    next if self.size > 1
-
-    case key
-    when "enter", "return"
-      self.create(StageEntity)
     end
   end
 
@@ -169,20 +166,19 @@ class PlayerEntity < RGame::Common::SimpleEntity
 
   collision(NilClass).respond("slide")
 
-  on "new" do
-    self.sprite = "player"
-  end
+  sprite.name = "player"
+  sprite.sprite_sized
 
   on "widen_player" do
     self.timer.set_timer(10000, { "tag" => "powerup_wide" }) do
-      self.sprite = "player"
+      self.sprite.name = "player"
     end
-    self.sprite = "player_wide"
+    self.sprite.name = "player_wide"
   end
 
   def clear_powerups
     self.timer.clear
-    self.sprite = "player"
+    self.sprite.name = "player"
   end
 end
 
@@ -190,14 +186,16 @@ class BlockEntity < RGame::Common::SimpleEntity
   include RGame::Core::Savable
   include RGame::Common::RandomHelpers
 
-  savable [ :x, :y, :sprite_tag ]
+  savable [ :x, :y, "sprite.tag" ]
 
   collision.check_collisions = false
 
   attr_accessor :score
 
+  sprite.name = "block"
+  sprite.sprite_sized
+
   on "new" do
-    self.sprite = "block"
     self.score = 100
   end
 
@@ -218,8 +216,9 @@ class HardBlockEntity < BlockEntity
 
   savable [ :hits ]
 
+  sprite.tag = "hard"
+
   on "new" do
-    self.sprite_tag = "hard"
     self.hits = 2
     self.score = 200
   end
@@ -230,7 +229,7 @@ class HardBlockEntity < BlockEntity
     if self.hits <= 0
       p.call
     elsif self.hits.finite?
-      self.sprite_tag = "hard_broken"
+      self.sprite.tag = "hard_broken"
     end
   end
 
@@ -242,8 +241,9 @@ class HardBlockEntity < BlockEntity
 end
 
 class InvincibleBlockEntity < HardBlockEntity
+  sprite.tag = "invincible"
+
   on "new" do
-    self.sprite_tag = "invincible"
     self.hits = Float::INFINITY
   end
 end
@@ -251,8 +251,9 @@ end
 class MovingBlockEntity < BlockEntity
   savable [ :x_speed, :y_speed ]
 
+  sprite.tag = "red_moving"
+
   on "new" do
-    self.sprite_tag = "red_moving"
     self.x_speed = 32
   end
 
@@ -279,13 +280,21 @@ class BallEntity < RGame::Common::SimpleEntity
   attr_accessor :player
 
   DEFAULT_SPEED = 112
-  STARTING_ANGLE = (3.0 * Math::PI / 4.0)
+  STARTING_ANGLE = (Math::PI / 4.0)
   ANGLE_CLAMP = [ (-7.0 * Math::PI / 8.0), (-1.0 * Math::PI / 8.0) ]
   ANGLE_RCLAMP = [ (-11.0 * Math::PI / 16.0), (-7.0 * Math::PI / 16.0) ]
 
-  on "new" do |player|
-    self.sprite = "ball"
-  end
+  sprite.name = "ball"
+  sprite.sprite_sized
+
+  input.keydown(%w[space])
+    .when_not { @started }
+    .callback { |_| 
+      @started = true
+
+      self.speed = DEFAULT_SPEED
+      self.angle = STARTING_ANGLE
+    }
 
   on "interval" do
     unless @started
@@ -298,15 +307,6 @@ class BallEntity < RGame::Common::SimpleEntity
         self.remove
         self.broadcast "ballout"
       end
-    end
-  end
-
-  on "keydown" do |key|
-    if not @started and key == "space"
-      @started = true
-
-      self.x_speed = DEFAULT_SPEED * Math.cos(STARTING_ANGLE)
-      self.y_speed = DEFAULT_SPEED * Math.sin(STARTING_ANGLE)
     end
   end
 
@@ -329,13 +329,13 @@ class BallEntity < RGame::Common::SimpleEntity
   end
 
   collision(BlockEntity)
-    .when { |_e| self.sprite_tag != "power_ball" }
+    .when { |_e| self.sprite.tag != "power_ball" }
     .emit("ball_collision")
     .respond("deflect")
     .callback { |_e| self.ctx.mixer.play_effect("ball_block_hit") }
 
   collision(BlockEntity)
-    .when { |_e| self.sprite_tag == "power_ball" }
+    .when { |_e| self.sprite.tag == "power_ball" }
     .emit("ball_collision")
     .callback do |e, info|
       self.collision.deflect!(info) unless e.parent.nil?
@@ -351,9 +351,9 @@ class BallEntity < RGame::Common::SimpleEntity
 
   on "power_ball" do
     self.timer.set_timer(5000, { "tag" => "powerup_powerball" }) do
-      self.sprite_tag = "default"
+      self.sprite.tag = "default"
     end
-    self.sprite_tag = "power_ball"
+    self.sprite.tag = "power_ball"
   end
 end
 
@@ -368,14 +368,16 @@ class PowerupEntity < RGame::Common::SimpleEntity
     [ "slow_ball", 2 ],
   ]
 
+  sprite.name = "powerup"
+  sprite.sprite_sized
+
   on "new" do
-    self.sprite = "powerup"
     self.y_speed = 48
-    self.sprite_tag = random_weights_yield(FREQUENCIES)
+    self.sprite.tag = random_weights_yield(FREQUENCIES)
   end
 
   collision(PlayerEntity) do
-    case self.sprite_tag
+    case self.sprite.tag
     when "1up"
       self.broadcast "livesup", 1
     when "extra_ball"

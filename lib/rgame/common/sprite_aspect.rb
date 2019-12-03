@@ -6,25 +6,87 @@ require "rgame/core/sprite"
 module RGame
   module Common
     module SpriteAspect
-      module ClassMethods
-        def self.extended klass
-          klass.instance_eval do
-            @sprite_sized = true
-          end
+      class ClassComponent
+        attr_accessor :name
+        attr_accessor :tag
+
+        def initialize
+          @sized = false
         end
 
         def sprite_sized value = true
-          @sprite_sized = value
+          @sized = value
         end
 
         def sprite_sized?
-          @sprite_sized
+          @sized
         end
+      end
+
+      class Component
+        attr_reader :name
+        attr_reader :tag
+        attr_accessor :frame
+        attr_accessor :key
+        attr_reader :translate
+
+        def initialize target
+          @target = target
+          self.name = @target.class.sprite.name
+          self.tag = @target.class.sprite.tag
+          self.frame = 0
+          self.key = 0
+          self.translate = 0
+        end
+
+        def name= value
+          @name = if value.is_a? RGame::Core::Sprite
+            value
+          else
+            RGame::Core::Sprite.load value.to_s
+          end
+          self.tag = self.name.default_tag
+          self.sprite_size! if @target.class.sprite.sprite_sized?
+        end
+
+        def tag= value
+          @tag = value.nil? ? self.name.default_tag : value
+          self.frame = 0
+          self.key = 0
+        end
+
+        def translate= value
+          value = [ value, value ] unless value.is_a? Array
+          @translate = if value.empty?
+            [ 1, 1 ]
+          elsif value.size == 1
+            [ value[0].to_i, value[0].to_i ]
+          else
+            value.take(2).map(&:to_i)
+          end
+        end
+
+        def sprite_size!
+          return if self.name.nil?
+
+          @target.width = self.name.width
+          @target.height = self.name.height
+        end
+      end
+
+      module ClassMethods
+        def self.extended klass
+          klass.instance_eval do
+            @sprite = ClassComponent.new
+          end
+        end
+
+        attr_reader :sprite
 
         def inherited klass
           super
           klass.instance_exec(self) do |parent|
-            @sprite_sized = parent.sprite_sized?
+            @sprite = parent.sprite.clone
           end
         end
       end
@@ -32,10 +94,6 @@ module RGame
       include RGame::Core::Aspect
 
       attr_reader :sprite
-      attr_reader :sprite_tag
-      attr_accessor :sprite_frame
-      attr_accessor :sprite_key
-      attr_reader :sprite_translate
 
       def self.included klass
         super
@@ -44,73 +102,39 @@ module RGame
         end
       end
 
-      def sprite= value
-        @sprite = if value.is_a? RGame::Core::Sprite
-          value
-        else
-          RGame::Core::Sprite.load value.to_s
-        end
-        self.sprite_tag = self.sprite.default_tag
-        self.sprite_size! if self.class.sprite_sized?
-      end
-
-      def sprite_tag= value
-        @sprite_tag = value.nil? ? self.sprite.default_tag : value
-        self.sprite_frame = 0
-        self.sprite_key = 0
-      end
-
-      def sprite_translate= value
-        value = [ value, value ] unless value.is_a? Array
-        @sprite_translate = if value.empty?
-          [ 1, 1 ]
-        elsif value.size == 1
-          [ value[0].to_i, value[0].to_i ]
-        else
-          value.take(2).map(&:to_i)
-        end
-      end
-
-      def sprite_size!
-        return if self.sprite.nil?
-
-        self.width = self.sprite.width
-        self.height = self.sprite.height
-      end
-
       on "new" do
-        self.sprite_frame = 0
-        self.sprite_key = 0
-        self.sprite_translate = 0
+        @sprite = Component.new self
       end
 
       on "interval" do |dt|
-        unless self.sprite.nil?
-          key = self.sprite_key + dt
+        next if self.sprite.name.nil?
 
-          tmp = self.sprite.next_frame_key(self.sprite_tag,
-                                           self.sprite_frame,
-                                           key)
-          self.sprite_frame, self.sprite_key = tmp
-        end
+        key = self.sprite.key + dt
+
+        tmp = self.sprite.name.next_frame_key(self.sprite.tag,
+                                              self.sprite.frame,
+                                              key)
+        self.sprite.frame, self.sprite.key = tmp
       end
 
       on "draw" do
-        at = self.sprite.at(self.sprite_tag, self.sprite_frame)
+        at = self.sprite.name.at(self.sprite.tag, self.sprite.frame)
 
-        self.ctx.renderer.source = self.sprite.image
-        self.ctx.renderer.draw_image(x.to_i + self.sprite_translate[0],
-                                     y.to_i + self.sprite_translate[1],
+        self.ctx.renderer.source = self.sprite.name.image
+        self.ctx.renderer.draw_image(x.to_i + self.sprite.translate[0],
+                                     y.to_i + self.sprite.translate[1],
                                      *at)
       end
 
       def to_h
         super.merge({
-          "sprite" => self.sprite.name,
-          "sprite_tag" => self.sprite_tag,
-          "sprite_frame" => self.sprite_frame,
-          "sprite_key" => self.sprite_key,
-          "sprite_translate" => self.sprite_translate,
+          "sprite" => {
+            "sprite" => self.sprite.name,
+            "tag" => self.sprite.tag,
+            "frame" => self.sprite.frame,
+            "key" => self.sprite.key,
+            "translate" => self.sprite.translate,
+          },
         })
       end
     end
