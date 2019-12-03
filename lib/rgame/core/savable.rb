@@ -12,8 +12,28 @@ module RGame
 
         def saveable_load data, context = nil
           self.new(context).tap do |o|
-            data.select { |k, _| self.savable.include?(k) }.each do |k, v|
-              o.send("%s=" % k, v)
+            p = lambda do |u|
+              Hash[*u.each_pair.map do |k, v|
+                if v.is_a?(data.class)
+                  p.call(v).map do |k2, v2|
+                    [ [ k ] + k2, v2 ]
+                  end
+                else
+                  [ [ [ k ], v ] ]
+                end
+              end.flatten(2)]
+            end
+
+            p.call(data).select do |k, _|
+              self.savable.include?(k.join("."))
+            end.each do |k, v|
+              k.each_with_index.reduce(o) do |m, v2|
+                if v2[1] == k.size - 1
+                  m.send("%s=" % v2[0], v)
+                else
+                  m.send(v2[0])
+                end
+              end
             end
           end
         end
@@ -58,7 +78,9 @@ module RGame
       def savable_dump
         h = self.to_h
         ([ "type" ] + self.class.savable).reduce({}) do |m, v|
-          m.merge({ v => h[v] })
+          m.merge(v.split(".").reverse.reduce(h.dig(*v.split("."))) do |m2, v2|
+            { v2 => m2 }
+          end)
         end
       end
     end
