@@ -9,7 +9,7 @@ module RGame
       attr_reader :children
 
       extend Forwardable
-      def_delegators :@children, :empty?
+      def_delegators :@children, :empty?, :each, :size
 
       def initialize id, context
         super
@@ -69,20 +69,12 @@ module RGame
       end
 
       def remove_all
-        self.each { |e| self.remove(e) }
-      end
-
-      def each &block
-        @children.each(&block)
-      end
-
-      def size
-        @children.size
+        self.remove_bulk(self.children.dup)
       end
 
       def inspect
         tmp = self.each.map(&:inspect).join("\n")
-        ([ super ] + tmp.each_line.map { |e| "  " + e.chomp }).join("\n")
+        ([ super ] + tmp.each_line.map { |e| "  " + e.chomp }).join("\n") + "\n"
       end
 
       private

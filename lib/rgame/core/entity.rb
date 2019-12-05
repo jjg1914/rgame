@@ -110,6 +110,7 @@ module RGame
             end
             p.call
           end
+          nil
         end
 
         def inherited klass

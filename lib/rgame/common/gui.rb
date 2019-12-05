@@ -83,8 +83,8 @@ module RGame
           on "keydown" do |key, mod|
             case key
             when "left", "right"
-              if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.alt) or
-                 ((/darwin/ =~ RUBY_PLATFORM).nil? and mod.ctrl)
+              if (RGame::Core::Env.macos? and mod.alt) or
+                 (not RGame::Core::Env.macos? and mod.ctrl)
                 if mod.shift
                   self.move_cursor_word_select key
                 else
@@ -110,8 +110,8 @@ module RGame
           on "keyrepeat" do |key, mod|
             case key
             when "left", "right"
-              if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.alt) or
-                 ((/darwin/ =~ RUBY_PLATFORM).nil?  and mod.ctrl)
+              if (RGame::Core::Env.macos? and mod.alt) or
+                 (not RGame::Core::Env.macos? and mod.ctrl)
                 self.move_cursor_word key
               else
                 self.move_cursor key
@@ -216,8 +216,8 @@ module RGame
           on "keydown" do |key, mod|
             case key
             when "a"
-              if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.super) or
-                 ((/darwin/ =~ RUBY_PLATFORM).nil? and mod.ctrl)
+              if (RGame::Core::Env.macos? and mod.super) or
+                 (not RGame::Core::Env.macos? and mod.ctrl)
                 self.select_all
               end
             end
@@ -236,18 +236,18 @@ module RGame
           on "keydown" do |key, mod|
             case key
             when "x"
-              if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.super) or
-                 ((/darwin/ =~ RUBY_PLATFORM).nil? and mod.ctrl)
+              if (RGame::Core::Env.macos? and mod.super) or
+                 (not RGame::Core::Env.macos? and mod.ctrl)
                 self.cut
               end
             when "c"
-              if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.super) or
-                 ((/darwin/ =~ RUBY_PLATFORM).nil? and mod.ctrl)
+              if (RGame::Core::Env.macos? and mod.super) or
+                 (not RGame::Core::Env.macos? and mod.ctrl)
                 self.copy
               end
             when "v"
-              if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.super) or
-                 ((/darwin/ =~ RUBY_PLATFORM).nil? and mod.ctrl)
+              if (RGame::Core::Env.macos? and mod.super) or
+                 (not RGame::Core::Env.macos? and mod.ctrl)
                 self.paste
               end
             end
@@ -291,17 +291,17 @@ module RGame
           on "keydown" do |key, mod|
             case key
             when "z"
-              if !(/darwin/ =~ RUBY_PLATFORM).nil? and mod.super
+              if RGame::Core::Env.macos? and mod.super
                 if mod.shift
                   self.redo
                 else
                   self.undo
                 end
-              elsif (/darwin/ =~ RUBY_PLATFORM).nil? and mod.ctrl
+              elsif not RGame::Core::Env.macos? and mod.ctrl
                 self.undo
               end
             when "y"
-              self.redo if (/darwin/ =~ RUBY_PLATFORM).nil? and mod.ctrl
+              self.redo if not RGame::Core::Env.macos? and mod.ctrl
             end
           end
 
@@ -417,8 +417,8 @@ module RGame
             when "backspace"
               if not self.selection.nil?
                 self.delete_selection
-              elsif (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.alt) or
-                    ((/darwin/ =~ RUBY_PLATFORM).nil? and mod.ctrl)
+              elsif (RGame::Core::Env.macos? and mod.alt) or
+                    (not RGame::Core::Env.macos? and mod.ctrl)
                 self.backspace_word
               else
                 self.backspace
@@ -426,8 +426,8 @@ module RGame
             when "delete"
               if not self.selection.nil?
                 self.delete_selection
-              elsif (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.alt) or
-                    ((/darwin/ =~ RUBY_PLATFORM).nil? and mod.ctrl)
+              elsif (RGame::Core::Env.macos? and mod.alt) or
+                    (not RGame::Core::Env.macos? and mod.ctrl)
                 self.delete_word
               else
                 self.delete
@@ -438,15 +438,15 @@ module RGame
           on "keyrepeat" do |key, mod|
             case key
             when "backspace"
-              if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.alt) or
-                 ((/darwin/ =~ RUBY_PLATFORM).nil? and mod.ctrl)
+              if (RGame::Core::Env.macos? and mod.alt) or
+                 (not RGame::Core::Env.macos? and mod.ctrl)
                 self.backspace_word
               else
                 self.backspace
               end
             when "delete"
-              if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.alt) or
-                 ((/darwin/ =~ RUBY_PLATFORM).nil?  and mod.ctrl)
+              if (RGame::Core::Env.macos? and mod.alt) or
+                 (not RGame::Core::Env.macos? and mod.ctrl)
                 self.delete_word
               else
                 self.delete

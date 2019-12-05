@@ -1,10 +1,16 @@
 # frozen_string_literal: true
 
+require "forwardable"
 require "rgame/core/entity"
 
 module RGame
   module Common
     class QueueEntity < RGame::Core::Entity
+      attr_reader :children
+
+      extend Forwardable
+      def_delegators :@children, :empty?, :size
+
       def initialize id, context
         super
         @children = []
@@ -35,14 +41,6 @@ module RGame
 
       def peek
         @children.first
-      end
-
-      def size
-        @children.size
-      end
-
-      def empty?
-        self.size.zero?
       end
 
       private

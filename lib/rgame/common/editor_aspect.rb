@@ -356,13 +356,13 @@ module RGame
 
           case key
           when "s"
-            if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.super) or
-               ((/darwin/ =~ RUBY_PLATFORM).nil? and mod.ctrl)
+            if (RGame::Core::Env.macos? and mod.super) or
+               (not RGame::Core::Env.macos? and mod.ctrl)
               self.set_save_edit_mode
             end
           when "o"
-            if (!(/darwin/ =~ RUBY_PLATFORM).nil? and mod.super) or
-               ((/darwin/ =~ RUBY_PLATFORM).nil? and mod.ctrl)
+            if (RGame::Core::Env.macos? and mod.super) or
+               (not RGame::Core::Env.macos? and mod.ctrl)
               self.set_open_edit_mode
             end
           end

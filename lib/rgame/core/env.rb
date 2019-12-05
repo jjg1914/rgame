@@ -13,6 +13,14 @@ module RGame
         not ENV["ENABLE_MMAP_MODE"].to_i.zero?
       end
 
+      def windows?
+        not (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM).nil?
+      end
+
+      def macos?
+        not (/darwin/ =~ RUBY_PLATFORM).nil?
+      end
+
       alias enable_software_mode? enable_software_mode
       alias enable_mmap_mode? enable_mmap_mode
 
@@ -28,9 +36,9 @@ module RGame
         ENV.fetch("FONT_PATH", begin
           _expand_all_paths([
             File.join(assets_path, "fonts"),
-            if not (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM).nil?
+            if self.windows?
               [ "C:\Windows\Fonts" ]
-            elsif not (/darwin/ =~ RUBY_PLATFORM).nil?
+            elsif self.macos?
               [ "~/Library/Fonts", "/Library/Fonts" ]
             else
               [ "~/.fonts", "/usr/share/fonts" ]
@@ -44,19 +52,23 @@ module RGame
       end
 
       def sound_path
-        ENV.fetch("SOUNT_PATH", begin
+        ENV.fetch("SOUND_PATH", begin
           [
             File.join(assets_path, "sounds"),
           ].join(File::PATH_SEPARATOR)
         end)
       end
 
+      def sound_path= value
+        ENV.store("SOUND_PATH", value)
+      end
+
       def image_path
         ENV.fetch("IMAGE_PATH", begin
           [
             File.join(assets_path, "images"),
-            File.join(assets_path, "sprites"),
-            File.join(assets_path, "tilesets"),
+            self.sprite_path,
+            self.tileset_path,
           ].join(File::PATH_SEPARATOR)
         end)
       end

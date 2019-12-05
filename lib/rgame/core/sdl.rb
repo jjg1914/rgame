@@ -7,9 +7,7 @@ module RGame
     EXT_PATH = File.expand_path("../../../ext", File.dirname(__FILE__))
 
     module Internal
-      unless (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM).nil?
-        raise "not supported"
-      end
+      raise "not supported" if RGame::Core::Env.windows?
 
       PROT_NONE = 0x0
       PROT_READ = 0x1
@@ -36,21 +34,21 @@ module RGame
           Internal::LibC.munmap(*args)
         end
 
-        if (/darwin/ =~ RUBY_PLATFORM).nil?
-          def shm_open *args
-            Internal::LibRT.shm_open(*args)
-          end
-
-          def shm_unlink *args
-            Internal::LibRT.shm_unlink(*args)
-          end
-        else
+        if RGame::Core::Env.macos?
           def shm_open *args
             Internal::LibC.shm_open(*args)
           end
 
           def shm_unlink *args
             Internal::LibC.shm_unlink(*args)
+          end
+        else
+          def shm_open *args
+            Internal::LibRT.shm_open(*args)
+          end
+
+          def shm_unlink *args
+            Internal::LibRT.shm_unlink(*args)
           end
         end
       end
@@ -62,7 +60,7 @@ module RGame
         attach_function :getpagesize, %i[], :int
         attach_function :ftruncate, %i[int int64], :int
 
-        unless (/darwin/ =~ RUBY_PLATFORM).nil?
+        if RGame::Core::Env.macos?
           attach_function :shm_open, %i[string int uint32], :int
           attach_function :shm_unlink, %i[string], :int
         end
@@ -76,7 +74,7 @@ module RGame
         attach_function :munmap, %i[pointer ulong], :pointer
       end
 
-      if (/darwin/ =~ RUBY_PLATFORM).nil?
+      unless RGame::Core::Env.macos?
         module LibRT
           extend FFI::Library
           ffi_lib "rt"
@@ -509,7 +507,7 @@ module RGame
     module SDLFontCache
       extend FFI::Library
 
-      if not (/darwin/ =~ RUBY_PLATFORM).nil?
+      if RGame::Core::Env.macos?
         ffi_lib File.expand_path("SDL_FontCache.bundle", EXT_PATH)
       else
         ffi_lib File.expand_path("SDL_FontCache.so", EXT_PATH)
